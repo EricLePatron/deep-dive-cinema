@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Star,
@@ -15,24 +15,26 @@ import {
   Bookmark,
   Share2,
   ChevronRight,
+  Loader2,
+  Film,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Header } from "@/components/Header";
 import { ContentCard } from "@/components/ContentCard";
 import { ContentSection } from "@/components/ContentSection";
+import { FilmCard } from "@/components/FilmCard";
+import { useMovieDetails, useSimilarMovies } from "@/hooks/useTMDB";
+import { getPosterUrl } from "@/services/tmdb";
 import {
-  mockFilm,
   mockBooks,
   mockDocumentaries,
   mockYouTubeVideos,
   mockPodcasts,
   mockArticles,
   mockInterviews,
-  popularFilms,
 } from "@/data/mockData";
 import { cn } from "@/lib/utils";
-import { FilmCard } from "@/components/FilmCard";
 
 const tabs = [
   { id: "all", label: "All Content", icon: null },
@@ -46,10 +48,12 @@ const tabs = [
 
 export default function FilmDeepDive() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("all");
 
-  // In real app, fetch film by ID from TMDB
-  const film = mockFilm;
+  const movieId = id ? parseInt(id, 10) : undefined;
+  const { data: film, isLoading, error } = useMovieDetails(movieId);
+  const { data: similarMoviesData, isLoading: loadingSimilar } = useSimilarMovies(movieId);
 
   const totalContent =
     mockBooks.length +
@@ -59,6 +63,50 @@ export default function FilmDeepDive() {
     mockArticles.length +
     mockInterviews.length;
 
+  // Transform similar movies to FilmCard format
+  const similarFilms = similarMoviesData?.results.slice(0, 6).map((movie) => ({
+    id: movie.id,
+    title: movie.title,
+    year: movie.release_date ? new Date(movie.release_date).getFullYear() : 0,
+    director: "",
+    directorId: 0,
+    synopsis: movie.overview,
+    genres: [],
+    runtime: 0,
+    posterUrl: getPosterUrl(movie.poster_path) || "",
+    backdropUrl: null,
+    rating: movie.vote_average,
+    cast: [],
+  })) || [];
+
+  if (isLoading) {
+    return (
+      <div className="dark min-h-screen bg-background">
+        <Header />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-12 w-12 text-primary animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !film) {
+    return (
+      <div className="dark min-h-screen bg-background">
+        <Header />
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+          <Film className="h-16 w-16 text-muted-foreground" />
+          <h2 className="font-display text-2xl font-bold text-foreground">Film not found</h2>
+          <p className="text-muted-foreground">We couldn't find this film. Please try another search.</p>
+          <Button variant="cinema" onClick={() => navigate("/")}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to search
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="dark min-h-screen bg-background">
       <Header />
@@ -67,11 +115,15 @@ export default function FilmDeepDive() {
       <section className="relative pt-16">
         {/* Backdrop image */}
         <div className="absolute inset-0 h-[70vh] overflow-hidden">
-          <img
-            src={film.backdropUrl}
-            alt=""
-            className="w-full h-full object-cover object-top"
-          />
+          {film.backdropUrl ? (
+            <img
+              src={film.backdropUrl}
+              alt=""
+              className="w-full h-full object-cover object-top"
+            />
+          ) : (
+            <div className="w-full h-full bg-muted" />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/20" />
           <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-transparent to-background/60" />
         </div>
@@ -91,11 +143,17 @@ export default function FilmDeepDive() {
             {/* Poster */}
             <div className="flex-shrink-0">
               <div className="w-64 poster-shadow rounded-xl overflow-hidden cinema-glow">
-                <img
-                  src={film.posterUrl}
-                  alt={film.title}
-                  className="w-full h-auto"
-                />
+                {film.posterUrl ? (
+                  <img
+                    src={film.posterUrl}
+                    alt={film.title}
+                    className="w-full h-auto"
+                  />
+                ) : (
+                  <div className="w-full aspect-[2/3] bg-muted flex items-center justify-center">
+                    <Film className="h-16 w-16 text-muted-foreground" />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -124,21 +182,25 @@ export default function FilmDeepDive() {
                   <Calendar className="h-4 w-4" />
                   {film.year}
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <Clock className="h-4 w-4" />
-                  {film.runtime} min
-                </span>
+                {film.runtime > 0 && (
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="h-4 w-4" />
+                    {film.runtime} min
+                  </span>
+                )}
                 <span className="flex items-center gap-1.5">
                   <Star className="h-4 w-4 text-primary fill-primary" />
                   {film.rating.toFixed(1)}
                 </span>
-                <Link
-                  to={`/director/${film.directorId}`}
-                  className="flex items-center gap-1.5 text-primary hover:underline"
-                >
-                  <User className="h-4 w-4" />
-                  {film.director}
-                </Link>
+                {film.director && (
+                  <Link
+                    to={`/director/${film.directorId}`}
+                    className="flex items-center gap-1.5 text-primary hover:underline"
+                  >
+                    <User className="h-4 w-4" />
+                    {film.director}
+                  </Link>
+                )}
               </div>
 
               {/* Synopsis */}
@@ -147,41 +209,43 @@ export default function FilmDeepDive() {
               </p>
 
               {/* Cast */}
-              <div className="mb-8">
-                <h3 className="text-sm font-medium text-muted-foreground mb-3">
-                  PRINCIPAL CAST
-                </h3>
-                <div className="flex flex-wrap gap-4">
-                  {film.cast.slice(0, 4).map((member) => (
-                    <div
-                      key={member.name}
-                      className="flex items-center gap-3 bg-muted/30 rounded-full pr-4"
-                    >
-                      <div className="w-10 h-10 rounded-full overflow-hidden bg-muted">
-                        {member.photoUrl ? (
-                          <img
-                            src={member.photoUrl}
-                            alt={member.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                        )}
+              {film.cast.length > 0 && (
+                <div className="mb-8">
+                  <h3 className="text-sm font-medium text-muted-foreground mb-3">
+                    PRINCIPAL CAST
+                  </h3>
+                  <div className="flex flex-wrap gap-4">
+                    {film.cast.slice(0, 4).map((member) => (
+                      <div
+                        key={member.name}
+                        className="flex items-center gap-3 bg-muted/30 rounded-full pr-4"
+                      >
+                        <div className="w-10 h-10 rounded-full overflow-hidden bg-muted">
+                          {member.photoUrl ? (
+                            <img
+                              src={member.photoUrl}
+                              alt={member.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            {member.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {member.character}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">
-                          {member.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {member.character}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Actions */}
               <div className="flex items-center gap-3">
@@ -399,11 +463,19 @@ export default function FilmDeepDive() {
             </Button>
           </div>
 
-          <div className="flex gap-6 overflow-x-auto pb-4 -mx-6 px-6">
-            {popularFilms.map((f) => (
-              <FilmCard key={f.id} film={f} size="md" />
-            ))}
-          </div>
+          {loadingSimilar ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 text-primary animate-spin" />
+            </div>
+          ) : similarFilms.length > 0 ? (
+            <div className="flex gap-6 overflow-x-auto pb-4 -mx-6 px-6">
+              {similarFilms.map((f) => (
+                <FilmCard key={f.id} film={f} size="md" />
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-8">No similar films found</p>
+          )}
         </div>
       </section>
     </div>
