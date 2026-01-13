@@ -1,17 +1,35 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Sparkles, BookOpen, Video, Headphones } from "lucide-react";
+import { ArrowRight, Sparkles, BookOpen, Video, Headphones, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/SearchBar";
 import { FilmCard } from "@/components/FilmCard";
 import { Header } from "@/components/Header";
-import { popularFilms, Film } from "@/data/mockData";
+import { usePopularMovies } from "@/hooks/useTMDB";
+import { getPosterUrl } from "@/services/tmdb";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { data: popularMovies, isLoading } = usePopularMovies();
 
-  const handleSelectFilm = (film: Film) => {
+  const handleSelectFilm = (film: { id: number; title: string }) => {
     navigate(`/film/${film.id}`);
   };
+
+  // Transform TMDB results to FilmCard format
+  const films = popularMovies?.results.slice(0, 8).map((movie) => ({
+    id: movie.id,
+    title: movie.title,
+    year: movie.release_date ? new Date(movie.release_date).getFullYear() : 0,
+    director: "", // Will show rating instead
+    directorId: 0,
+    synopsis: movie.overview,
+    genres: [],
+    runtime: 0,
+    posterUrl: getPosterUrl(movie.poster_path) || "",
+    backdropUrl: null,
+    rating: movie.vote_average,
+    cast: [],
+  })) || [];
 
   return (
     <div className="dark min-h-screen cinema-gradient-radial">
@@ -56,7 +74,7 @@ const Index = () => {
             <Button
               variant="cinema-gold"
               size="xl"
-              onClick={() => navigate("/film/1")}
+              onClick={() => navigate("/film/335984")} // Blade Runner 2049 TMDB ID
               className="group"
             >
               Explore Blade Runner 2049
@@ -133,11 +151,17 @@ const Index = () => {
             </Button>
           </div>
 
-          <div className="flex gap-6 overflow-x-auto pb-4 -mx-6 px-6 scrollbar-hide">
-            {[...popularFilms, ...popularFilms].slice(0, 6).map((film, index) => (
-              <FilmCard key={`${film.id}-${index}`} film={film} size="lg" />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 text-primary animate-spin" />
+            </div>
+          ) : (
+            <div className="flex gap-6 overflow-x-auto pb-4 -mx-6 px-6 scrollbar-hide">
+              {films.map((film) => (
+                <FilmCard key={film.id} film={film} size="lg" />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

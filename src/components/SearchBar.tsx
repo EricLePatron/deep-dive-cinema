@@ -1,36 +1,33 @@
 import { useState, useRef, useEffect } from "react";
-import { Search, Film, X } from "lucide-react";
+import { Search, Film, X, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { popularFilms, Film as FilmType } from "@/data/mockData";
+import { useSearchMovies } from "@/hooks/useTMDB";
+import { getPosterUrl, TMDBSearchResult } from "@/services/tmdb";
 import { cn } from "@/lib/utils";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface SearchBarProps {
-  onSelectFilm?: (film: FilmType) => void;
+  onSelectFilm?: (film: { id: number; title: string }) => void;
   variant?: "hero" | "header";
 }
 
 export function SearchBar({ onSelectFilm, variant = "hero" }: SearchBarProps) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
-  const [results, setResults] = useState<FilmType[]>([]);
+  const debouncedQuery = useDebounce(query, 300);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const { data, isLoading } = useSearchMovies(debouncedQuery);
+  const results = data?.results.slice(0, 8) || [];
+
   useEffect(() => {
-    if (query.length > 0) {
-      // Mock search - in real app, this would call TMDB API
-      const filtered = popularFilms.filter(
-        (film) =>
-          film.title.toLowerCase().includes(query.toLowerCase()) ||
-          film.director.toLowerCase().includes(query.toLowerCase())
-      );
-      setResults(filtered);
+    if (debouncedQuery.length > 0) {
       setIsOpen(true);
     } else {
-      setResults([]);
       setIsOpen(false);
     }
-  }, [query]);
+  }, [debouncedQuery]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -43,8 +40,8 @@ export function SearchBar({ onSelectFilm, variant = "hero" }: SearchBarProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSelect = (film: FilmType) => {
-    onSelectFilm?.(film);
+  const handleSelect = (film: TMDBSearchResult) => {
+    onSelectFilm?.({ id: film.id, title: film.title });
     setQuery("");
     setIsOpen(false);
   };
@@ -54,19 +51,28 @@ export function SearchBar({ onSelectFilm, variant = "hero" }: SearchBarProps) {
   return (
     <div ref={containerRef} className={cn("relative w-full", isHero ? "max-w-2xl" : "max-w-md")}>
       <div className="relative">
-        <Search
-          className={cn(
-            "absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground",
-            isHero ? "h-5 w-5" : "h-4 w-4"
-          )}
-        />
+        {isLoading ? (
+          <Loader2
+            className={cn(
+              "absolute left-4 top-1/2 -translate-y-1/2 text-primary animate-spin",
+              isHero ? "h-5 w-5" : "h-4 w-4"
+            )}
+          />
+        ) : (
+          <Search
+            className={cn(
+              "absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground",
+              isHero ? "h-5 w-5" : "h-4 w-4"
+            )}
+          />
+        )}
         <Input
           ref={inputRef}
           type="text"
           placeholder="Search for a film to explore..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => query.length > 0 && setIsOpen(true)}
+          onFocus={() => debouncedQuery.length > 0 && setIsOpen(true)}
           variant="cinema-search"
           inputSize={isHero ? "xl" : "lg"}
           className={cn(
@@ -97,9 +103,9 @@ export function SearchBar({ onSelectFilm, variant = "hero" }: SearchBarProps) {
               )}
             >
               <div className="w-12 h-16 bg-muted rounded overflow-hidden flex-shrink-0">
-                {film.posterUrl ? (
+                {film.poster_path ? (
                   <img
-                    src={film.posterUrl}
+                    src={getPosterUrl(film.poster_path, "w185") || ""}
                     alt={film.title}
                     className="w-full h-full object-cover"
                   />
@@ -112,7 +118,8 @@ export function SearchBar({ onSelectFilm, variant = "hero" }: SearchBarProps) {
               <div className="flex-1 min-w-0">
                 <h4 className="font-medium text-foreground truncate">{film.title}</h4>
                 <p className="text-sm text-muted-foreground">
-                  {film.year} • {film.director}
+                  {film.release_date ? new Date(film.release_date).getFullYear() : "Unknown year"}
+                  {film.vote_average > 0 && ` • ★ ${film.vote_average.toFixed(1)}`}
                 </p>
               </div>
             </button>
@@ -120,10 +127,10 @@ export function SearchBar({ onSelectFilm, variant = "hero" }: SearchBarProps) {
         </div>
       )}
 
-      {isOpen && query.length > 0 && results.length === 0 && (
+      {isOpen && debouncedQuery.length > 0 && !isLoading && results.length === 0 && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-popover border border-border rounded-xl shadow-2xl shadow-black/40 p-6 text-center z-50 animate-fade-in">
           <Film className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">No films found for "{query}"</p>
+          <p className="text-muted-foreground">No films found for "{debouncedQuery}"</p>
           <p className="text-sm text-muted-foreground mt-1">Try a different search term</p>
         </div>
       )}
