@@ -40,24 +40,52 @@ export async function searchYouTubeVideos(
   return data.videos || [];
 }
 
-export function searchFilmAnalysisVideos(filmTitle: string, year?: number): Promise<YouTubeVideo[]> {
+// Search for all types of film content in a single, optimized query
+export function searchFilmVideos(filmTitle: string, year?: number): Promise<YouTubeVideo[]> {
   const yearStr = year ? ` ${year}` : '';
-  const queries = [
-    `${filmTitle}${yearStr} video essay analysis`,
-    `${filmTitle}${yearStr} film analysis breakdown`,
-    `${filmTitle}${yearStr} cinematography explained`,
-  ];
-  
-  // Use the first query for now, could randomize or combine results
-  return searchYouTubeVideos(queries[0], 6);
+  // Use a broader query to get diverse content: analysis, making of, interviews, Q&A
+  const query = `${filmTitle}${yearStr} film`;
+  return searchYouTubeVideos(query, 15);
 }
 
-export function searchFilmDocumentaries(filmTitle: string, year?: number): Promise<YouTubeVideo[]> {
-  const yearStr = year ? ` ${year}` : '';
-  return searchYouTubeVideos(`${filmTitle}${yearStr} behind the scenes making of documentary`, 6);
-}
+// Categorize videos by type based on title/description keywords
+export function categorizeVideos(videos: YouTubeVideo[]): {
+  analysis: YouTubeVideo[];
+  behindTheScenes: YouTubeVideo[];
+  interviews: YouTubeVideo[];
+  reviews: YouTubeVideo[];
+  other: YouTubeVideo[];
+} {
+  const analysisKeywords = ['analysis', 'explained', 'breakdown', 'essay', 'meaning', 'symbolism', 'deep dive', 'théorie', 'analyse'];
+  const btsKeywords = ['making of', 'behind the scenes', 'bts', 'production', 'how they made', 'vfx', 'special effects', 'documentary', 'coulisses'];
+  const interviewKeywords = ['interview', 'q&a', 'qa', 'press', 'talk show', 'cast', 'actor', 'director', 'entrevue', 'conversation'];
+  const reviewKeywords = ['review', 'critique', 'reaction', 'opinion', 'thoughts', 'avis', 'critique'];
 
-export function searchFilmInterviews(filmTitle: string, director?: string): Promise<YouTubeVideo[]> {
-  const directorStr = director ? ` ${director}` : '';
-  return searchYouTubeVideos(`${filmTitle}${directorStr} interview cast director`, 6);
+  const categorized = {
+    analysis: [] as YouTubeVideo[],
+    behindTheScenes: [] as YouTubeVideo[],
+    interviews: [] as YouTubeVideo[],
+    reviews: [] as YouTubeVideo[],
+    other: [] as YouTubeVideo[],
+  };
+
+  for (const video of videos) {
+    const titleLower = video.title.toLowerCase();
+    const descLower = video.description.toLowerCase();
+    const combined = titleLower + ' ' + descLower;
+
+    if (analysisKeywords.some(kw => combined.includes(kw))) {
+      categorized.analysis.push(video);
+    } else if (btsKeywords.some(kw => combined.includes(kw))) {
+      categorized.behindTheScenes.push(video);
+    } else if (interviewKeywords.some(kw => combined.includes(kw))) {
+      categorized.interviews.push(video);
+    } else if (reviewKeywords.some(kw => combined.includes(kw))) {
+      categorized.reviews.push(video);
+    } else {
+      categorized.other.push(video);
+    }
+  }
+
+  return categorized;
 }
