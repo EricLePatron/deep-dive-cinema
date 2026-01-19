@@ -24,15 +24,14 @@ import { Header } from "@/components/Header";
 import { ContentCard } from "@/components/ContentCard";
 import { ContentSection } from "@/components/ContentSection";
 import { FilmCard } from "@/components/FilmCard";
+import { YouTubeVideoCard } from "@/components/YouTubeVideoCard";
 import { useMovieDetails, useSimilarMovies } from "@/hooks/useTMDB";
+import { useFilmAnalysisVideos, useFilmDocumentaries, useFilmInterviews } from "@/hooks/useYouTube";
 import { getPosterUrl } from "@/services/tmdb";
 import {
   mockBooks,
-  mockDocumentaries,
-  mockYouTubeVideos,
   mockPodcasts,
   mockArticles,
-  mockInterviews,
 } from "@/data/mockData";
 import { cn } from "@/lib/utils";
 
@@ -55,13 +54,21 @@ export default function FilmDeepDive() {
   const { data: film, isLoading, error } = useMovieDetails(movieId);
   const { data: similarMoviesData, isLoading: loadingSimilar } = useSimilarMovies(movieId);
 
+  // Fetch YouTube videos based on film title
+  const filmTitle = film?.title || "";
+  const filmYear = film?.year;
+  const filmDirector = film?.director;
+
+  const { data: analysisVideos = [], isLoading: loadingAnalysis } = useFilmAnalysisVideos(filmTitle, filmYear);
+  const { data: documentaryVideos = [], isLoading: loadingDocs } = useFilmDocumentaries(filmTitle, filmYear);
+  const { data: interviewVideos = [], isLoading: loadingInterviews } = useFilmInterviews(filmTitle, filmDirector);
+
+  const totalVideos = analysisVideos.length + documentaryVideos.length + interviewVideos.length;
   const totalContent =
     mockBooks.length +
-    mockDocumentaries.length +
-    mockYouTubeVideos.length +
+    totalVideos +
     mockPodcasts.length +
-    mockArticles.length +
-    mockInterviews.length;
+    mockArticles.length;
 
   // Transform similar movies to FilmCard format
   const similarFilms = similarMoviesData?.results.slice(0, 6).map((movie) => ({
@@ -106,6 +113,8 @@ export default function FilmDeepDive() {
       </div>
     );
   }
+
+  const isLoadingVideos = loadingAnalysis || loadingDocs || loadingInterviews;
 
   return (
     <div className="dark min-h-screen bg-background">
@@ -266,7 +275,7 @@ export default function FilmDeepDive() {
             <div className="flex flex-wrap items-center justify-between gap-6">
               <div>
                 <h2 className="font-display text-2xl font-bold text-foreground mb-1">
-                  {totalContent} pieces of content found
+                  {isLoadingVideos ? "Loading content..." : `${totalContent} pieces of content found`}
                 </h2>
                 <p className="text-muted-foreground">
                   Deep dive into everything about {film.title}
@@ -275,15 +284,21 @@ export default function FilmDeepDive() {
               <div className="flex items-center gap-4">
                 {[
                   { icon: Book, count: mockBooks.length, label: "Books" },
-                  { icon: Play, count: mockYouTubeVideos.length, label: "Videos" },
-                  { icon: Headphones, count: mockPodcasts.length, label: "Podcasts" },
+                  { icon: Play, count: analysisVideos.length + documentaryVideos.length, label: "Videos" },
+                  { icon: Mic, count: interviewVideos.length, label: "Interviews" },
                 ].map((stat) => (
                   <div
                     key={stat.label}
                     className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/30"
                   >
                     <stat.icon className="h-4 w-4 text-primary" />
-                    <span className="font-medium text-foreground">{stat.count}</span>
+                    <span className="font-medium text-foreground">
+                      {isLoadingVideos && stat.label !== "Books" ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        stat.count
+                      )}
+                    </span>
                     <span className="text-sm text-muted-foreground">{stat.label}</span>
                   </div>
                 ))}
@@ -328,30 +343,46 @@ export default function FilmDeepDive() {
               </div>
             </ContentSection>
 
-            {/* Documentaries */}
+            {/* Documentaries & Making-of */}
             <ContentSection
               title="Documentaries & Making-of"
               icon={<Video className="h-5 w-5" />}
-              count={mockDocumentaries.length}
+              count={documentaryVideos.length}
             >
-              <div className="grid md:grid-cols-2 gap-4">
-                {mockDocumentaries.map((doc) => (
-                  <ContentCard key={doc.id} item={doc} />
-                ))}
-              </div>
+              {loadingDocs ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                </div>
+              ) : documentaryVideos.length > 0 ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {documentaryVideos.map((video) => (
+                    <YouTubeVideoCard key={video.id} video={video} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground py-4">No documentaries found for this film.</p>
+              )}
             </ContentSection>
 
             {/* YouTube Videos */}
             <ContentSection
               title="Video Essays & Analyses"
               icon={<Play className="h-5 w-5" />}
-              count={mockYouTubeVideos.length}
+              count={analysisVideos.length}
             >
-              <div className="grid md:grid-cols-2 gap-4">
-                {mockYouTubeVideos.map((video) => (
-                  <ContentCard key={video.id} item={video} />
-                ))}
-              </div>
+              {loadingAnalysis ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                </div>
+              ) : analysisVideos.length > 0 ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {analysisVideos.map((video) => (
+                    <YouTubeVideoCard key={video.id} video={video} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground py-4">No video essays found for this film.</p>
+              )}
             </ContentSection>
 
             {/* Podcasts */}
@@ -384,13 +415,21 @@ export default function FilmDeepDive() {
             <ContentSection
               title="Interviews"
               icon={<Mic className="h-5 w-5" />}
-              count={mockInterviews.length}
+              count={interviewVideos.length}
             >
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {mockInterviews.map((interview) => (
-                  <ContentCard key={interview.id} item={interview} variant="compact" />
-                ))}
-              </div>
+              {loadingInterviews ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                </div>
+              ) : interviewVideos.length > 0 ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {interviewVideos.map((video) => (
+                    <YouTubeVideoCard key={video.id} video={video} variant="compact" />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground py-4">No interviews found for this film.</p>
+              )}
             </ContentSection>
           </TabsContent>
 
@@ -404,19 +443,35 @@ export default function FilmDeepDive() {
           </TabsContent>
 
           <TabsContent value="docs">
-            <div className="grid md:grid-cols-2 gap-4">
-              {mockDocumentaries.map((doc) => (
-                <ContentCard key={doc.id} item={doc} />
-              ))}
-            </div>
+            {loadingDocs ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+              </div>
+            ) : documentaryVideos.length > 0 ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {documentaryVideos.map((video) => (
+                  <YouTubeVideoCard key={video.id} video={video} />
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground py-8 text-center">No documentaries found for this film.</p>
+            )}
           </TabsContent>
 
           <TabsContent value="youtube">
-            <div className="grid md:grid-cols-2 gap-4">
-              {mockYouTubeVideos.map((video) => (
-                <ContentCard key={video.id} item={video} />
-              ))}
-            </div>
+            {loadingAnalysis ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+              </div>
+            ) : analysisVideos.length > 0 ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {analysisVideos.map((video) => (
+                  <YouTubeVideoCard key={video.id} video={video} />
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground py-8 text-center">No video essays found for this film.</p>
+            )}
           </TabsContent>
 
           <TabsContent value="podcasts">
@@ -436,11 +491,19 @@ export default function FilmDeepDive() {
           </TabsContent>
 
           <TabsContent value="interviews">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {mockInterviews.map((interview) => (
-                <ContentCard key={interview.id} item={interview} />
-              ))}
-            </div>
+            {loadingInterviews ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+              </div>
+            ) : interviewVideos.length > 0 ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {interviewVideos.map((video) => (
+                  <YouTubeVideoCard key={video.id} video={video} />
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground py-8 text-center">No interviews found for this film.</p>
+            )}
           </TabsContent>
         </Tabs>
       </section>
@@ -474,7 +537,7 @@ export default function FilmDeepDive() {
               ))}
             </div>
           ) : (
-            <p className="text-muted-foreground text-center py-8">No similar films found</p>
+            <p className="text-muted-foreground">No similar films found.</p>
           )}
         </div>
       </section>
