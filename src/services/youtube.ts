@@ -63,7 +63,7 @@ function isHighQualityContent(video: YouTubeVideo): boolean {
     return false;
   }
   
-  // Prefer longer videos (usually more in-depth) - at least 5 minutes
+  // Prefer longer videos (usually more in-depth) - at least 20 minutes
   const durationParts = video.duration.split(':').map(Number);
   let totalMinutes = 0;
   if (durationParts.length === 3) {
@@ -72,8 +72,8 @@ function isHighQualityContent(video: YouTubeVideo): boolean {
     totalMinutes = durationParts[0];
   }
   
-  // Filter out very short videos (likely clips/trailers)
-  if (totalMinutes < 3) {
+  // Filter out short videos - keep only 20+ minutes content
+  if (totalMinutes < 20) {
     return false;
   }
   
