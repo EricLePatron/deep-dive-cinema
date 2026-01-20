@@ -52,8 +52,19 @@ const excludeKeywords = [
   'honest trailer', 'pitch meeting', 'everything wrong'
 ];
 
+// Get video duration in minutes
+function getVideoDurationMinutes(video: YouTubeVideo): number {
+  const durationParts = video.duration.split(':').map(Number);
+  if (durationParts.length === 3) {
+    return durationParts[0] * 60 + durationParts[1];
+  } else if (durationParts.length === 2) {
+    return durationParts[0];
+  }
+  return 0;
+}
+
 // Filter out low-quality/marketing content
-function isHighQualityContent(video: YouTubeVideo): boolean {
+function isHighQualityContent(video: YouTubeVideo, minDuration: number = 20): boolean {
   const titleLower = video.title.toLowerCase();
   const descLower = video.description.toLowerCase();
   const combined = titleLower + ' ' + descLower;
@@ -63,17 +74,9 @@ function isHighQualityContent(video: YouTubeVideo): boolean {
     return false;
   }
   
-  // Prefer longer videos (usually more in-depth) - at least 20 minutes
-  const durationParts = video.duration.split(':').map(Number);
-  let totalMinutes = 0;
-  if (durationParts.length === 3) {
-    totalMinutes = durationParts[0] * 60 + durationParts[1];
-  } else if (durationParts.length === 2) {
-    totalMinutes = durationParts[0];
-  }
-  
-  // Filter out short videos - keep only 20+ minutes content
-  if (totalMinutes < 20) {
+  // Filter based on minimum duration
+  const totalMinutes = getVideoDurationMinutes(video);
+  if (totalMinutes < minDuration) {
     return false;
   }
   
@@ -87,8 +90,15 @@ export async function searchFilmVideos(filmTitle: string, year?: number): Promis
   const query = `${filmTitle}${yearStr} analysis OR interview OR making of OR behind the scenes`;
   const videos = await searchYouTubeVideos(query, 25);
   
-  // Filter for high-quality content only
-  return videos.filter(isHighQualityContent);
+  // First try to get 20+ minute videos
+  const longVideos = videos.filter(v => isHighQualityContent(v, 20));
+  
+  // If no long videos found, fallback to 10-20 minute videos
+  if (longVideos.length === 0) {
+    return videos.filter(v => isHighQualityContent(v, 10));
+  }
+  
+  return longVideos;
 }
 
 // Categorize videos by type based on title/description keywords
