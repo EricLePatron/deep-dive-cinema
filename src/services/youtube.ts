@@ -46,12 +46,12 @@ const excludeKeywords = [
   'promo', 'promotional', 'tv spot', 'spot tv',
   'official clip', 'movie clip', 'extrait officiel',
   'first look', 'sneak peek', 'avant-première',
-  'red carpet', 'tapis rouge', 'premiere', 'première',
+  'red carpet', 'tapis rouge',
   'fan reaction', 'audience reaction',
   'rank', 'ranking', 'top 10', 'top 5', 'tier list',
   'honest trailer', 'pitch meeting', 'everything wrong',
-  'compilation', 'best moments', 'funny moments', 'scene',
-  'recap', 'explained in', 'minutes'
+  'compilation', 'best moments', 'funny moments',
+  'recap', 'in 5 minutes', 'in 10 minutes', 'in 3 minutes'
 ];
 
 // Professional cinephile channels to prioritize
@@ -125,6 +125,12 @@ function getVideoDurationMinutes(video: YouTubeVideo): number {
   return 0;
 }
 
+// Check if video is from a premium channel
+function isPremiumChannel(video: YouTubeVideo): boolean {
+  const channelLower = video.channelTitle.toLowerCase();
+  return premiumChannels.some(ch => channelLower.includes(ch));
+}
+
 // Filter out low-quality/marketing content
 function isHighQualityContent(video: YouTubeVideo, minDuration: number = 20): boolean {
   const titleLower = video.title.toLowerCase();
@@ -136,7 +142,14 @@ function isHighQualityContent(video: YouTubeVideo, minDuration: number = 20): bo
     return false;
   }
   
-  // Filter based on minimum duration
+  // Premium channels get a pass on duration (they curate quality content)
+  if (isPremiumChannel(video)) {
+    // Still require at least 3 minutes to filter out very short clips
+    const totalMinutes = getVideoDurationMinutes(video);
+    return totalMinutes >= 3;
+  }
+  
+  // Filter based on minimum duration for non-premium channels
   const totalMinutes = getVideoDurationMinutes(video);
   if (totalMinutes < minDuration) {
     return false;
