@@ -198,6 +198,28 @@ export async function searchFilmVideos(filmTitle: string, year?: number): Promis
     filteredVideos = videos.filter(v => isHighQualityContent(v, 10));
   }
   
+  // If still no videos, fallback to 5+ minute videos (exclude only very short clips)
+  if (filteredVideos.length === 0) {
+    filteredVideos = videos.filter(v => isHighQualityContent(v, 5));
+  }
+  
+  // Last resort: show all videos that aren't marketing content, regardless of duration
+  if (filteredVideos.length === 0) {
+    filteredVideos = videos.filter(v => {
+      const titleLower = v.title.toLowerCase();
+      const descLower = v.description.toLowerCase();
+      const combined = titleLower + ' ' + descLower;
+      // Only exclude obvious marketing content
+      const marketingKeywords = ['trailer', 'teaser', 'bande annonce', 'tv spot', 'promo'];
+      return !marketingKeywords.some(kw => combined.includes(kw));
+    });
+  }
+  
+  // Absolute fallback: return all videos sorted by quality
+  if (filteredVideos.length === 0) {
+    filteredVideos = videos;
+  }
+  
   // Sort by quality score (highest first)
   return filteredVideos.sort((a, b) => getVideoQualityScore(b) - getVideoQualityScore(a));
 }
