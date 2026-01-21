@@ -56,7 +56,7 @@ const excludeKeywords = [
 
 // Professional cinephile channels to prioritize
 const premiumChannels = [
-  // English channels
+  // English channels - Film institutions & festivals
   'criterion collection', 'bfi', 'british film institute',
   'academy originals', 'oscars', 'tiff', 'toronto international',
   'sundance institute', 'cannes', 'venice film festival',
@@ -65,34 +65,53 @@ const premiumChannels = [
   'sag-aftra', 'actors on actors', 'variety',
   'hollywood reporter', 'indiewire', 'film comment',
   'sight and sound', 'little white lies', 'mubi',
+  // Quality distributors
   'a24', 'neon', 'searchlight', 'focus features',
   'arrow video', 'shout factory', 'kino lorber',
+  // Video essayists & film analysis
   'every frame a painting', 'lessons from the screenplay',
   'nerdwriter', 'channel criswell', 'like stories of old',
   'the royal ocean film society', 'just write',
   'filmspotting', 'the ringer', 'the rewatchables',
+  // Quality media outlets with BTS content
+  'vice', 'vanity fair', 'gq', 'wired', 'vulture',
+  'collider', 'screen rant', 'deadline', 'the wrap',
   // French channels
   'arte cinema', 'cahiers du cinéma', 'les inrocks',
   'télérama', 'positif', 'cinémathèque', 'institut lumière',
   'le cercle', 'blow up', 'analyse film', 'cinéaste',
   'la septième obsession', 'sofilm', 'mad movies',
-  // Studios & distributors with quality content
+  // Studios & distributors with quality BTS content
   'warner bros', 'universal pictures', 'paramount',
-  'sony pictures', 'lionsgate', 'mgm'
+  'sony pictures', 'lionsgate', 'mgm',
+  // Film commissions & cinematography
+  'film commission', 'dallas film', 'austin film', 'nyc film'
 ];
 
 // High-value content keywords (boost score)
 const premiumContentKeywords = [
-  'masterclass', 'in conversation', 'q&a', 'q & a',
+  // Masterclasses & Q&A sessions
+  'masterclass', 'master class', 'in conversation', 'q&a', 'q & a',
+  'oscar-winning', 'oscar winning', 'academy award',
+  // Crew interviews (cinematographers, directors, etc.)
+  'roger deakins', 'cinematographer', 'director of photography', 'dp',
   'director interview', 'actor interview', 'actress interview',
   'filmmaker', 'cinéaste', 'réalisateur', 'metteur en scène',
-  'screenwriter', 'scénariste', 'cinematographer', 'directeur photo',
-  'behind the camera', 'making of documentary', 'the art of',
+  'screenwriter', 'scénariste', 'directeur photo',
+  'production designer', 'vfx supervisor', 'composer',
+  // Behind the scenes & making of
+  'behind the scenes', 'inside the making', 'how they made',
+  'making of documentary', 'the art of', 'created with',
+  'on set', 'set visit', 'set tour', 'toured the set',
+  'production design', 'practical effects', 'visual effects breakdown',
+  // Premium content types
   'criterion', 'restoration', 'retrospective', 'tribute',
   'legacy', 'influence', 'career retrospective',
   'press conference', 'festival', 'academy', 'bafta', 'cesar',
   'golden globes', 'press junket full', 'roundtable',
-  'discusses', 'breaks down', 'explains', 'reveals'
+  'discusses', 'breaks down', 'explains', 'reveals',
+  // Documentary style
+  'documentary', 'featurette', 'exclusive', 'special feature'
 ];
 
 // Get video duration in minutes
@@ -191,9 +210,33 @@ export function categorizeVideos(videos: YouTubeVideo[]): {
   reviews: YouTubeVideo[];
   other: YouTubeVideo[];
 } {
-  const analysisKeywords = ['analysis', 'explained', 'breakdown', 'essay', 'meaning', 'symbolism', 'deep dive', 'théorie', 'analyse', 'décryptage', 'philosophy', 'themes', 'cinematography', 'directing', 'visual style', 'technique'];
-  const btsKeywords = ['making of', 'behind the scenes', 'bts', 'production', 'how they made', 'vfx', 'special effects', 'documentary', 'coulisses', 'fabrication', 'tournage', 'on set', 'featurette'];
-  const interviewKeywords = ['interview', 'q&a', 'q & a', 'qa', 'press junket', 'talk show', 'cast interview', 'director interview', 'entrevue', 'conversation with', 'discusses', 'talks about', 'masterclass', 'in conversation', 'roundtable', 'actors on actors', 'press conference'];
+  // Interviews & Q&A - prioritize masterclasses and crew interviews
+  const interviewKeywords = [
+    'masterclass', 'master class', 'q&a', 'q & a', 'qa session',
+    'interview', 'entrevue', 'in conversation', 'roundtable',
+    'actors on actors', 'press conference', 'press junket',
+    'director interview', 'cast interview', 'discusses', 'talks about',
+    'cinematographer', 'roger deakins', 'director of photography',
+    'oscar-winning', 'academy award', 'conversation with'
+  ];
+  
+  // Making of & Behind the scenes - prioritize set visits and production documentaries
+  const btsKeywords = [
+    'making of', 'behind the scenes', 'bts', 'inside the making',
+    'how they made', 'created with', 'set visit', 'set tour',
+    'toured the set', 'on set', 'production design', 'production designer',
+    'vfx', 'visual effects', 'special effects', 'practical effects',
+    'documentary', 'featurette', 'coulisses', 'fabrication', 'tournage',
+    'special feature', 'bonus feature'
+  ];
+  
+  // Analysis & video essays
+  const analysisKeywords = [
+    'analysis', 'explained', 'breakdown', 'essay', 'meaning',
+    'symbolism', 'deep dive', 'théorie', 'analyse', 'décryptage',
+    'philosophy', 'themes', 'cinematography', 'directing',
+    'visual style', 'technique', 'storytelling'
+  ];
   const reviewKeywords = ['critique', 'review in-depth', 'film analysis', 'retrospective', 'avis détaillé', 'criterion', 'tribute', 'legacy'];
 
   const categorized = {
@@ -207,15 +250,30 @@ export function categorizeVideos(videos: YouTubeVideo[]): {
   for (const video of videos) {
     const titleLower = video.title.toLowerCase();
     const descLower = video.description.toLowerCase();
+    const channelLower = video.channelTitle.toLowerCase();
     const combined = titleLower + ' ' + descLower;
 
-    if (interviewKeywords.some(kw => combined.includes(kw))) {
+    // Count keyword matches for each category
+    const interviewScore = interviewKeywords.filter(kw => combined.includes(kw)).length;
+    const btsScore = btsKeywords.filter(kw => combined.includes(kw)).length;
+    const analysisScore = analysisKeywords.filter(kw => combined.includes(kw)).length;
+    const reviewScore = reviewKeywords.filter(kw => combined.includes(kw)).length;
+    
+    // Boost for premium channels
+    const isPremiumChannel = premiumChannels.some(ch => channelLower.includes(ch));
+    
+    // Find the highest scoring category
+    const maxScore = Math.max(interviewScore, btsScore, analysisScore, reviewScore);
+    
+    if (maxScore === 0) {
+      categorized.other.push(video);
+    } else if (interviewScore === maxScore) {
       categorized.interviews.push(video);
-    } else if (analysisKeywords.some(kw => combined.includes(kw))) {
-      categorized.analysis.push(video);
-    } else if (btsKeywords.some(kw => combined.includes(kw))) {
+    } else if (btsScore === maxScore) {
       categorized.behindTheScenes.push(video);
-    } else if (reviewKeywords.some(kw => combined.includes(kw))) {
+    } else if (analysisScore === maxScore) {
+      categorized.analysis.push(video);
+    } else if (reviewScore === maxScore) {
       categorized.reviews.push(video);
     } else {
       categorized.other.push(video);
