@@ -158,7 +158,7 @@ function isHighQualityContent(video: YouTubeVideo, minDuration: number = 20): bo
   return true;
 }
 
-// Calculate a quality score for a video
+// Calculate a quality score for a video - prioritize views and duration
 function getVideoQualityScore(video: YouTubeVideo): number {
   let score = 0;
   const titleLower = video.title.toLowerCase();
@@ -166,27 +166,34 @@ function getVideoQualityScore(video: YouTubeVideo): number {
   const channelLower = video.channelTitle.toLowerCase();
   const combined = titleLower + ' ' + descLower;
   
-  // Premium channel bonus (+50 points)
+  // Premium channel bonus (+30 points)
   if (premiumChannels.some(ch => channelLower.includes(ch))) {
-    score += 50;
+    score += 30;
   }
   
-  // Premium content keywords bonus (+10 per keyword, max 40)
+  // Premium content keywords bonus (+5 per keyword, max 25)
   const contentMatches = premiumContentKeywords.filter(kw => combined.includes(kw));
-  score += Math.min(contentMatches.length * 10, 40);
+  score += Math.min(contentMatches.length * 5, 25);
   
-  // Duration bonus (longer = better for in-depth content)
+  // VIEW COUNT is now a major factor (up to 50 points)
+  if (video.viewCount > 10000000) score += 50;       // 10M+ views
+  else if (video.viewCount > 5000000) score += 45;   // 5M+ views
+  else if (video.viewCount > 1000000) score += 40;   // 1M+ views
+  else if (video.viewCount > 500000) score += 35;    // 500K+ views
+  else if (video.viewCount > 100000) score += 25;    // 100K+ views
+  else if (video.viewCount > 50000) score += 15;     // 50K+ views
+  else if (video.viewCount > 10000) score += 10;     // 10K+ views
+  
+  // DURATION bonus - longer content is better for cinephiles (up to 30 points)
   const minutes = getVideoDurationMinutes(video);
-  if (minutes >= 60) score += 20;
-  else if (minutes >= 40) score += 15;
-  else if (minutes >= 25) score += 10;
+  if (minutes >= 60) score += 30;       // 1h+
+  else if (minutes >= 45) score += 25;  // 45min+
+  else if (minutes >= 30) score += 20;  // 30min+
+  else if (minutes >= 20) score += 15;  // 20min+
+  else if (minutes >= 10) score += 10;  // 10min+
+  else if (minutes >= 5) score += 5;    // 5min+
   
-  // High engagement bonus
-  if (video.viewCount > 1000000) score += 15;
-  else if (video.viewCount > 100000) score += 10;
-  else if (video.viewCount > 10000) score += 5;
-  
-  // Like ratio bonus (if we have likes)
+  // Like ratio bonus (engagement quality indicator)
   if (video.likeCount > 0 && video.viewCount > 0) {
     const likeRatio = video.likeCount / video.viewCount;
     if (likeRatio > 0.05) score += 10;
@@ -197,43 +204,40 @@ function getVideoQualityScore(video: YouTubeVideo): number {
 }
 
 // Search for all types of film content in a single, optimized query
-export async function searchFilmVideos(filmTitle: string, year?: number): Promise<YouTubeVideo[]> {
+export async function searchFilmVideos(filmTitle: string, year?: number, director?: string): Promise<YouTubeVideo[]> {
   const yearStr = year ? ` ${year}` : '';
+  // Include director name for better accuracy (crucial for films with common titles)
+  const directorStr = director ? ` ${director}` : '';
+  
   // Use cinephile-focused query terms with emphasis on interviews and Q&A
-  const query = `${filmTitle}${yearStr} interview OR q&a OR masterclass OR making of OR analysis`;
-  const videos = await searchYouTubeVideos(query, 30);
+  // Adding director name helps disambiguate films like "L'Étranger" (common title)
+  const query = `${filmTitle}${directorStr}${yearStr} interview OR making of OR analysis OR critique`;
   
-  // First try to get 20+ minute videos
-  let filteredVideos = videos.filter(v => isHighQualityContent(v, 20));
+  console.log('YouTube search query:', query);
   
-  // If no long videos found, fallback to 10-20 minute videos
-  if (filteredVideos.length === 0) {
-    filteredVideos = videos.filter(v => isHighQualityContent(v, 10));
-  }
+  const videos = await searchYouTubeVideos(query, 50);
   
-  // If still no videos, fallback to 5+ minute videos (exclude only very short clips)
-  if (filteredVideos.length === 0) {
-    filteredVideos = videos.filter(v => isHighQualityContent(v, 5));
-  }
+  console.log(`Found ${videos.length} raw videos from YouTube`);
   
-  // Last resort: show all videos that aren't marketing content, regardless of duration
-  if (filteredVideos.length === 0) {
-    filteredVideos = videos.filter(v => {
-      const titleLower = v.title.toLowerCase();
-      const descLower = v.description.toLowerCase();
-      const combined = titleLower + ' ' + descLower;
-      // Only exclude obvious marketing content
-      const marketingKeywords = ['trailer', 'teaser', 'bande annonce', 'tv spot', 'promo'];
-      return !marketingKeywords.some(kw => combined.includes(kw));
-    });
-  }
+  // Filter out marketing content but be less aggressive
+  let filteredVideos = videos.filter(v => {
+    const titleLower = v.title.toLowerCase();
+    const descLower = v.description.toLowerCase();
+    const combined = titleLower + ' ' + descLower;
+    
+    // Only exclude obvious trailers/marketing
+    const strictMarketingKeywords = ['trailer officiel', 'official trailer', 'bande-annonce officielle', 'teaser officiel', 'tv spot'];
+    return !strictMarketingKeywords.some(kw => combined.includes(kw));
+  });
   
-  // Absolute fallback: return all videos sorted by quality
-  if (filteredVideos.length === 0) {
+  // If too aggressive, show all
+  if (filteredVideos.length < 5) {
     filteredVideos = videos;
   }
   
-  // Sort by quality score (highest first)
+  console.log(`After filtering: ${filteredVideos.length} videos`);
+  
+  // Sort by quality score (views + duration + premium content)
   return filteredVideos.sort((a, b) => getVideoQualityScore(b) - getVideoQualityScore(a));
 }
 
@@ -248,11 +252,12 @@ export function categorizeVideos(videos: YouTubeVideo[]): {
   // Interviews & Q&A - prioritize masterclasses and crew interviews
   const interviewKeywords = [
     'masterclass', 'master class', 'q&a', 'q & a', 'qa session',
-    'interview', 'entrevue', 'in conversation', 'roundtable',
+    'interview', 'entrevue', 'entretien', 'in conversation', 'roundtable',
     'actors on actors', 'press conference', 'press junket',
     'director interview', 'cast interview', 'discusses', 'talks about',
     'cinematographer', 'roger deakins', 'director of photography',
-    'oscar-winning', 'academy award', 'conversation with'
+    'oscar-winning', 'academy award', 'conversation with',
+    'rencontre', 'échange', 'parle de'
   ];
   
   // Making of & Behind the scenes - prioritize set visits and production documentaries
@@ -262,7 +267,7 @@ export function categorizeVideos(videos: YouTubeVideo[]): {
     'toured the set', 'on set', 'production design', 'production designer',
     'vfx', 'visual effects', 'special effects', 'practical effects',
     'documentary', 'featurette', 'coulisses', 'fabrication', 'tournage',
-    'special feature', 'bonus feature'
+    'special feature', 'bonus feature', 'dans les coulisses'
   ];
   
   // Analysis & video essays
@@ -270,9 +275,15 @@ export function categorizeVideos(videos: YouTubeVideo[]): {
     'analysis', 'explained', 'breakdown', 'essay', 'meaning',
     'symbolism', 'deep dive', 'théorie', 'analyse', 'décryptage',
     'philosophy', 'themes', 'cinematography', 'directing',
-    'visual style', 'technique', 'storytelling'
+    'visual style', 'technique', 'storytelling', 'explication',
+    'comprendre', 'pourquoi'
   ];
-  const reviewKeywords = ['critique', 'review in-depth', 'film analysis', 'retrospective', 'avis détaillé', 'criterion', 'tribute', 'legacy'];
+  
+  const reviewKeywords = [
+    'critique', 'review in-depth', 'film analysis', 'retrospective', 
+    'avis détaillé', 'criterion', 'tribute', 'legacy', 'mon avis',
+    'que vaut', 'vaut-il'
+  ];
 
   const categorized = {
     analysis: [] as YouTubeVideo[],
@@ -294,9 +305,6 @@ export function categorizeVideos(videos: YouTubeVideo[]): {
     const analysisScore = analysisKeywords.filter(kw => combined.includes(kw)).length;
     const reviewScore = reviewKeywords.filter(kw => combined.includes(kw)).length;
     
-    // Boost for premium channels
-    const isPremiumChannel = premiumChannels.some(ch => channelLower.includes(ch));
-    
     // Find the highest scoring category
     const maxScore = Math.max(interviewScore, btsScore, analysisScore, reviewScore);
     
@@ -315,10 +323,22 @@ export function categorizeVideos(videos: YouTubeVideo[]): {
     }
   }
 
-  // Sort each category by quality score
+  // Sort each category by quality score (views + duration)
   Object.keys(categorized).forEach(key => {
     categorized[key as keyof typeof categorized].sort((a, b) => getVideoQualityScore(b) - getVideoQualityScore(a));
   });
+
+  // FALLBACK: Ensure each category has content by pulling from 'other' if empty
+  const minPerCategory = 2;
+  const categories: (keyof typeof categorized)[] = ['interviews', 'behindTheScenes', 'analysis', 'reviews'];
+  
+  for (const category of categories) {
+    if (categorized[category].length < minPerCategory && categorized.other.length > 0) {
+      const needed = minPerCategory - categorized[category].length;
+      const toMove = categorized.other.splice(0, Math.min(needed, categorized.other.length));
+      categorized[category].push(...toMove);
+    }
+  }
 
   return categorized;
 }
