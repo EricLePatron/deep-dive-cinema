@@ -25,12 +25,13 @@ import { ContentCard } from "@/components/ContentCard";
 import { ContentSection } from "@/components/ContentSection";
 import { FilmCard } from "@/components/FilmCard";
 import { YouTubeVideoCard } from "@/components/YouTubeVideoCard";
+import { PodcastCard } from "@/components/PodcastCard";
 import { useMovieDetails, useSimilarMovies } from "@/hooks/useTMDB";
 import { useFilmVideos } from "@/hooks/useYouTube";
+import { useFilmPodcasts } from "@/hooks/usePodcast";
 import { getPosterUrl } from "@/services/tmdb";
 import {
   mockBooks,
-  mockPodcasts,
   mockArticles,
 } from "@/data/mockData";
 import { cn } from "@/lib/utils";
@@ -60,12 +61,16 @@ export default function FilmDeepDive() {
   const filmDirector = film?.director || "";
 
   const { data: videos, isLoading: loadingVideos } = useFilmVideos(filmTitle, filmYear, filmDirector);
+  
+  // Fetch podcasts based on film title + director
+  const { data: podcasts, isLoading: loadingPodcasts } = useFilmPodcasts(filmTitle, filmDirector);
 
   const totalVideos = videos?.all.length || 0;
+  const totalPodcasts = podcasts?.length || 0;
   const totalContent =
     mockBooks.length +
     totalVideos +
-    mockPodcasts.length +
+    totalPodcasts +
     mockArticles.length;
 
   // Transform similar movies to FilmCard format
@@ -280,8 +285,8 @@ export default function FilmDeepDive() {
               <div className="flex items-center gap-4">
                 {[
                   { icon: Book, count: mockBooks.length, label: "Books" },
-                  { icon: Play, count: totalVideos, label: "Videos" },
-                  { icon: Headphones, count: mockPodcasts.length, label: "Podcasts" },
+                  { icon: Play, count: totalVideos, label: "Videos", loading: loadingVideos },
+                  { icon: Headphones, count: totalPodcasts, label: "Podcasts", loading: loadingPodcasts },
                 ].map((stat) => (
                   <div
                     key={stat.label}
@@ -289,7 +294,7 @@ export default function FilmDeepDive() {
                   >
                     <stat.icon className="h-4 w-4 text-primary" />
                     <span className="font-medium text-foreground">
-                      {loadingVideos && stat.label === "Videos" ? (
+                      {stat.loading ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         stat.count
@@ -385,13 +390,21 @@ export default function FilmDeepDive() {
             <ContentSection
               title="Podcasts"
               icon={<Headphones className="h-5 w-5" />}
-              count={mockPodcasts.length}
+              count={totalPodcasts}
             >
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {mockPodcasts.map((podcast) => (
-                  <ContentCard key={podcast.id} item={podcast} variant="compact" />
-                ))}
-              </div>
+              {loadingPodcasts ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                </div>
+              ) : podcasts && podcasts.length > 0 ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {podcasts.map((podcast) => (
+                    <PodcastCard key={podcast.id} episode={podcast} variant="compact" />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground py-4">Aucun podcast trouvé pour ce film.</p>
+              )}
             </ContentSection>
 
             {/* Articles */}
@@ -498,11 +511,19 @@ export default function FilmDeepDive() {
           </TabsContent>
 
           <TabsContent value="podcasts">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {mockPodcasts.map((podcast) => (
-                <ContentCard key={podcast.id} item={podcast} />
-              ))}
-            </div>
+            {loadingPodcasts ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+              </div>
+            ) : podcasts && podcasts.length > 0 ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {podcasts.map((podcast) => (
+                  <PodcastCard key={podcast.id} episode={podcast} />
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground py-8 text-center">Aucun podcast trouvé pour ce film.</p>
+            )}
           </TabsContent>
 
           <TabsContent value="articles">
