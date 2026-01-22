@@ -1,1 +1,7 @@
 project_id = "kyprrtpmvugfcfffaelv"
+
+[functions.youtube-search]
+verify_jwt = false
+
+[functions.podcast-search]
+verify_jwt = false
