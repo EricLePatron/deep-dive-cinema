@@ -54,11 +54,12 @@ export default function FilmDeepDive() {
   const { data: film, isLoading, error } = useMovieDetails(movieId);
   const { data: similarMoviesData, isLoading: loadingSimilar } = useSimilarMovies(movieId);
 
-  // Fetch YouTube videos based on film title
+  // Fetch YouTube videos based on film title + director for accuracy
   const filmTitle = film?.title || "";
   const filmYear = film?.year;
+  const filmDirector = film?.director || "";
 
-  const { data: videos, isLoading: loadingVideos } = useFilmVideos(filmTitle, filmYear);
+  const { data: videos, isLoading: loadingVideos } = useFilmVideos(filmTitle, filmYear, filmDirector);
 
   const totalVideos = videos?.all.length || 0;
   const totalContent =
