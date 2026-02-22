@@ -44,6 +44,7 @@ export interface TMDBSearchResult {
   original_title: string;
   release_date: string;
   poster_path: string | null;
+  backdrop_path: string | null;
   vote_average: number;
   overview: string;
 }
@@ -133,6 +134,30 @@ export async function getSimilarMovies(movieId: number): Promise<TMDBSimilarMovi
 export async function getPopularMovies(page = 1): Promise<TMDBSearchResponse> {
   const response = await fetch(
     `${TMDB_BASE_URL}/movie/popular?api_key=${TMDB_API_KEY}&page=${page}`
+  );
+  
+  if (!response.ok) {
+    throw new Error(`TMDB API error: ${response.status}`);
+  }
+  
+  return response.json();
+}
+
+export async function getNowPlayingMovies(page = 1): Promise<TMDBSearchResponse> {
+  const response = await fetch(
+    `${TMDB_BASE_URL}/movie/now_playing?api_key=${TMDB_API_KEY}&page=${page}&region=FR`
+  );
+  
+  if (!response.ok) {
+    throw new Error(`TMDB API error: ${response.status}`);
+  }
+  
+  return response.json();
+}
+
+export async function getTrendingMovies(timeWindow: 'day' | 'week' = 'week'): Promise<TMDBSearchResponse> {
+  const response = await fetch(
+    `${TMDB_BASE_URL}/trending/movie/${timeWindow}?api_key=${TMDB_API_KEY}`
   );
   
   if (!response.ok) {
