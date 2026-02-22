@@ -89,11 +89,11 @@ const Index = () => {
   const spotlight = nowPlaying?.results.find(m => m.backdrop_path)?? null;
 
   return (
-    <div className="dark min-h-screen bg-background">
+    <div className="dark min-h-screen bg-background safe-top safe-bottom">
       <Header />
 
       {/* Hero with spotlight film */}
-      <section className="relative min-h-[90vh] flex items-end pb-20 px-6 overflow-hidden">
+      <section className="relative min-h-[75vh] md:min-h-[85vh] flex items-end pb-12 md:pb-20 px-4 md:px-6 overflow-hidden pt-20">
         {/* Backdrop */}
         {spotlight && (
           <div className="absolute inset-0">
@@ -102,8 +102,8 @@ const Index = () => {
               alt=""
               className="w-full h-full object-cover object-top"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/30" />
-            <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-transparent to-background/50" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/20" />
+            <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-background/40" />
           </div>
         )}
         {!spotlight && (
@@ -114,27 +114,27 @@ const Index = () => {
         )}
 
         <div className="relative z-10 container mx-auto max-w-5xl">
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-5 md:gap-8">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 w-fit">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-primary">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-primary/10 border border-primary/20 w-fit">
+              <Sparkles className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
+              <span className="text-xs md:text-sm font-medium text-primary">
                 Explorez l'envers du décor
               </span>
             </div>
 
             {/* Headline */}
-            <h1 className="font-display text-5xl md:text-7xl font-bold text-foreground leading-tight max-w-3xl">
+            <h1 className="font-display text-4xl md:text-7xl font-bold text-foreground leading-[1.1] max-w-3xl">
               Plongez au cœur du
               <span className="text-primary cinema-text-glow"> Cinéma</span>
             </h1>
 
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
+            <p className="text-base md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
               Une recherche pour tout découvrir : interviews, making-of, analyses, podcasts et essais vidéo.
             </p>
 
             {/* Search Bar - prominent */}
-            <div className="max-w-2xl">
+            <div className="max-w-2xl w-full">
               <SearchBar onSelectFilm={handleSelectFilm} variant="hero" />
             </div>
 
@@ -142,9 +142,9 @@ const Index = () => {
             {spotlight && (
               <button
                 onClick={() => navigate(`/film/${spotlight.id}`)}
-                className="flex items-center gap-3 group w-fit mt-2"
+                className="flex items-center gap-3 group w-fit"
               >
-                <div className="w-12 h-16 rounded-lg overflow-hidden border border-border/50">
+                <div className="w-11 h-[60px] rounded-lg overflow-hidden border border-border/50">
                   <img
                     src={getPosterUrl(spotlight.poster_path, "w185") || ""}
                     alt={spotlight.title}
@@ -153,7 +153,7 @@ const Index = () => {
                 </div>
                 <div className="text-left">
                   <p className="text-xs text-primary font-medium uppercase tracking-wider">À l'affiche</p>
-                  <p className="text-foreground font-medium group-hover:text-primary transition-colors">
+                  <p className="text-foreground font-medium group-hover:text-primary transition-colors text-sm md:text-base">
                     {spotlight.title}
                     <ArrowRight className="inline h-4 w-4 ml-1 transition-transform group-hover:translate-x-1" />
                   </p>
@@ -195,18 +195,18 @@ const Index = () => {
       />
 
       {/* Features Preview */}
-      <section className="relative py-20 px-6">
+      <section className="relative py-12 md:py-20 px-4 md:px-6">
         <div className="container mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
+          <div className="text-center mb-10 md:mb-16">
+            <h2 className="font-display text-2xl md:text-4xl font-bold text-foreground mb-3">
               Tout le contexte, <span className="text-primary">au même endroit</span>
             </h2>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+            <p className="text-muted-foreground text-sm md:text-lg max-w-xl mx-auto">
               Plus besoin de chercher sur dix plateformes. On agrège tout ce qui vaut la peine d'être vu sur vos films préférés.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-4xl mx-auto">
             {[
               {
                 icon: BookOpen,
@@ -224,16 +224,18 @@ const Index = () => {
                 description: "Conversations approfondies avec réalisateurs, acteurs et critiques.",
               },
             ].map((feature, index) => (
-              <div key={index} className="content-card p-6 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <feature.icon className="h-7 w-7 text-primary" />
+              <div key={index} className="content-card p-5 md:p-6 flex md:flex-col items-center md:text-center gap-4 md:gap-0">
+                <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0 md:mx-auto md:mb-4">
+                  <feature.icon className="h-6 w-6 md:h-7 md:w-7 text-primary" />
                 </div>
-                <h3 className="font-display text-lg font-semibold text-foreground mb-2">
-                  {feature.title}
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {feature.description}
-                </p>
+                <div>
+                  <h3 className="font-display text-base md:text-lg font-semibold text-foreground mb-1 md:mb-2">
+                    {feature.title}
+                  </h3>
+                  <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
+                    {feature.description}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
@@ -250,18 +252,18 @@ const Index = () => {
       />
 
       {/* Footer */}
-      <footer className="border-t border-border/50 py-12 px-6">
+      <footer className="border-t border-border/50 py-8 md:py-12 px-4 md:px-6">
         <div className="container mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
             <div className="flex items-center gap-2">
-              <span className="font-display text-xl font-semibold">
+              <span className="font-display text-lg md:text-xl font-semibold">
                 Deep<span className="text-primary">Dive</span>
               </span>
-              <span className="text-muted-foreground text-sm">
+              <span className="text-muted-foreground text-xs md:text-sm">
                 — L'outil ultime d'exploration cinématographique
               </span>
             </div>
-            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+            <div className="flex items-center gap-5 text-xs md:text-sm text-muted-foreground">
               <a href="#" className="hover:text-foreground transition-colors">À propos</a>
               <a href="#" className="hover:text-foreground transition-colors">Confidentialité</a>
               <a href="#" className="hover:text-foreground transition-colors">CGU</a>
@@ -295,21 +297,21 @@ function FilmRowSection({
   const hasMore = films.length > limit;
 
   return (
-    <section className="relative py-12 px-6">
+    <section className="relative py-8 md:py-12 px-4 md:px-6">
       <div className="container mx-auto">
-        <div className="flex items-end justify-between mb-8">
-          <div className="flex items-start gap-3">
-            <div className="mt-1">{icon}</div>
+        <div className="flex items-end justify-between mb-5 md:mb-8">
+          <div className="flex items-start gap-2.5 md:gap-3">
+            <div className="mt-0.5">{icon}</div>
             <div>
-              <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-1">
+              <h2 className="font-display text-xl md:text-3xl font-bold text-foreground mb-0.5">
                 {title}
               </h2>
-              <p className="text-muted-foreground text-sm">{subtitle}</p>
+              <p className="text-muted-foreground text-xs md:text-sm">{subtitle}</p>
             </div>
           </div>
           {hasMore && !expanded && (
-            <Button variant="cinema-ghost" size="sm" onClick={() => setExpanded(true)} className="gap-1.5 shrink-0">
-              Voir plus <ArrowRight className="h-4 w-4" />
+            <Button variant="cinema-ghost" size="sm" onClick={() => setExpanded(true)} className="gap-1.5 shrink-0 text-xs md:text-sm">
+              Voir plus <ArrowRight className="h-3.5 w-3.5 md:h-4 md:w-4" />
             </Button>
           )}
         </div>
@@ -319,7 +321,7 @@ function FilmRowSection({
             <Loader2 className="h-8 w-8 text-primary animate-spin" />
           </div>
         ) : (
-          <div className="flex gap-5 overflow-x-auto pb-4 -mx-6 px-6 scrollbar-hide">
+          <div className="flex gap-3 md:gap-5 overflow-x-auto pb-4 -mx-4 px-4 md:-mx-6 md:px-6 snap-x snap-mandatory scrollbar-hide">
             {visibleFilms.map((film) => (
               <FilmCard key={film.id} film={film} size="md" />
             ))}

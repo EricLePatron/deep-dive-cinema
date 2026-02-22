@@ -16,9 +16,9 @@ interface FilmCardProps {
 
 export function FilmCard({ film, size = "md" }: FilmCardProps) {
   const sizeClasses = {
-    sm: "w-32",
-    md: "w-40",
-    lg: "w-48",
+    sm: "w-28 md:w-32",
+    md: "w-32 md:w-40 snap-start",
+    lg: "w-40 md:w-48",
   };
 
   return (
