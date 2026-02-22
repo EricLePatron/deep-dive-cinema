@@ -163,7 +163,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Personalized from Letterboxd */}
+      {/* Personalized from Letterboxd - FIRST if available */}
       {personalizedFilms && personalizedFilms.length > 0 && (
         <FilmRowSection
           title="Pour vous"
