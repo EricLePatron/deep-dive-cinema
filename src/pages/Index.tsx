@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Sparkles, BookOpen, Video, Headphones, Loader2, TrendingUp, Clapperboard, Star, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -171,6 +172,7 @@ const Index = () => {
           icon={<Heart className="h-5 w-5 text-primary" />}
           films={personalizedFilms}
           loading={loadingPersonalized}
+          initialCount={6}
         />
       )}
 
@@ -278,13 +280,20 @@ function FilmRowSection({
   icon,
   films,
   loading,
+  initialCount,
 }: {
   title: string;
   subtitle: string;
   icon: React.ReactNode;
   films: any[];
   loading: boolean;
+  initialCount?: number;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const limit = initialCount ?? films.length;
+  const visibleFilms = expanded ? films : films.slice(0, limit);
+  const hasMore = films.length > limit;
+
   return (
     <section className="relative py-12 px-6">
       <div className="container mx-auto">
@@ -298,6 +307,11 @@ function FilmRowSection({
               <p className="text-muted-foreground text-sm">{subtitle}</p>
             </div>
           </div>
+          {hasMore && !expanded && (
+            <Button variant="cinema-ghost" size="sm" onClick={() => setExpanded(true)} className="gap-1.5 shrink-0">
+              Voir plus <ArrowRight className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         {loading ? (
@@ -306,7 +320,7 @@ function FilmRowSection({
           </div>
         ) : (
           <div className="flex gap-5 overflow-x-auto pb-4 -mx-6 px-6 scrollbar-hide">
-            {films.map((film) => (
+            {visibleFilms.map((film) => (
               <FilmCard key={film.id} film={film} size="md" />
             ))}
           </div>
