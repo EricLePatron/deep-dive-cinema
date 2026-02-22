@@ -230,11 +230,21 @@ export async function searchFilmVideos(filmTitle: string, year?: number, directo
     
     // Only exclude obvious trailers/marketing
     const strictMarketingKeywords = ['trailer officiel', 'official trailer', 'bande-annonce officielle', 'teaser officiel', 'tv spot'];
-    return !strictMarketingKeywords.some(kw => combined.includes(kw));
+    if (strictMarketingKeywords.some(kw => combined.includes(kw))) return false;
+    
+    // Exclude videos shorter than 5 minutes
+    const minutes = getVideoDurationMinutes(v);
+    if (minutes < 5) return false;
+    
+    return true;
   });
   
-  // If too aggressive, show all
+  // If too aggressive, fallback but still enforce 5min minimum
   if (filteredVideos.length < 5) {
+    filteredVideos = videos.filter(v => getVideoDurationMinutes(v) >= 5);
+  }
+  // Ultimate fallback: all videos
+  if (filteredVideos.length < 3) {
     filteredVideos = videos;
   }
   
