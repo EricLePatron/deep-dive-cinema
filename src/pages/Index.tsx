@@ -42,34 +42,46 @@ const Index = () => {
   const trendingFilms = trending?.results.slice(0, 10).map(toFilmCard) || [];
   const popularFilms = popularMovies?.results.slice(0, 10).map(toFilmCard) || [];
 
-  // Personalized suggestions: search TMDB for each recent Letterboxd film and get similar
-  const recentLetterboxdTitles = letterboxdFilms?.slice(0, 5).map(f => f.filmTitle) || [];
+  // Personalized suggestions: based on diary (last month), prioritized by user rating
+  const recentRatedFilms = (() => {
+    if (!letterboxdFilms) return [];
+    const now = new Date();
+    const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+    return letterboxdFilms
+      .filter(f => {
+        if (!f.watchedDate) return false;
+        return new Date(f.watchedDate) >= oneMonthAgo;
+      })
+      .sort((a, b) => b.rating - a.rating) // Best rated first
+      .slice(0, 8);
+  })();
+
+  const recentTitles = recentRatedFilms.map(f => f.filmTitle);
 
   const { data: personalizedFilms, isLoading: loadingPersonalized } = useQuery({
-    queryKey: ["personalized", recentLetterboxdTitles],
+    queryKey: ["personalized", recentTitles],
     queryFn: async () => {
       const results: any[] = [];
       const seen = new Set<number>();
-      for (const title of recentLetterboxdTitles) {
-        const search = await searchMovies(title);
+      for (const film of recentRatedFilms) {
+        const search = await searchMovies(film.filmTitle);
         if (search.results.length > 0) {
           const movieId = search.results[0].id;
-          // Fetch similar movies for this one
           const { getSimilarMovies } = await import("@/services/tmdb");
           const similar = await getSimilarMovies(movieId);
           for (const m of similar.results) {
             if (!seen.has(m.id)) {
               seen.add(m.id);
-              results.push(toFilmCard(m));
+              results.push({ ...toFilmCard(m), _basedOn: film.filmTitle, _baseRating: film.rating });
             }
-            if (results.length >= 15) break;
+            if (results.length >= 20) break;
           }
         }
-        if (results.length >= 15) break;
+        if (results.length >= 20) break;
       }
       return results;
     },
-    enabled: recentLetterboxdTitles.length > 0,
+    enabled: recentRatedFilms.length > 0,
     staleTime: 1000 * 60 * 15,
   });
 
@@ -156,7 +168,7 @@ const Index = () => {
       {personalizedFilms && personalizedFilms.length > 0 && (
         <FilmRowSection
           title="Pour vous"
-          subtitle="Basé sur vos films récents Letterboxd"
+          subtitle="Basé sur votre diary Letterboxd du dernier mois — vos coups de cœur en priorité"
           icon={<Heart className="h-5 w-5 text-primary" />}
           films={personalizedFilms}
           loading={loadingPersonalized}
