@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Loader2,
   Film,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,6 +30,7 @@ import { PodcastCard } from "@/components/PodcastCard";
 import { useMovieDetails, useSimilarMovies } from "@/hooks/useTMDB";
 import { useFilmVideos } from "@/hooks/useYouTube";
 import { useFilmPodcasts } from "@/hooks/usePodcast";
+import { useLetterboxdProfile, useLetterboxdFeed } from "@/hooks/useLetterboxd";
 import { getPosterUrl } from "@/services/tmdb";
 import {
   mockBooks,
@@ -71,6 +73,12 @@ export default function FilmDeepDive() {
   // Fetch podcasts based on film title + director
   const { data: podcasts, isLoading: loadingPodcasts } = useFilmPodcasts(filmTitle, filmDirector);
 
+  // Letterboxd status
+  const { profile } = useLetterboxdProfile();
+  const { data: letterboxdFilms } = useLetterboxdFeed(profile?.username);
+  const letterboxdEntry = letterboxdFilms?.find(
+    (f) => f.filmTitle.toLowerCase() === filmTitle.toLowerCase()
+  );
   const totalVideos = videos?.all.length || 0;
   const totalPodcasts = podcasts?.length || 0;
   const totalContent =
@@ -223,6 +231,35 @@ export default function FilmDeepDive() {
               <p className="text-lg text-foreground/80 leading-relaxed max-w-2xl mb-8">
                 {film.synopsis}
               </p>
+
+              {/* Letterboxd Status */}
+              {letterboxdEntry && (
+                <div className="flex items-center gap-3 mb-8 px-4 py-3 rounded-xl bg-accent/50 border border-accent w-fit">
+                  <Eye className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      Vu sur Letterboxd
+                      {letterboxdEntry.watchedDate && (
+                        <span className="text-muted-foreground font-normal"> — {new Date(letterboxdEntry.watchedDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                      )}
+                    </p>
+                    {letterboxdEntry.rating > 0 && (
+                      <div className="flex items-center gap-1 mt-0.5">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star
+                            key={i}
+                            className={cn(
+                              "h-3.5 w-3.5",
+                              i < Math.round(letterboxdEntry.rating) ? "text-primary fill-primary" : "text-muted-foreground"
+                            )}
+                          />
+                        ))}
+                        <span className="text-xs text-muted-foreground ml-1">{letterboxdEntry.rating}/5</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Cast */}
               {film.cast.length > 0 && (
