@@ -58,26 +58,25 @@ const Index = () => {
 
   const recentTitles = recentRatedFilms.map(f => f.filmTitle);
 
+  // Resolve diary films to TMDB entries for poster/id
   const { data: personalizedFilms, isLoading: loadingPersonalized } = useQuery({
-    queryKey: ["personalized", recentTitles],
+    queryKey: ["personalized-diary", recentTitles],
     queryFn: async () => {
       const results: any[] = [];
       const seen = new Set<number>();
       for (const film of recentRatedFilms) {
         const search = await searchMovies(film.filmTitle);
-        if (search.results.length > 0) {
-          const movieId = search.results[0].id;
-          const { getSimilarMovies } = await import("@/services/tmdb");
-          const similar = await getSimilarMovies(movieId);
-          for (const m of similar.results) {
-            if (!seen.has(m.id)) {
-              seen.add(m.id);
-              results.push({ ...toFilmCard(m), _basedOn: film.filmTitle, _baseRating: film.rating });
-            }
-            if (results.length >= 20) break;
-          }
+        const match = search.results.find(
+          (m: any) => m.release_date?.startsWith(film.filmYear)
+        ) || search.results[0];
+        if (match && !seen.has(match.id)) {
+          seen.add(match.id);
+          results.push({
+            ...toFilmCard(match),
+            _userRating: film.rating,
+            _watchedDate: film.watchedDate,
+          });
         }
-        if (results.length >= 20) break;
       }
       return results;
     },
@@ -168,7 +167,7 @@ const Index = () => {
       {personalizedFilms && personalizedFilms.length > 0 && (
         <FilmRowSection
           title="Pour vous"
-          subtitle="Basé sur votre diary Letterboxd du dernier mois — vos coups de cœur en priorité"
+          subtitle="Vos films récents sur Letterboxd — plongez dans le deep dive"
           icon={<Heart className="h-5 w-5 text-primary" />}
           films={personalizedFilms}
           loading={loadingPersonalized}
