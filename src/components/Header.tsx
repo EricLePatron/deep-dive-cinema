@@ -1,15 +1,39 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Film, Search, X } from "lucide-react";
+import { Film, Search, X, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/SearchBar";
 import { cn } from "@/lib/utils";
+import { lovable } from "@/integrations/lovable/index";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
 
 export function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const isHome = location.pathname === "/";
   const [searchOpen, setSearchOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSignIn = async () => {
+    await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+  };
 
   const handleSelectFilm = (film: { id: number; title: string }) => {
     navigate(`/film/${film.id}`);
@@ -89,9 +113,22 @@ export function Header() {
             >
               <Search className="h-4 w-4" />
             </Button>
-            <Button variant="cinema-outline" size="sm">
-              Sign In
-            </Button>
+            {user ? (
+              <div className="flex items-center gap-2">
+                <img
+                  src={user.user_metadata?.avatar_url}
+                  alt=""
+                  className="w-8 h-8 rounded-full"
+                />
+                <Button variant="cinema-ghost" size="icon" className="rounded-full" onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <Button variant="cinema-outline" size="sm" onClick={handleSignIn}>
+                Sign In
+              </Button>
+            )}
           </div>
         </div>
       </div>
