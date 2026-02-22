@@ -76,6 +76,9 @@ const premiumChannels = [
   // Quality media outlets with BTS content
   'vice', 'vanity fair', 'gq', 'wired', 'vulture',
   'collider', 'screen rant', 'deadline', 'the wrap',
+  // Technical craft channels
+  'dolby', 'dolby laboratories', 'imax', 'panavision',
+  'arri', 'red digital cinema', 'blackmagic',
   // French channels
   'arte cinema', 'cahiers du cinéma', 'les inrocks',
   'télérama', 'positif', 'cinémathèque', 'institut lumière',
@@ -211,7 +214,7 @@ export async function searchFilmVideos(filmTitle: string, year?: number, directo
   
   // Use cinephile-focused query terms with emphasis on interviews and Q&A
   // Adding director name helps disambiguate films like "L'Étranger" (common title)
-  const query = `${filmTitle}${directorStr}${yearStr} interview OR making of OR analysis OR critique`;
+  const query = `${filmTitle}${directorStr}${yearStr} interview OR making of OR cinematography OR analysis OR behind the scenes`;
   
   console.log('YouTube search query:', query);
   
@@ -267,7 +270,19 @@ export function categorizeVideos(videos: YouTubeVideo[]): {
     'toured the set', 'on set', 'production design', 'production designer',
     'vfx', 'visual effects', 'special effects', 'practical effects',
     'documentary', 'featurette', 'coulisses', 'fabrication', 'tournage',
-    'special feature', 'bonus feature', 'dans les coulisses'
+    'special feature', 'bonus feature', 'dans les coulisses',
+    // Cinematography & technical craft
+    'cinematography of', 'cinematography behind', 'shooting on film',
+    'anamorphic', 'lighting', 'color grading', 'color palette',
+    'sound design', 'sound editing', 'sound mix', 're-recording',
+    'dolby creator', 'creator talks', 'dolby vision', 'dolby atmos',
+    'academy conversation', 'academy conversations',
+    'costume design', 'wardrobe', 'art direction', 'set decoration',
+    'stunt', 'choreography', 'fight choreography',
+    'editing process', 'editorial', 'post-production', 'post production',
+    'score', 'scoring', 'original score', 'film score',
+    'lens', 'lenses', 'camera work', 'camera setup',
+    'from obsession', 'crafting', 'building the world'
   ];
   
   // Analysis & video essays
