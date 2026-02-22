@@ -1,18 +1,23 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Sparkles, BookOpen, Video, Headphones, Loader2, TrendingUp, Clapperboard, Star } from "lucide-react";
+import { ArrowRight, Sparkles, BookOpen, Video, Headphones, Loader2, TrendingUp, Clapperboard, Star, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/SearchBar";
 import { FilmCard } from "@/components/FilmCard";
 import { Header } from "@/components/Header";
-import { usePopularMovies, useNowPlayingMovies, useTrendingMovies } from "@/hooks/useTMDB";
-import { getPosterUrl, getBackdropUrl } from "@/services/tmdb";
+import { usePopularMovies, useNowPlayingMovies, useTrendingMovies, useSearchMovies } from "@/hooks/useTMDB";
+import { useLetterboxdProfile, useLetterboxdFeed } from "@/hooks/useLetterboxd";
+import { useSimilarMovies } from "@/hooks/useTMDB";
+import { getPosterUrl, getBackdropUrl, searchMovies } from "@/services/tmdb";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
 
 const Index = () => {
   const navigate = useNavigate();
   const { data: popularMovies, isLoading: loadingPopular } = usePopularMovies();
   const { data: nowPlaying, isLoading: loadingNowPlaying } = useNowPlayingMovies();
   const { data: trending, isLoading: loadingTrending } = useTrendingMovies('week');
+  const { profile } = useLetterboxdProfile();
+  const { data: letterboxdFilms } = useLetterboxdFeed(profile?.username);
 
   const handleSelectFilm = (film: { id: number; title: string }) => {
     navigate(`/film/${film.id}`);
@@ -36,6 +41,37 @@ const Index = () => {
   const nowPlayingFilms = nowPlaying?.results.slice(0, 10).map(toFilmCard) || [];
   const trendingFilms = trending?.results.slice(0, 10).map(toFilmCard) || [];
   const popularFilms = popularMovies?.results.slice(0, 10).map(toFilmCard) || [];
+
+  // Personalized suggestions: search TMDB for each recent Letterboxd film and get similar
+  const recentLetterboxdTitles = letterboxdFilms?.slice(0, 5).map(f => f.filmTitle) || [];
+
+  const { data: personalizedFilms, isLoading: loadingPersonalized } = useQuery({
+    queryKey: ["personalized", recentLetterboxdTitles],
+    queryFn: async () => {
+      const results: any[] = [];
+      const seen = new Set<number>();
+      for (const title of recentLetterboxdTitles) {
+        const search = await searchMovies(title);
+        if (search.results.length > 0) {
+          const movieId = search.results[0].id;
+          // Fetch similar movies for this one
+          const { getSimilarMovies } = await import("@/services/tmdb");
+          const similar = await getSimilarMovies(movieId);
+          for (const m of similar.results) {
+            if (!seen.has(m.id)) {
+              seen.add(m.id);
+              results.push(toFilmCard(m));
+            }
+            if (results.length >= 15) break;
+          }
+        }
+        if (results.length >= 15) break;
+      }
+      return results;
+    },
+    enabled: recentLetterboxdTitles.length > 0,
+    staleTime: 1000 * 60 * 15,
+  });
 
   // Hero spotlight: first now playing film with backdrop
   const spotlight = nowPlaying?.results.find(m => m.backdrop_path)?? null;
@@ -115,6 +151,17 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Personalized from Letterboxd */}
+      {personalizedFilms && personalizedFilms.length > 0 && (
+        <FilmRowSection
+          title="Pour vous"
+          subtitle="Basé sur vos films récents Letterboxd"
+          icon={<Heart className="h-5 w-5 text-primary" />}
+          films={personalizedFilms}
+          loading={loadingPersonalized}
+        />
+      )}
 
       {/* Now Playing */}
       <FilmRowSection
