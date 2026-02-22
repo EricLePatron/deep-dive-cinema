@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Film, Search, X, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/SearchBar";
+import { LetterboxdLink } from "@/components/LetterboxdLink";
 import { cn } from "@/lib/utils";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
@@ -114,7 +115,8 @@ export function Header() {
               <Search className="h-4 w-4" />
             </Button>
             {user ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                <LetterboxdLink />
                 <img
                   src={user.user_metadata?.avatar_url}
                   alt=""
