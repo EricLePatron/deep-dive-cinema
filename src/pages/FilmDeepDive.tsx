@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -50,7 +50,13 @@ export default function FilmDeepDive() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("all");
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
 
+  const toggleSection = useCallback((section: string) => {
+    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  }, []);
+
+  const PREVIEW_COUNT = 3;
   const movieId = id ? parseInt(id, 10) : undefined;
   const { data: film, isLoading, error } = useMovieDetails(movieId);
   const { data: similarMoviesData, isLoading: loadingSimilar } = useSimilarMovies(movieId);
@@ -350,16 +356,26 @@ export default function FilmDeepDive() {
               icon={<Video className="h-5 w-5" />}
               count={videos?.behindTheScenes.length || 0}
             >
-              {loadingVideos ? (
+            {loadingVideos ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-8 w-8 text-primary animate-spin" />
                 </div>
               ) : videos?.behindTheScenes && videos.behindTheScenes.length > 0 ? (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {videos.behindTheScenes.map((video) => (
-                    <YouTubeVideoCard key={video.id} video={video} />
-                  ))}
-                </div>
+                <>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {(expandedSections['bts'] ? videos.behindTheScenes : videos.behindTheScenes.slice(0, PREVIEW_COUNT)).map((video) => (
+                      <YouTubeVideoCard key={video.id} video={video} />
+                    ))}
+                  </div>
+                  {videos.behindTheScenes.length > PREVIEW_COUNT && (
+                    <div className="flex justify-center mt-4">
+                      <Button variant="cinema-ghost" onClick={() => toggleSection('bts')} className="group">
+                        {expandedSections['bts'] ? 'Voir moins' : `Voir plus (${videos.behindTheScenes.length - PREVIEW_COUNT} de plus)`}
+                        <ChevronRight className={cn("h-4 w-4 transition-transform ml-1", expandedSections['bts'] && "rotate-90")} />
+                      </Button>
+                    </div>
+                  )}
+                </>
               ) : (
                 <p className="text-muted-foreground py-4">No behind-the-scenes content found. Check the "All Videos" section below.</p>
               )}
@@ -371,16 +387,26 @@ export default function FilmDeepDive() {
               icon={<Play className="h-5 w-5" />}
               count={videos?.analysis.length || 0}
             >
-              {loadingVideos ? (
+            {loadingVideos ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-8 w-8 text-primary animate-spin" />
                 </div>
               ) : videos?.analysis && videos.analysis.length > 0 ? (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {videos.analysis.map((video) => (
-                    <YouTubeVideoCard key={video.id} video={video} />
-                  ))}
-                </div>
+                <>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {(expandedSections['analysis'] ? videos.analysis : videos.analysis.slice(0, PREVIEW_COUNT)).map((video) => (
+                      <YouTubeVideoCard key={video.id} video={video} />
+                    ))}
+                  </div>
+                  {videos.analysis.length > PREVIEW_COUNT && (
+                    <div className="flex justify-center mt-4">
+                      <Button variant="cinema-ghost" onClick={() => toggleSection('analysis')} className="group">
+                        {expandedSections['analysis'] ? 'Voir moins' : `Voir plus (${videos.analysis.length - PREVIEW_COUNT} de plus)`}
+                        <ChevronRight className={cn("h-4 w-4 transition-transform ml-1", expandedSections['analysis'] && "rotate-90")} />
+                      </Button>
+                    </div>
+                  )}
+                </>
               ) : (
                 <p className="text-muted-foreground py-4">No video essays found. Check the "All Videos" section below.</p>
               )}
@@ -397,11 +423,21 @@ export default function FilmDeepDive() {
                   <Loader2 className="h-8 w-8 text-primary animate-spin" />
                 </div>
               ) : podcasts && podcasts.length > 0 ? (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {podcasts.map((podcast) => (
-                    <PodcastCard key={podcast.id} episode={podcast} variant="compact" />
-                  ))}
-                </div>
+                <>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {(expandedSections['podcasts'] ? podcasts : podcasts.slice(0, PREVIEW_COUNT)).map((podcast) => (
+                      <PodcastCard key={podcast.id} episode={podcast} variant="compact" />
+                    ))}
+                  </div>
+                  {podcasts.length > PREVIEW_COUNT && (
+                    <div className="flex justify-center mt-4">
+                      <Button variant="cinema-ghost" onClick={() => toggleSection('podcasts')} className="group">
+                        {expandedSections['podcasts'] ? 'Voir moins' : `Voir plus (${podcasts.length - PREVIEW_COUNT} de plus)`}
+                        <ChevronRight className={cn("h-4 w-4 transition-transform ml-1", expandedSections['podcasts'] && "rotate-90")} />
+                      </Button>
+                    </div>
+                  )}
+                </>
               ) : (
                 <p className="text-muted-foreground py-4">Aucun podcast trouvé pour ce film.</p>
               )}
@@ -426,16 +462,26 @@ export default function FilmDeepDive() {
               icon={<Mic className="h-5 w-5" />}
               count={videos?.interviews.length || 0}
             >
-              {loadingVideos ? (
+            {loadingVideos ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-8 w-8 text-primary animate-spin" />
                 </div>
               ) : videos?.interviews && videos.interviews.length > 0 ? (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {videos.interviews.map((video) => (
-                    <YouTubeVideoCard key={video.id} video={video} variant="compact" />
-                  ))}
-                </div>
+                <>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {(expandedSections['interviews'] ? videos.interviews : videos.interviews.slice(0, PREVIEW_COUNT)).map((video) => (
+                      <YouTubeVideoCard key={video.id} video={video} variant="compact" />
+                    ))}
+                  </div>
+                  {videos.interviews.length > PREVIEW_COUNT && (
+                    <div className="flex justify-center mt-4">
+                      <Button variant="cinema-ghost" onClick={() => toggleSection('interviews')} className="group">
+                        {expandedSections['interviews'] ? 'Voir moins' : `Voir plus (${videos.interviews.length - PREVIEW_COUNT} de plus)`}
+                        <ChevronRight className={cn("h-4 w-4 transition-transform ml-1", expandedSections['interviews'] && "rotate-90")} />
+                      </Button>
+                    </div>
+                  )}
+                </>
               ) : (
                 <p className="text-muted-foreground py-4">No interviews found. Check the "All Videos" section below.</p>
               )}
