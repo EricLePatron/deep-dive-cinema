@@ -159,7 +159,19 @@ serve(async (req) => {
         if (word.length > 2 && titleLower.includes(word)) score += 10;
       });
       
-      // French cinema sources get priority
+      // Detect French language content
+      const frenchIndicators = ['france culture', 'france inter', 'radio france', 'arte', 'blow up', 
+        'masque et la plume', 'dispute', 'cercle', 'canal+', 'rfi', 'europe 1', 'rtl',
+        'affranchis', 'plan large', 'chaînes', 'émission', 'chronique'];
+      const descLower = episode.description.toLowerCase();
+      const isFrench = frenchIndicators.some(ind => 
+        podcastLower.includes(ind) || authorLower.includes(ind) || titleLower.includes(ind) || descLower.includes(ind)
+      );
+      
+      // French content gets massive priority
+      if (isFrench) score += 100;
+      
+      // French cinema sources get extra priority on top
       if (podcastLower.includes('france culture') || authorLower.includes('radio france')) score += 30;
       if (podcastLower.includes('france inter')) score += 25;
       if (podcastLower.includes('arte') || podcastLower.includes('blow up')) score += 25;
