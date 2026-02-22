@@ -93,7 +93,7 @@ const Index = () => {
       <Header />
 
       {/* Hero with spotlight film */}
-      <section className="relative min-h-[75vh] md:min-h-[85vh] flex items-end pb-12 md:pb-20 px-4 md:px-6 overflow-hidden pt-20">
+      <section className="relative min-h-[55vh] md:min-h-[85vh] flex items-end pb-6 md:pb-20 px-4 md:px-6 overflow-hidden pt-16 md:pt-20">
         {/* Backdrop */}
         {spotlight && (
           <div className="absolute inset-0">
@@ -114,7 +114,7 @@ const Index = () => {
         )}
 
         <div className="relative z-10 container mx-auto max-w-5xl">
-          <div className="flex flex-col gap-5 md:gap-8">
+          <div className="flex flex-col gap-3 md:gap-8">
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-primary/10 border border-primary/20 w-fit">
               <Sparkles className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
@@ -124,7 +124,7 @@ const Index = () => {
             </div>
 
             {/* Headline */}
-            <h1 className="font-display text-4xl md:text-7xl font-bold text-foreground leading-[1.1] max-w-3xl">
+            <h1 className="font-display text-3xl md:text-7xl font-bold text-foreground leading-[1.1] max-w-3xl">
               Plongez au cœur du
               <span className="text-primary cinema-text-glow"> Cinéma</span>
             </h1>
@@ -297,7 +297,7 @@ function FilmRowSection({
   const hasMore = films.length > limit;
 
   return (
-    <section className="relative py-8 md:py-12 px-4 md:px-6">
+    <section className="relative py-5 md:py-12 px-4 md:px-6">
       <div className="container mx-auto">
         <div className="flex items-end justify-between mb-5 md:mb-8">
           <div className="flex items-start gap-2.5 md:gap-3">
