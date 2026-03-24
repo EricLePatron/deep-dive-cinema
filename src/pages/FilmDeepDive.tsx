@@ -47,6 +47,7 @@ const tabs = [
   { id: "podcasts", label: "Podcasts", icon: Headphones },
   { id: "articles", label: "Articles", icon: FileText },
   { id: "interviews", label: "Interviews", icon: Mic },
+  { id: "editions", label: "Éditions", icon: Disc3 },
 ];
 
 export default function FilmDeepDive() {
