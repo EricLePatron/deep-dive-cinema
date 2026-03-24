@@ -14,6 +14,7 @@ import {
   Mic,
   Bookmark,
   Share2,
+  Disc3,
   ChevronRight,
   Loader2,
   Film,
