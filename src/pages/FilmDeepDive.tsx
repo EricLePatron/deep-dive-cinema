@@ -650,6 +650,10 @@ export default function FilmDeepDive() {
               </div>
             )}
           </TabsContent>
+
+          <TabsContent value="editions">
+            <PhysicalMediaSection movieId={film.id} filmTitle={film.title} filmYear={film.year} />
+          </TabsContent>
         </Tabs>
       </section>
 
