@@ -37,6 +37,7 @@ import {
   mockArticles,
 } from "@/data/mockData";
 import { cn } from "@/lib/utils";
+import { PhysicalMediaSection } from "@/components/PhysicalMediaSection";
 
 const tabs = [
   { id: "all", label: "All Content", icon: null },
