@@ -528,7 +528,7 @@ export default function FilmDeepDive() {
             </ContentSection>
 
             {/* Physical Media Editions */}
-            <PhysicalMediaSection movieId={film.id} filmTitle={film.title} filmYear={film.year} />
+            <PhysicalMediaSection movieId={film.id} filmTitle={film.title} originalTitle={film.originalTitle} filmYear={film.year} />
 
             {/* All Videos (uncategorized or reviews) */}
             {videos && (videos.other.length > 0 || videos.reviews.length > 0) && (
@@ -652,7 +652,7 @@ export default function FilmDeepDive() {
           </TabsContent>
 
           <TabsContent value="editions">
-            <PhysicalMediaSection movieId={film.id} filmTitle={film.title} filmYear={film.year} />
+            <PhysicalMediaSection movieId={film.id} filmTitle={film.title} originalTitle={film.originalTitle} filmYear={film.year} />
           </TabsContent>
         </Tabs>
       </section>
