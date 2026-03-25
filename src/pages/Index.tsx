@@ -4,6 +4,7 @@ import { ArrowRight, Sparkles, BookOpen, Video, Headphones, Loader2, TrendingUp,
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/SearchBar";
 import { FilmCard } from "@/components/FilmCard";
+import { DiaryContentHighlights } from "@/components/DiaryContentHighlights";
 import { Header } from "@/components/Header";
 import { usePopularMovies, useNowPlayingMovies, useTrendingMovies, useSearchMovies } from "@/hooks/useTMDB";
 import { useLetterboxdProfile, useLetterboxdFeed } from "@/hooks/useLetterboxd";
