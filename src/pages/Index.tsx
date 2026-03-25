@@ -4,6 +4,7 @@ import { ArrowRight, Sparkles, BookOpen, Video, Headphones, Loader2, TrendingUp,
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/SearchBar";
 import { FilmCard } from "@/components/FilmCard";
+import { DiaryContentHighlights } from "@/components/DiaryContentHighlights";
 import { Header } from "@/components/Header";
 import { usePopularMovies, useNowPlayingMovies, useTrendingMovies, useSearchMovies } from "@/hooks/useTMDB";
 import { useLetterboxdProfile, useLetterboxdFeed } from "@/hooks/useLetterboxd";
@@ -164,16 +165,9 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Personalized from Letterboxd - FIRST if available */}
+      {/* Personalized content highlights from Letterboxd diary */}
       {personalizedFilms && personalizedFilms.length > 0 && (
-        <FilmRowSection
-          title="Pour vous"
-          subtitle="Vos films récents sur Letterboxd — plongez dans le deep dive"
-          icon={<Heart className="h-5 w-5 text-primary" />}
-          films={personalizedFilms}
-          loading={loadingPersonalized}
-          initialCount={6}
-        />
+        <DiaryContentHighlights films={personalizedFilms} />
       )}
 
       {/* Now Playing */}
