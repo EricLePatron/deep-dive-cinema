@@ -73,11 +73,14 @@ ${cast?.length ? `Acteurs principaux : ${cast.slice(0, 5).join(', ')}` : ''}
 ${genres?.length ? `Genres : ${genres.join(', ')}` : ''}
 
 Voici une liste de livres trouvés. Évalue la pertinence de chaque livre par rapport au film.
+Sois TRÈS STRICT : seuls les livres qui traitent RÉELLEMENT du film, du réalisateur, des acteurs ou du genre cinématographique doivent avoir un score élevé.
+Un livre qui mentionne vaguement un mot-clé commun mais ne parle pas de cinéma doit avoir un score bas.
 Attribue un score de 0 à 100 :
-- 90-100 : livre directement sur ce film spécifique
-- 70-89 : livre sur le réalisateur ou un aspect majeur du film
-- 50-69 : livre sur un acteur principal ou le mouvement cinématographique
-- 30-49 : livre sur le genre ou le contexte culturel du film
+- 90-100 : livre directement et spécifiquement sur ce film
+- 70-89 : livre consacré au réalisateur de ce film ou analysant en profondeur un aspect majeur du film
+- 50-69 : livre sur un acteur principal du film ou le mouvement cinématographique auquel il appartient
+- 30-49 : livre pertinent sur le genre cinématographique du film
+- 0-29 : peu ou pas pertinent (livre sans rapport réel avec le film ou le cinéma)
 - 0-29 : peu ou pas pertinent
 
 Livres :
@@ -147,8 +150,8 @@ ${JSON.stringify(booksForAI, null, 1)}`;
       }
     }
 
-    // Filter out irrelevant books (score < 25 after AI ranking)
-    return books.filter(b => b.relevanceScore >= 25);
+    // Filter out irrelevant books (strict threshold)
+    return books.filter(b => b.relevanceScore >= 60);
   } catch (e) {
     console.error("AI ranking error:", e);
     return books;
@@ -240,10 +243,11 @@ serve(async (req) => {
     // Use AI to rank and filter books
     const rankedBooks = await aiRankBooks(allBooks, filmTitle, originalTitle, director, cast, genres);
 
-    // Sort by relevance score
+    // Sort by relevance score, keep only top 10
     rankedBooks.sort((a, b) => b.relevanceScore - a.relevanceScore);
+    const topBooks = rankedBooks.slice(0, 10);
 
-    return new Response(JSON.stringify({ books: rankedBooks }), {
+    return new Response(JSON.stringify({ books: topBooks }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
