@@ -26,6 +26,7 @@ import { Header } from "@/components/Header";
 import { ContentCard } from "@/components/ContentCard";
 import { ContentSection } from "@/components/ContentSection";
 import { FilmCard } from "@/components/FilmCard";
+import { BookCard } from "@/components/BookCard";
 import { YouTubeVideoCard } from "@/components/YouTubeVideoCard";
 import { PodcastCard } from "@/components/PodcastCard";
 import { useMovieDetails, useSimilarMovies } from "@/hooks/useTMDB";
