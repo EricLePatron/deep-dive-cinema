@@ -79,30 +79,6 @@ export function Header() {
             </div>
           )}
 
-          {/* Nav */}
-          <nav className="hidden md:flex items-center gap-6">
-            <Link
-              to="/"
-              className={cn(
-                "text-sm font-medium transition-colors hover:text-foreground",
-                isHome ? "text-foreground" : "text-muted-foreground"
-              )}
-            >
-              Home
-            </Link>
-            <Link
-              to="/explore"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Explore
-            </Link>
-            <Link
-              to="/directors"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Directors
-            </Link>
-          </nav>
 
           {/* Actions */}
           <div className="flex items-center gap-3">
