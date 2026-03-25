@@ -7,6 +7,7 @@ export interface FrenchEdition {
   description: string;
   retailer: string;
   format: string;
+  image: string | null;
 }
 
 async function searchFrenchEditions(filmTitle: string, filmYear: number, originalTitle?: string): Promise<FrenchEdition[]> {
