@@ -76,6 +76,12 @@ export default function FilmDeepDive() {
   // Fetch podcasts based on film title + director
   const { data: podcasts, isLoading: loadingPodcasts } = useFilmPodcasts(filmTitle, filmDirector);
 
+  // Fetch books based on film info
+  const castNames = film?.cast?.map(c => c.name) || [];
+  const { data: books, isLoading: loadingBooks } = useFilmBooks(
+    filmTitle, film?.originalTitle, filmDirector, castNames, film?.genres
+  );
+
   // Letterboxd status
   const { profile } = useLetterboxdProfile();
   const { data: letterboxdFilms } = useLetterboxdFeed(profile?.username);
@@ -84,8 +90,9 @@ export default function FilmDeepDive() {
   );
   const totalVideos = videos?.all.length || 0;
   const totalPodcasts = podcasts?.length || 0;
+  const totalBooks = books?.length || 0;
   const totalContent =
-    mockBooks.length +
+    totalBooks +
     totalVideos +
     totalPodcasts +
     mockArticles.length;
@@ -330,7 +337,7 @@ export default function FilmDeepDive() {
               </div>
               <div className="flex items-center gap-4">
                 {[
-                  { icon: Book, count: mockBooks.length, label: "Books" },
+                  { icon: Book, count: totalBooks, label: "Books", loading: loadingBooks },
                   { icon: Play, count: totalVideos, label: "Videos", loading: loadingVideos },
                   { icon: Headphones, count: totalPodcasts, label: "Podcasts", loading: loadingPodcasts },
                 ].map((stat) => (
@@ -379,15 +386,33 @@ export default function FilmDeepDive() {
           <TabsContent value="all" className="space-y-2">
             {/* Books */}
             <ContentSection
-              title="Books & Essays"
+              title="Livres & Essais"
               icon={<Book className="h-5 w-5" />}
-              count={mockBooks.length}
+              count={totalBooks}
             >
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {mockBooks.map((book) => (
-                  <ContentCard key={book.id} item={book} />
-                ))}
-              </div>
+              {loadingBooks ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                </div>
+              ) : books && books.length > 0 ? (
+                <>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {(expandedSections['books'] ? books : books.slice(0, PREVIEW_COUNT)).map((book) => (
+                      <BookCard key={book.id} book={book} />
+                    ))}
+                  </div>
+                  {books.length > PREVIEW_COUNT && (
+                    <div className="flex justify-center mt-4">
+                      <Button variant="cinema-ghost" onClick={() => toggleSection('books')} className="group">
+                        {expandedSections['books'] ? 'Voir moins' : `Voir plus (${books.length - PREVIEW_COUNT} de plus)`}
+                        <ChevronRight className={cn("h-4 w-4 transition-transform ml-1", expandedSections['books'] && "rotate-90")} />
+                      </Button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-muted-foreground py-4">Aucun livre trouvé pour ce film.</p>
+              )}
             </ContentSection>
 
             {/* Behind the Scenes / Making of */}
@@ -548,11 +573,19 @@ export default function FilmDeepDive() {
 
           {/* Individual content tabs */}
           <TabsContent value="books">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {mockBooks.map((book) => (
-                <ContentCard key={book.id} item={book} />
-              ))}
-            </div>
+            {loadingBooks ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+              </div>
+            ) : books && books.length > 0 ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {books.map((book) => (
+                  <BookCard key={book.id} book={book} />
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground py-8 text-center">Aucun livre trouvé pour ce film.</p>
+            )}
           </TabsContent>
 
           <TabsContent value="docs">
