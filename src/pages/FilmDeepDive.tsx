@@ -34,9 +34,9 @@ import { useFilmPodcasts } from "@/hooks/usePodcast";
 import { useLetterboxdProfile, useLetterboxdFeed } from "@/hooks/useLetterboxd";
 import { getPosterUrl } from "@/services/tmdb";
 import {
-  mockBooks,
   mockArticles,
 } from "@/data/mockData";
+import { useFilmBooks, categoryLabels, BookResult } from "@/hooks/useFilmBooks";
 import { cn } from "@/lib/utils";
 import { PhysicalMediaSection } from "@/components/PhysicalMediaSection";
 
