@@ -18,17 +18,21 @@ interface BookResult {
   relevanceScore: number;
 }
 
-async function searchGoogleBooks(query: string, maxResults = 10): Promise<any[]> {
-  const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=${maxResults}&langRestrict=fr&orderBy=relevance&printType=books`;
+async function searchGoogleBooks(query: string, maxResults = 10, lang?: string): Promise<any[]> {
+  let url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=${maxResults}&orderBy=relevance&printType=books`;
+  if (lang) url += `&langRestrict=${lang}`;
   const res = await fetch(url);
   if (!res.ok) return [];
   const data = await res.json();
-  return data.items || [];
+  return (data.items || []).map((item: any) => ({ ...item, _lang: lang || 'any' }));
 }
 
 function mapBookItem(item: any, category: BookResult['category'], score: number): BookResult {
   const info = item.volumeInfo || {};
   const imageLinks = info.imageLinks || {};
+  const lang = info.language || item._lang || 'unknown';
+  // French books get a strong bonus
+  const langBonus = lang === 'fr' ? 40 : lang === 'en' ? 0 : -10;
   return {
     id: item.id,
     title: info.title || 'Unknown',
@@ -39,7 +43,7 @@ function mapBookItem(item: any, category: BookResult['category'], score: number)
     imageUrl: imageLinks.thumbnail?.replace('http://', 'https://') || imageLinks.smallThumbnail?.replace('http://', 'https://') || null,
     infoLink: info.infoLink || info.previewLink || '',
     category,
-    relevanceScore: score,
+    relevanceScore: score + langBonus,
   };
 }
 
@@ -70,47 +74,56 @@ serve(async (req) => {
       }
     };
 
-    // 1. Search by film title (highest priority)
-    const titleQueries = [
-      `"${filmTitle}" cinema livre`,
-      `"${filmTitle}" film analyse`,
+    // 1. Search by film title — FR then EN
+    const titleSearches = [
+      searchGoogleBooks(`"${filmTitle}" cinema livre`, 5, 'fr'),
+      searchGoogleBooks(`"${filmTitle}" film analyse`, 5, 'fr'),
+      searchGoogleBooks(`"${filmTitle}" film book`, 5, 'en'),
     ];
     if (originalTitle && originalTitle !== filmTitle) {
-      titleQueries.push(`"${originalTitle}" film book`);
+      titleSearches.push(searchGoogleBooks(`"${originalTitle}" film book`, 5, 'en'));
+      titleSearches.push(searchGoogleBooks(`"${originalTitle}" cinema livre`, 5, 'fr'));
     }
-
-    const titleResults = await Promise.all(titleQueries.map(q => searchGoogleBooks(q, 5)));
+    const titleResults = await Promise.all(titleSearches);
     for (const results of titleResults) {
       addBooks(results, 'film', 100);
     }
 
-    // 2. Search by director (high priority)
+    // 2. Search by director — FR then EN
     if (director) {
       const directorResults = await Promise.all([
-        searchGoogleBooks(`"${director}" cinéma réalisateur`, 5),
-        searchGoogleBooks(`"${director}" filmmaker cinema`, 5),
+        searchGoogleBooks(`"${director}" cinéma réalisateur`, 5, 'fr'),
+        searchGoogleBooks(`"${director}" filmmaker cinema`, 5, 'en'),
       ]);
       for (const results of directorResults) {
         addBooks(results, 'director', 70);
       }
     }
 
-    // 3. Search by main cast (medium priority)
+    // 3. Search by main cast — FR then EN
     if (cast && cast.length > 0) {
       const mainCast = cast.slice(0, 2);
       const castResults = await Promise.all(
-        mainCast.map((name: string) => searchGoogleBooks(`"${name}" acteur cinéma`, 3))
+        mainCast.flatMap((name: string) => [
+          searchGoogleBooks(`"${name}" acteur cinéma`, 3, 'fr'),
+          searchGoogleBooks(`"${name}" actor cinema`, 3, 'en'),
+        ])
       );
       for (const results of castResults) {
         addBooks(results, 'cast', 50);
       }
     }
 
-    // 4. Search by genre (lower priority)
+    // 4. Search by genre — FR then EN
     if (genres && genres.length > 0) {
       const genreQuery = genres.slice(0, 2).join(' ');
-      const genreResults = await searchGoogleBooks(`${genreQuery} cinéma analyse livre`, 5);
-      addBooks(genreResults, 'genre', 30);
+      const genreResults = await Promise.all([
+        searchGoogleBooks(`${genreQuery} cinéma analyse livre`, 5, 'fr'),
+        searchGoogleBooks(`${genreQuery} cinema analysis book`, 5, 'en'),
+      ]);
+      for (const results of genreResults) {
+        addBooks(results, 'genre', 30);
+      }
     }
 
     // Boost books that mention the film title in their title/description
