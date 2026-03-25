@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 interface PhysicalMediaSectionProps {
   movieId: number;
   filmTitle: string;
+  originalTitle?: string;
   filmYear: number;
 }
 
@@ -30,7 +31,7 @@ const RETAILER_COLORS: Record<string, string> = {
   "Spectrum Films": "text-violet-400",
 };
 
-export function PhysicalMediaSection({ movieId, filmTitle, filmYear }: PhysicalMediaSectionProps) {
+export function PhysicalMediaSection({ movieId, filmTitle, originalTitle, filmYear }: PhysicalMediaSectionProps) {
   const {
     upcomingReleases,
     hasPhysicalRelease,
@@ -42,7 +43,7 @@ export function PhysicalMediaSection({ movieId, filmTitle, filmYear }: PhysicalM
   const {
     data: frenchEditions,
     isLoading: isLoadingEditions,
-  } = useFrenchEditions(filmTitle, filmYear, true);
+  } = useFrenchEditions(filmTitle, filmYear, true, originalTitle);
 
   const isLoading = isLoadingTMDB || isLoadingEditions;
 
