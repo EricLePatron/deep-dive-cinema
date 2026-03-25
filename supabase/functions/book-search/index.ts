@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 interface BookResult {
@@ -24,14 +24,13 @@ async function searchGoogleBooks(query: string, maxResults = 10, lang?: string):
   const res = await fetch(url);
   if (!res.ok) return [];
   const data = await res.json();
-  return (data.items || []).map((item: any) => ({ ...item, _lang: lang || 'any' }));
+  return data.items || [];
 }
 
 function mapBookItem(item: any, category: BookResult['category'], score: number): BookResult {
   const info = item.volumeInfo || {};
   const imageLinks = info.imageLinks || {};
-  const lang = info.language || item._lang || 'unknown';
-  // French books get a strong bonus
+  const lang = info.language || 'unknown';
   const langBonus = lang === 'fr' ? 40 : lang === 'en' ? 0 : -10;
   return {
     id: item.id,
@@ -47,13 +46,122 @@ function mapBookItem(item: any, category: BookResult['category'], score: number)
   };
 }
 
+async function aiRankBooks(
+  books: BookResult[],
+  filmTitle: string,
+  originalTitle: string | undefined,
+  director: string | undefined,
+  cast: string[] | undefined,
+  genres: string[] | undefined
+): Promise<BookResult[]> {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY || books.length === 0) return books;
+
+  const booksForAI = books.map((b, i) => ({
+    index: i,
+    title: b.title,
+    authors: b.authors.join(', '),
+    description: b.description.substring(0, 300),
+    publisher: b.publisher,
+    category: b.category,
+  }));
+
+  const prompt = `Tu es un expert en cinéma et en littérature sur le cinéma.
+Voici un film : "${filmTitle}"${originalTitle && originalTitle !== filmTitle ? ` (titre original : "${originalTitle}")` : ''}
+${director ? `Réalisateur : ${director}` : ''}
+${cast?.length ? `Acteurs principaux : ${cast.slice(0, 5).join(', ')}` : ''}
+${genres?.length ? `Genres : ${genres.join(', ')}` : ''}
+
+Voici une liste de livres trouvés. Évalue la pertinence de chaque livre par rapport au film.
+Attribue un score de 0 à 100 :
+- 90-100 : livre directement sur ce film spécifique
+- 70-89 : livre sur le réalisateur ou un aspect majeur du film
+- 50-69 : livre sur un acteur principal ou le mouvement cinématographique
+- 30-49 : livre sur le genre ou le contexte culturel du film
+- 0-29 : peu ou pas pertinent
+
+Livres :
+${JSON.stringify(booksForAI, null, 1)}`;
+
+  try {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: "Tu évalues la pertinence de livres par rapport à un film. Réponds uniquement avec le JSON demandé." },
+          { role: "user", content: prompt },
+        ],
+        tools: [{
+          type: "function",
+          function: {
+            name: "rank_books",
+            description: "Return relevance scores for each book",
+            parameters: {
+              type: "object",
+              properties: {
+                rankings: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      index: { type: "number", description: "Book index from the list" },
+                      score: { type: "number", description: "Relevance score 0-100" },
+                      category: { type: "string", enum: ["film", "director", "cast", "genre"], description: "Best fitting category" },
+                    },
+                    required: ["index", "score", "category"],
+                    additionalProperties: false,
+                  },
+                },
+              },
+              required: ["rankings"],
+              additionalProperties: false,
+            },
+          },
+        }],
+        tool_choice: { type: "function", function: { name: "rank_books" } },
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("AI ranking failed:", response.status);
+      return books;
+    }
+
+    const data = await response.json();
+    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall) return books;
+
+    const rankings = JSON.parse(toolCall.function.arguments).rankings as Array<{ index: number; score: number; category: string }>;
+
+    for (const r of rankings) {
+      if (r.index >= 0 && r.index < books.length) {
+        books[r.index].relevanceScore = r.score + (books[r.index].relevanceScore > 0 ? 40 : 0); // keep lang bonus
+        if (['film', 'director', 'cast', 'genre'].includes(r.category)) {
+          books[r.index].category = r.category as BookResult['category'];
+        }
+      }
+    }
+
+    // Filter out irrelevant books (score < 25 after AI ranking)
+    return books.filter(b => b.relevanceScore >= 25);
+  } catch (e) {
+    console.error("AI ranking error:", e);
+    return books;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { filmTitle, originalTitle, director, cast, genres, year } = await req.json();
+    const { filmTitle, originalTitle, director, cast, genres } = await req.json();
 
     if (!filmTitle) {
       return new Response(JSON.stringify({ error: 'filmTitle is required' }), {
@@ -74,33 +182,36 @@ serve(async (req) => {
       }
     };
 
-    // 1. Search by film title — FR then EN
+    // 1. Film title — FR then EN
     const titleSearches = [
-      searchGoogleBooks(`"${filmTitle}" cinema livre`, 5, 'fr'),
-      searchGoogleBooks(`"${filmTitle}" film analyse`, 5, 'fr'),
-      searchGoogleBooks(`"${filmTitle}" film book`, 5, 'en'),
+      searchGoogleBooks(`"${filmTitle}" cinema`, 5, 'fr'),
+      searchGoogleBooks(`"${filmTitle}" film`, 5, 'fr'),
     ];
     if (originalTitle && originalTitle !== filmTitle) {
-      titleSearches.push(searchGoogleBooks(`"${originalTitle}" film book`, 5, 'en'));
-      titleSearches.push(searchGoogleBooks(`"${originalTitle}" cinema livre`, 5, 'fr'));
+      titleSearches.push(searchGoogleBooks(`"${originalTitle}" film`, 5, 'en'));
+      titleSearches.push(searchGoogleBooks(`"${originalTitle}" cinema`, 5, 'fr'));
     }
+    // Also search without quotes for broader results
+    titleSearches.push(searchGoogleBooks(`${filmTitle} analyse film livre`, 5, 'fr'));
+    titleSearches.push(searchGoogleBooks(`${filmTitle} film analysis book`, 5, 'en'));
+
     const titleResults = await Promise.all(titleSearches);
     for (const results of titleResults) {
-      addBooks(results, 'film', 100);
+      addBooks(results, 'film', 80);
     }
 
-    // 2. Search by director — FR then EN
+    // 2. Director — FR then EN
     if (director) {
       const directorResults = await Promise.all([
-        searchGoogleBooks(`"${director}" cinéma réalisateur`, 5, 'fr'),
-        searchGoogleBooks(`"${director}" filmmaker cinema`, 5, 'en'),
+        searchGoogleBooks(`"${director}" cinéma`, 5, 'fr'),
+        searchGoogleBooks(`"${director}" cinema filmmaker`, 5, 'en'),
       ]);
       for (const results of directorResults) {
-        addBooks(results, 'director', 70);
+        addBooks(results, 'director', 60);
       }
     }
 
-    // 3. Search by main cast — FR then EN
+    // 3. Main cast — FR then EN
     if (cast && cast.length > 0) {
       const mainCast = cast.slice(0, 2);
       const castResults = await Promise.all(
@@ -110,40 +221,29 @@ serve(async (req) => {
         ])
       );
       for (const results of castResults) {
-        addBooks(results, 'cast', 50);
+        addBooks(results, 'cast', 40);
       }
     }
 
-    // 4. Search by genre — FR then EN
+    // 4. Genre — FR then EN
     if (genres && genres.length > 0) {
       const genreQuery = genres.slice(0, 2).join(' ');
       const genreResults = await Promise.all([
-        searchGoogleBooks(`${genreQuery} cinéma analyse livre`, 5, 'fr'),
-        searchGoogleBooks(`${genreQuery} cinema analysis book`, 5, 'en'),
+        searchGoogleBooks(`${genreQuery} cinéma analyse`, 5, 'fr'),
+        searchGoogleBooks(`${genreQuery} cinema analysis`, 5, 'en'),
       ]);
       for (const results of genreResults) {
         addBooks(results, 'genre', 30);
       }
     }
 
-    // Boost books that mention the film title in their title/description
-    const titleLower = filmTitle.toLowerCase();
-    const directorLower = (director || '').toLowerCase();
-    for (const book of allBooks) {
-      const bookTitleLower = book.title.toLowerCase();
-      const descLower = book.description.toLowerCase();
-      if (bookTitleLower.includes(titleLower)) book.relevanceScore += 50;
-      if (descLower.includes(titleLower)) book.relevanceScore += 20;
-      if (directorLower && bookTitleLower.includes(directorLower)) book.relevanceScore += 15;
-      if (directorLower && descLower.includes(directorLower)) book.relevanceScore += 10;
-      // Penalize very short descriptions
-      if (book.description.length < 20) book.relevanceScore -= 10;
-    }
+    // Use AI to rank and filter books
+    const rankedBooks = await aiRankBooks(allBooks, filmTitle, originalTitle, director, cast, genres);
 
     // Sort by relevance score
-    allBooks.sort((a, b) => b.relevanceScore - a.relevanceScore);
+    rankedBooks.sort((a, b) => b.relevanceScore - a.relevanceScore);
 
-    return new Response(JSON.stringify({ books: allBooks }), {
+    return new Response(JSON.stringify({ books: rankedBooks }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
