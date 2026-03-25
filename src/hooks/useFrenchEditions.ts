@@ -9,9 +9,9 @@ export interface FrenchEdition {
   format: string;
 }
 
-async function searchFrenchEditions(filmTitle: string, filmYear: number): Promise<FrenchEdition[]> {
+async function searchFrenchEditions(filmTitle: string, filmYear: number, originalTitle?: string): Promise<FrenchEdition[]> {
   const { data, error } = await supabase.functions.invoke("french-editions-search", {
-    body: { filmTitle, filmYear },
+    body: { filmTitle, filmYear, originalTitle },
   });
 
   if (error) throw new Error(error.message);
@@ -19,10 +19,10 @@ async function searchFrenchEditions(filmTitle: string, filmYear: number): Promis
   return data.editions || [];
 }
 
-export function useFrenchEditions(filmTitle: string, filmYear: number, enabled: boolean) {
+export function useFrenchEditions(filmTitle: string, filmYear: number, enabled: boolean, originalTitle?: string) {
   return useQuery({
-    queryKey: ["french-editions", filmTitle, filmYear],
-    queryFn: () => searchFrenchEditions(filmTitle, filmYear),
+    queryKey: ["french-editions", filmTitle, filmYear, originalTitle],
+    queryFn: () => searchFrenchEditions(filmTitle, filmYear, originalTitle),
     enabled: enabled && !!filmTitle,
     staleTime: 1000 * 60 * 60, // 1h cache
     retry: 1,

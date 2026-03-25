@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { filmTitle, filmYear } = await req.json();
+    const { filmTitle, filmYear, originalTitle } = await req.json();
 
     if (!filmTitle) {
       return new Response(
@@ -35,34 +35,51 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Search for French editions across specialty retailers
-    const query = `"${filmTitle}" ${filmYear || ''} blu-ray DVD édition française site:potemkine.fr OR site:carlottafilms.com OR site:fnac.com OR site:amazon.fr OR site:wildsidevideoclub.com OR site:spectrumfilms.fr`;
+    const sitesFilter = 'site:potemkine.fr OR site:carlottafilms.com OR site:fnac.com OR site:amazon.fr OR site:wildsidevideoclub.com OR site:spectrumfilms.fr';
 
-    console.log('Searching French editions:', query);
-
-    const response = await fetch('https://api.firecrawl.dev/v1/search', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        query,
-        limit: 15,
-        lang: 'fr',
-        country: 'FR',
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error('Firecrawl error:', data);
-      return new Response(
-        JSON.stringify({ success: false, error: data.error || `Search failed: ${response.status}` }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Build multiple search queries: French title first, then original title if different
+    const titles = [filmTitle];
+    if (originalTitle && originalTitle !== filmTitle) {
+      titles.push(originalTitle);
     }
+
+    const allResults: any[] = [];
+
+    for (const title of titles) {
+      const query = `"${title}" ${filmYear || ''} blu-ray DVD ${sitesFilter}`;
+      console.log('Searching French editions:', query);
+
+      const response = await fetch('https://api.firecrawl.dev/v1/search', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query,
+          limit: 15,
+          lang: 'fr',
+          country: 'FR',
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('Firecrawl error:', data);
+        continue; // Try next title instead of failing
+      }
+
+      allResults.push(...(data.data || []));
+    }
+
+    // Deduplicate by URL
+    const seen = new Set<string>();
+    const data = { data: allResults.filter((r: any) => {
+      if (!r.url || seen.has(r.url)) return false;
+      seen.add(r.url);
+      return true;
+    })};
 
     // Process results: identify retailer and format
     const editions = (data.data || []).map((result: any) => {
