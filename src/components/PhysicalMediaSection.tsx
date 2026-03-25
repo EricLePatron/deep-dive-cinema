@@ -154,7 +154,16 @@ export function PhysicalMediaSection({ movieId, filmTitle, originalTitle, filmYe
                     rel="noopener noreferrer"
                     className="group flex items-start gap-4 p-4 rounded-xl bg-muted/20 border border-border/50 hover:border-primary/30 hover:bg-muted/40 transition-all"
                   >
-                    <Store className={cn("h-5 w-5 mt-0.5 flex-shrink-0", RETAILER_COLORS[edition.retailer] || "text-muted-foreground")} />
+                    {edition.image ? (
+                      <img
+                        src={edition.image}
+                        alt={edition.title}
+                        className="w-16 h-20 object-cover rounded-md flex-shrink-0 bg-muted"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      />
+                    ) : (
+                      <Store className={cn("h-5 w-5 mt-0.5 flex-shrink-0", RETAILER_COLORS[edition.retailer] || "text-muted-foreground")} />
+                    )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">

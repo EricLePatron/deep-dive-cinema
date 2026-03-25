@@ -12,6 +12,22 @@ const FRENCH_RETAILERS = [
   { name: "Spectrum Films", domain: "spectrumfilms.fr" },
 ];
 
+// Higher = more relevant
+const FORMAT_PRIORITY: Record<string, number> = {
+  '4K UHD': 4,
+  'Collector': 3,
+  'Blu-ray': 2,
+  'DVD': 1,
+};
+
+function detectFormat(text: string): string {
+  const lower = text.toLowerCase();
+  if (lower.includes('4k') || lower.includes('uhd')) return '4K UHD';
+  if (lower.includes('steelbook') || lower.includes('collector') || lower.includes('coffret')) return 'Collector';
+  if (lower.includes('blu-ray') || lower.includes('bluray') || lower.includes('blu ray')) return 'Blu-ray';
+  return 'DVD';
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -37,7 +53,6 @@ Deno.serve(async (req) => {
 
     const sitesFilter = 'site:potemkine.fr OR site:carlottafilms.com OR site:fnac.com OR site:amazon.fr OR site:wildsidevideoclub.com OR site:spectrumfilms.fr';
 
-    // Build multiple search queries: French title first, then original title if different
     const titles = [filmTitle];
     if (originalTitle && originalTitle !== filmTitle) {
       titles.push(originalTitle);
@@ -67,7 +82,7 @@ Deno.serve(async (req) => {
 
       if (!response.ok) {
         console.error('Firecrawl error:', data);
-        continue; // Try next title instead of failing
+        continue;
       }
 
       allResults.push(...(data.data || []));
@@ -75,27 +90,41 @@ Deno.serve(async (req) => {
 
     // Deduplicate by URL
     const seen = new Set<string>();
-    const data = { data: allResults.filter((r: any) => {
+    const uniqueResults = allResults.filter((r: any) => {
       if (!r.url || seen.has(r.url)) return false;
       seen.add(r.url);
       return true;
-    })};
+    });
 
-    // Process results: identify retailer and format
-    const editions = (data.data || []).map((result: any) => {
+    const filmTitleLower = filmTitle.toLowerCase();
+    const originalTitleLower = (originalTitle || '').toLowerCase();
+
+    // Process and score results
+    const editions = uniqueResults.map((result: any) => {
       const url = result.url || '';
       const title = result.title || '';
       const description = result.description || '';
       const combined = `${title} ${description}`.toLowerCase();
 
-      // Detect retailer
       const retailer = FRENCH_RETAILERS.find(r => url.includes(r.domain));
+      const format = detectFormat(combined);
 
-      // Detect format
-      let format = 'DVD';
-      if (combined.includes('4k') || combined.includes('uhd')) format = '4K UHD';
-      else if (combined.includes('blu-ray') || combined.includes('bluray') || combined.includes('blu ray')) format = 'Blu-ray';
-      else if (combined.includes('steelbook') || combined.includes('collector') || combined.includes('coffret')) format = 'Collector';
+      // Extract image from Firecrawl metadata if available
+      const image = result.metadata?.ogImage || result.metadata?.image || result.image || null;
+
+      // Relevance scoring
+      let score = 0;
+      // Title match
+      if (combined.includes(filmTitleLower)) score += 10;
+      if (originalTitleLower && combined.includes(originalTitleLower)) score += 8;
+      // Format priority
+      score += (FORMAT_PRIORITY[format] || 0) * 2;
+      // Known retailer bonus
+      if (retailer) score += 3;
+      // Combo editions (Blu-ray + DVD) are usually the most relevant
+      if (combined.includes('combo')) score += 5;
+      // Has image = likely a real product page
+      if (image) score += 2;
 
       return {
         url,
@@ -103,13 +132,21 @@ Deno.serve(async (req) => {
         description: result.description || '',
         retailer: retailer?.name || new URL(url).hostname,
         format,
+        image,
+        score,
       };
     }).filter((e: any) => e.url);
 
-    console.log(`Found ${editions.length} French editions`);
+    // Sort by relevance score descending
+    editions.sort((a: any, b: any) => b.score - a.score);
+
+    // Remove score from output
+    const cleanEditions = editions.map(({ score, ...rest }: any) => rest);
+
+    console.log(`Found ${cleanEditions.length} French editions`);
 
     return new Response(
-      JSON.stringify({ success: true, editions }),
+      JSON.stringify({ success: true, editions: cleanEditions }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
