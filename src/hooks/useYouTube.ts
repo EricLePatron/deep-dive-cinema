@@ -13,11 +13,11 @@ export interface CategorizedVideos {
   all: YouTubeVideo[];
 }
 
-export function useFilmVideos(filmTitle: string, year?: number, director?: string) {
+export function useFilmVideos(filmTitle: string, year?: number, director?: string, originalTitle?: string) {
   return useQuery<CategorizedVideos, Error>({
-    queryKey: ['youtube', 'film-videos', filmTitle, year, director],
+    queryKey: ['youtube', 'film-videos', filmTitle, year, director, originalTitle],
     queryFn: async () => {
-      const videos = await searchFilmVideos(filmTitle, year, director);
+      const videos = await searchFilmVideos(filmTitle, year, director, originalTitle);
       const categorized = categorizeVideos(videos);
       return {
         ...categorized,
