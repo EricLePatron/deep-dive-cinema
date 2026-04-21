@@ -384,7 +384,7 @@ export function categorizeVideos(videos: YouTubeVideo[]): {
     'décors', 'costumes', 'cascades',
     // Interviews of cast / crew
     'interview', 'entrevue', 'entretien', 'rencontre avec', 'rencontre entre',
-    'press conference', 'press junket', 'roundtable', 'actors on actors',
+    'press conference', 'press junket', 'press tour',
     'director interview', 'cast interview', 'conférence de presse',
   ];
 
@@ -401,9 +401,15 @@ export function categorizeVideos(videos: YouTubeVideo[]): {
     'in conversation', 'conversation with', 'talks about', 'discusses',
   'présenté par', 'présentation de', 'introduit par', 'séance présentée',
   'avant-séance', 'ciné-club', 'cine-club', 'leçon de cinéma',
+    // Cross-interviews & roundtables (editorial format, not production BTS)
+    'actors on actors', 'directors on directors', 'roundtable',
+    'close up with', 'screen talks', 'in conversation with',
     // Cinémathèque / institutions
     'cinémathèque', 'cinematheque', 'forum des images', 'institut lumière',
     'criterion', 'retrospective', 'rétrospective', 'tribute', 'hommage',
+    'film at lincoln center', 'lincoln center', 'metrograph', 'film forum',
+    'bamcinematek', 'bam cinema', 'moma', 'anthology film archives',
+    'academy museum', 'bfi southbank', 'cineteca', 'arsenal berlin',
     // Reviews / critiques
     'critique', 'review in-depth', 'film analysis', 'mon avis', 'que vaut', 'vaut-il',
   ];
