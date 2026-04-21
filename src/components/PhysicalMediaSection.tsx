@@ -17,19 +17,19 @@ interface PhysicalMediaSectionProps {
 }
 
 const FORMAT_COLORS: Record<string, string> = {
-  "4K UHD": "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  "Blu-ray": "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  "DVD": "bg-muted text-muted-foreground border-border",
-  "Collector": "bg-purple-500/10 text-purple-400 border-purple-500/20",
+  "4K UHD": "bg-foreground/10 text-foreground border-foreground/20",
+  "Blu-ray": "bg-muted/50 text-foreground border-border",
+  "DVD": "bg-muted/30 text-muted-foreground border-border/60",
+  "Collector": "bg-foreground/10 text-foreground border-foreground/20",
 };
 
 const RETAILER_COLORS: Record<string, string> = {
-  "Potemkine": "text-orange-400",
-  "Carlotta Films": "text-rose-400",
-  "Fnac": "text-yellow-400",
-  "Amazon.fr": "text-sky-400",
-  "Wild Side": "text-emerald-400",
-  "Spectrum Films": "text-violet-400",
+  "Potemkine": "text-foreground",
+  "Carlotta Films": "text-foreground",
+  "Fnac": "text-foreground",
+  "Amazon.fr": "text-foreground",
+  "Wild Side": "text-foreground",
+  "Spectrum Films": "text-foreground",
 };
 
 const TOP_COUNT = 3;

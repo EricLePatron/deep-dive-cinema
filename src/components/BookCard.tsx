@@ -6,32 +6,17 @@ interface BookCardProps {
   book: BookResult;
 }
 
-const categoryColors: Record<BookResult['category'], string> = {
-  film: "bg-primary/10 text-primary border-primary/20",
-  director: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-  cast: "bg-cyan-500/10 text-cyan-500 border-cyan-500/20",
-  genre: "bg-violet-500/10 text-violet-500 border-violet-500/20",
-};
-
-const retailerColors: Record<string, string> = {
-  Fnac: "bg-yellow-500/10 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/20",
-  Cultura: "bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/20",
-  "Amazon.fr": "bg-sky-500/10 text-sky-400 border-sky-500/30 hover:bg-sky-500/20",
-  Amazon: "bg-sky-500/10 text-sky-400 border-sky-500/30 hover:bg-sky-500/20",
-  Decitre: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20",
-};
-
 export function BookCard({ book }: BookCardProps) {
   const isFrench = book.language === 'fr';
   return (
-    <div className="group flex flex-col gap-3 p-4 rounded-xl bg-muted/30 border border-border/50 hover:border-primary/30 hover:bg-muted/50 transition-all">
+    <div className="group flex flex-col gap-3 p-4 rounded-lg bg-muted/20 border border-border/40 hover:border-border hover:bg-muted/30 transition-colors">
       <div className="flex gap-4">
       {/* Cover */}
       <a
         href={book.infoLink}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex-shrink-0 w-20 h-28 rounded-lg overflow-hidden bg-muted shadow-md"
+        className="flex-shrink-0 w-20 h-28 rounded-md overflow-hidden bg-muted"
       >
         {book.imageUrl ? (
           <img
@@ -49,14 +34,13 @@ export function BookCard({ book }: BookCardProps) {
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
-          <span className={cn("inline-block px-2 py-0.5 text-[10px] font-medium rounded-full border", categoryColors[book.category])}>
-            {categoryLabels[book.category]}
-          </span>
+        <div className="flex items-center gap-1.5 mb-1.5 flex-wrap text-[10px] uppercase tracking-wider text-muted-foreground">
+          <span>{categoryLabels[book.category]}</span>
           {isFrench && (
-            <span className="inline-block px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/30">
-              🇫🇷 FR
-            </span>
+            <>
+              <span className="text-border">·</span>
+              <span>FR</span>
+            </>
           )}
         </div>
         <a
@@ -65,7 +49,7 @@ export function BookCard({ book }: BookCardProps) {
           rel="noopener noreferrer"
           className="block"
         >
-          <h4 className="font-medium text-foreground text-sm leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+          <h4 className="font-medium text-foreground text-sm leading-tight line-clamp-2">
           {book.title}
           </h4>
         </a>
@@ -85,21 +69,17 @@ export function BookCard({ book }: BookCardProps) {
 
       {/* Retailer purchase links */}
       {book.retailers && book.retailers.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border/40">
-          <ShoppingCart className="h-3.5 w-3.5 text-muted-foreground self-center" />
+        <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border/30 items-center">
+          <ShoppingCart className="h-3 w-3 text-muted-foreground" />
           {book.retailers.map((r) => (
             <a
               key={r.name}
               href={r.url}
               target="_blank"
               rel="noopener noreferrer"
-              className={cn(
-                "inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded-md border transition-colors",
-                retailerColors[r.name] || "bg-muted text-muted-foreground border-border hover:bg-muted/80"
-              )}
+              className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-md border border-border/50 text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/40 transition-colors"
             >
               {r.name}
-              <ExternalLink className="h-2.5 w-2.5" />
             </a>
           ))}
         </div>

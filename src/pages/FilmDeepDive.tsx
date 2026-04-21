@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   Star,
   Clock,
-  Calendar,
   User,
   Book,
   Video,
@@ -24,7 +23,6 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Header } from "@/components/Header";
 import { ContentCard } from "@/components/ContentCard";
-import { ContentSection } from "@/components/ContentSection";
 import { FilmCard } from "@/components/FilmCard";
 import { BookCard } from "@/components/BookCard";
 import { YouTubeVideoCard } from "@/components/YouTubeVideoCard";
@@ -34,71 +32,93 @@ import { useFilmVideos } from "@/hooks/useYouTube";
 import { useFilmPodcasts } from "@/hooks/usePodcast";
 import { useLetterboxdProfile, useLetterboxdFeed } from "@/hooks/useLetterboxd";
 import { getPosterUrl } from "@/services/tmdb";
-import {
-  mockArticles,
-} from "@/data/mockData";
-import { useFilmBooks, categoryLabels, BookResult } from "@/hooks/useFilmBooks";
+import { mockArticles } from "@/data/mockData";
+import { useFilmBooks } from "@/hooks/useFilmBooks";
 import { cn } from "@/lib/utils";
 import { PhysicalMediaSection } from "@/components/PhysicalMediaSection";
 
-const tabs = [
-  { id: "all", label: "All Content", icon: null },
-  { id: "books", label: "Books", icon: Book },
-  { id: "docs", label: "Behind the Scenes", icon: Video },
-  { id: "youtube", label: "Video Essays", icon: Play },
-  { id: "podcasts", label: "Podcasts", icon: Headphones },
-  { id: "articles", label: "Articles", icon: FileText },
-  { id: "interviews", label: "Interviews", icon: Mic },
-  { id: "editions", label: "Éditions", icon: Disc3 },
-];
+const PREVIEW = 3;
+
+interface SectionHeaderProps {
+  title: string;
+  count?: number;
+  onViewAll?: () => void;
+}
+
+function SectionHeader({ title, count, onViewAll }: SectionHeaderProps) {
+  return (
+    <div className="flex items-baseline justify-between mb-5 pb-3 border-b border-border/40">
+      <div className="flex items-baseline gap-3">
+        <h2 className="font-display text-xl font-medium text-foreground tracking-tight">
+          {title}
+        </h2>
+        {count !== undefined && count > 0 && (
+          <span className="text-xs text-muted-foreground tabular-nums">{count}</span>
+        )}
+      </div>
+      {onViewAll && (
+        <button
+          onClick={onViewAll}
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 group"
+        >
+          Voir tout
+          <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+function SectionLoader() {
+  return (
+    <div className="flex items-center justify-center py-12">
+      <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />
+    </div>
+  );
+}
+
+function EmptyState({ message }: { message: string }) {
+  return <p className="text-sm text-muted-foreground/70 py-6">{message}</p>;
+}
 
 export default function FilmDeepDive() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("all");
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [activeTab, setActiveTab] = useState("overview");
 
-  const toggleSection = useCallback((section: string) => {
-    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
-  }, []);
-
-  const PREVIEW_COUNT = 3;
   const movieId = id ? parseInt(id, 10) : undefined;
   const { data: film, isLoading, error } = useMovieDetails(movieId);
   const { data: similarMoviesData, isLoading: loadingSimilar } = useSimilarMovies(movieId);
 
-  // Fetch YouTube videos based on film title + director for accuracy
   const filmTitle = film?.title || "";
   const filmYear = film?.year;
   const filmDirector = film?.director || "";
 
   const { data: videos, isLoading: loadingVideos } = useFilmVideos(filmTitle, filmYear, filmDirector);
-  
-  // Fetch podcasts based on film title + director
   const { data: podcasts, isLoading: loadingPodcasts } = useFilmPodcasts(filmTitle, filmDirector);
 
-  // Fetch books based on film info
-  const castNames = film?.cast?.map(c => c.name) || [];
+  const castNames = film?.cast?.map((c) => c.name) || [];
   const { data: books, isLoading: loadingBooks } = useFilmBooks(
     filmTitle, film?.originalTitle, filmDirector, castNames, film?.genres
   );
 
-  // Letterboxd status
   const { profile } = useLetterboxdProfile();
   const { data: letterboxdFilms } = useLetterboxdFeed(profile?.username);
   const letterboxdEntry = letterboxdFilms?.find(
     (f) => f.filmTitle.toLowerCase() === filmTitle.toLowerCase()
   );
-  const totalVideos = videos?.all.length || 0;
-  const totalPodcasts = podcasts?.length || 0;
-  const totalBooks = books?.length || 0;
-  const totalContent =
-    totalBooks +
-    totalVideos +
-    totalPodcasts +
-    mockArticles.length;
 
-  // Transform similar movies to FilmCard format
+  const totalBooks = books?.length || 0;
+  const totalBts = videos?.behindTheScenes.length || 0;
+  const totalAnalysis = videos?.analysis.length || 0;
+  const totalInterviews = videos?.interviews.length || 0;
+  const totalPodcasts = podcasts?.length || 0;
+
+  const goToTab = useCallback((tab: string) => {
+    setActiveTab(tab);
+    window.scrollTo({ top: document.getElementById("content")?.offsetTop || 0, behavior: "smooth" });
+  }, []);
+
   const similarFilms = similarMoviesData?.results.slice(0, 6).map((movie) => ({
     id: movie.id,
     title: movie.title,
@@ -119,7 +139,7 @@ export default function FilmDeepDive() {
       <div className="dark min-h-screen bg-background">
         <Header />
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-12 w-12 text-primary animate-spin" />
+          <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
         </div>
       </div>
     );
@@ -130,12 +150,11 @@ export default function FilmDeepDive() {
       <div className="dark min-h-screen bg-background">
         <Header />
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-          <Film className="h-16 w-16 text-muted-foreground" />
-          <h2 className="font-display text-2xl font-bold text-foreground">Film not found</h2>
-          <p className="text-muted-foreground">We couldn't find this film. Please try another search.</p>
-          <Button variant="cinema" onClick={() => navigate("/")}>
+          <Film className="h-12 w-12 text-muted-foreground" />
+          <h2 className="font-display text-xl font-semibold text-foreground">Film introuvable</h2>
+          <Button variant="cinema-outline" onClick={() => navigate("/")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to search
+            Retour
           </Button>
         </div>
       </div>
@@ -146,480 +165,312 @@ export default function FilmDeepDive() {
     <div className="dark min-h-screen bg-background">
       <Header />
 
-      {/* Hero with backdrop */}
-      <section className="relative pt-16">
-        {/* Backdrop image */}
-        <div className="absolute inset-0 h-[70vh] overflow-hidden">
-          {film.backdropUrl ? (
-            <img
-              src={film.backdropUrl}
-              alt=""
-              className="w-full h-full object-cover object-top"
-            />
-          ) : (
-            <div className="w-full h-full bg-muted" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/20" />
-          <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-transparent to-background/60" />
-        </div>
+      {/* Hero immersif minimaliste */}
+      <section className="relative min-h-[85vh] flex items-end overflow-hidden">
+        {film.backdropUrl ? (
+          <img
+            src={film.backdropUrl}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-muted" />
+        )}
+        {/* Gradient overlays — monochrome, dramatic */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/85 to-background/10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/70 via-background/20 to-transparent" />
 
-        {/* Content overlay */}
-        <div className="relative z-10 container mx-auto px-6 pt-20 pb-10">
-          {/* Back button */}
+        {/* Top nav */}
+        <div className="absolute top-20 left-0 right-0 z-20 container mx-auto px-6">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span className="text-sm">Back to search</span>
+            Retour
           </Link>
+        </div>
 
-          <div className="flex flex-col lg:flex-row gap-10">
-            {/* Poster */}
-            <div className="flex-shrink-0">
-              <div className="w-64 poster-shadow rounded-xl overflow-hidden cinema-glow">
-                {film.posterUrl ? (
-                  <img
-                    src={film.posterUrl}
-                    alt={film.title}
-                    className="w-full h-auto"
-                  />
-                ) : (
-                  <div className="w-full aspect-[2/3] bg-muted flex items-center justify-center">
-                    <Film className="h-16 w-16 text-muted-foreground" />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Film Info */}
-            <div className="flex-1 stagger-children">
-              {/* Genres */}
-              <div className="flex flex-wrap gap-2 mb-4">
-                {film.genres.map((genre) => (
-                  <span
-                    key={genre}
-                    className="px-3 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary border border-primary/20"
-                  >
-                    {genre}
-                  </span>
-                ))}
-              </div>
-
-              {/* Title */}
-              <h1 className="font-display text-4xl md:text-5xl font-bold text-foreground mb-3">
-                {film.title}
-              </h1>
-
-              {/* Meta info */}
-              <div className="flex flex-wrap items-center gap-4 text-muted-foreground mb-6">
-                <span className="flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4" />
-                  {film.year}
-                </span>
-                {film.runtime > 0 && (
+        {/* Hero content — centered minimal */}
+        <div className="relative z-10 container mx-auto px-6 pb-20">
+          <div className="max-w-3xl">
+            {/* Year + runtime + rating */}
+            <div className="flex items-center gap-4 text-xs uppercase tracking-widest text-muted-foreground mb-4 font-medium">
+              <span>{film.year}</span>
+              {film.runtime > 0 && (
+                <>
+                  <span className="text-border">·</span>
                   <span className="flex items-center gap-1.5">
-                    <Clock className="h-4 w-4" />
+                    <Clock className="h-3 w-3" />
                     {film.runtime} min
                   </span>
-                )}
-                <span className="flex items-center gap-1.5">
-                  <Star className="h-4 w-4 text-primary fill-primary" />
-                  {film.rating.toFixed(1)}
-                </span>
-                {film.director && (
-                  <Link
-                    to={`/director/${film.directorId}`}
-                    className="flex items-center gap-1.5 text-primary hover:underline"
-                  >
-                    <User className="h-4 w-4" />
-                    {film.director}
-                  </Link>
-                )}
-              </div>
-
-              {/* Synopsis */}
-              <p className="text-lg text-foreground/80 leading-relaxed max-w-2xl mb-8">
-                {film.synopsis}
-              </p>
-
-              {/* Letterboxd Status */}
-              {letterboxdEntry && (
-                <div className="flex items-center gap-3 mb-8 px-4 py-3 rounded-xl bg-accent/50 border border-accent w-fit">
-                  <Eye className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="text-sm font-medium text-foreground">
-                      Vu sur Letterboxd
-                      {letterboxdEntry.watchedDate && (
-                        <span className="text-muted-foreground font-normal"> — {new Date(letterboxdEntry.watchedDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                      )}
-                    </p>
-                    {letterboxdEntry.rating > 0 && (
-                      <div className="flex items-center gap-1 mt-0.5">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Star
-                            key={i}
-                            className={cn(
-                              "h-3.5 w-3.5",
-                              i < Math.round(letterboxdEntry.rating) ? "text-primary fill-primary" : "text-muted-foreground"
-                            )}
-                          />
-                        ))}
-                        <span className="text-xs text-muted-foreground ml-1">{letterboxdEntry.rating}/5</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                </>
               )}
-
-              {/* Cast */}
-              {film.cast.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-sm font-medium text-muted-foreground mb-3">
-                    PRINCIPAL CAST
-                  </h3>
-                  <div className="flex flex-wrap gap-4">
-                    {film.cast.slice(0, 4).map((member) => (
-                      <div
-                        key={member.name}
-                        className="flex items-center gap-3 bg-muted/30 rounded-full pr-4"
-                      >
-                        <div className="w-10 h-10 rounded-full overflow-hidden bg-muted">
-                          {member.photoUrl ? (
-                            <img
-                              src={member.photoUrl}
-                              alt={member.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <User className="h-4 w-4 text-muted-foreground" />
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">
-                            {member.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {member.character}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              {film.rating > 0 && (
+                <>
+                  <span className="text-border">·</span>
+                  <span className="flex items-center gap-1.5">
+                    <Star className="h-3 w-3 fill-foreground text-foreground" />
+                    {film.rating.toFixed(1)}
+                  </span>
+                </>
               )}
-
-              {/* Actions */}
-              <div className="flex items-center gap-3">
-                <Button variant="cinema" size="lg" className="group">
-                  <Bookmark className="h-4 w-4" />
-                  Save Film
-                </Button>
-                <Button variant="cinema-outline" size="lg">
-                  <Share2 className="h-4 w-4" />
-                  Share
-                </Button>
-              </div>
             </div>
-          </div>
 
-          {/* Content Stats */}
-          <div className="mt-16 p-6 rounded-2xl glass-panel">
-            <div className="flex flex-wrap items-center justify-between gap-6">
-              <div>
-                <h2 className="font-display text-2xl font-bold text-foreground mb-1">
-                  {loadingVideos ? "Loading content..." : `${totalContent} pieces of content found`}
-                </h2>
-                <p className="text-muted-foreground">
-                  Deep dive into everything about {film.title}
-                </p>
+            {/* Title */}
+            <h1 className="font-display text-5xl md:text-7xl font-bold text-foreground tracking-tight leading-[1.05] mb-6">
+              {film.title}
+            </h1>
+
+            {/* Director */}
+            {film.director && (
+              <Link
+                to={`/director/${film.directorId}`}
+                className="inline-flex items-center gap-2 text-base text-foreground/80 hover:text-foreground transition-colors mb-8"
+              >
+                <span className="text-muted-foreground">Un film de</span>
+                <span className="font-medium underline-offset-4 hover:underline">{film.director}</span>
+              </Link>
+            )}
+
+            {/* Letterboxd badge */}
+            {letterboxdEntry && (
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-foreground/10 border border-foreground/15 mb-8">
+                <Eye className="h-3.5 w-3.5 text-foreground" />
+                <span className="text-xs text-foreground/80">
+                  Vu sur Letterboxd
+                  {letterboxdEntry.rating > 0 && ` · ${letterboxdEntry.rating}/5`}
+                </span>
               </div>
-              <div className="flex items-center gap-4">
-                {[
-                  { icon: Book, count: totalBooks, label: "Books", loading: loadingBooks },
-                  { icon: Play, count: totalVideos, label: "Videos", loading: loadingVideos },
-                  { icon: Headphones, count: totalPodcasts, label: "Podcasts", loading: loadingPodcasts },
-                ].map((stat) => (
-                  <div
-                    key={stat.label}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/30"
-                  >
-                    <stat.icon className="h-4 w-4 text-primary" />
-                    <span className="font-medium text-foreground">
-                      {stat.loading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        stat.count
-                      )}
-                    </span>
-                    <span className="text-sm text-muted-foreground">{stat.label}</span>
-                  </div>
-                ))}
-              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex items-center gap-3">
+              <Button variant="cinema" size="default">
+                <Bookmark className="h-4 w-4" />
+                Sauvegarder
+              </Button>
+              <Button variant="cinema-outline" size="default">
+                <Share2 className="h-4 w-4" />
+                Partager
+              </Button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Content Tabs */}
-      <section className="container mx-auto px-6 py-12">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="bg-muted/30 p-1.5 rounded-xl h-auto flex-wrap">
-            {tabs.map((tab) => (
+      {/* Synopsis + meta band */}
+      <section className="border-b border-border/40 py-12">
+        <div className="container mx-auto px-6">
+          <div className="grid md:grid-cols-3 gap-12 max-w-6xl">
+            {/* Synopsis */}
+            <div className="md:col-span-2">
+              <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-4 font-medium">
+                Synopsis
+              </h3>
+              <p className="text-base md:text-lg text-foreground/85 leading-relaxed">
+                {film.synopsis}
+              </p>
+              {film.genres.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-6">
+                  {film.genres.map((genre) => (
+                    <span
+                      key={genre}
+                      className="px-2.5 py-1 text-[11px] font-medium rounded-md bg-muted/40 text-muted-foreground border border-border/40"
+                    >
+                      {genre}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Cast */}
+            {film.cast.length > 0 && (
+              <div>
+                <h3 className="text-xs uppercase tracking-widest text-muted-foreground mb-4 font-medium">
+                  Distribution
+                </h3>
+                <div className="space-y-3">
+                  {film.cast.slice(0, 5).map((member) => (
+                    <div key={member.name} className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-muted flex-shrink-0">
+                        {member.photoUrl ? (
+                          <img src={member.photoUrl} alt={member.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{member.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{member.character}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Tabs : Aperçu + onglets dédiés */}
+      <section id="content" className="container mx-auto px-6 py-12">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-10">
+          <TabsList className="bg-transparent p-0 border-b border-border/40 rounded-none h-auto w-full justify-start gap-1 flex-wrap">
+            {[
+              { id: "overview", label: "Aperçu" },
+              { id: "books", label: "Livres", count: totalBooks },
+              { id: "videos", label: "Vidéos", count: videos?.all.length || 0 },
+              { id: "podcasts", label: "Podcasts", count: totalPodcasts },
+              { id: "editions", label: "Éditions" },
+              { id: "articles", label: "Articles", count: mockArticles.length },
+            ].map((tab) => (
               <TabsTrigger
                 key={tab.id}
                 value={tab.id}
                 className={cn(
-                  "rounded-lg px-4 py-2.5 text-sm font-medium transition-all",
-                  "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground",
+                  "rounded-none px-4 py-3 text-sm font-medium border-b-2 border-transparent bg-transparent shadow-none",
+                  "data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none",
                   "data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground"
                 )}
               >
-                {tab.icon && <tab.icon className="h-4 w-4 mr-2" />}
                 {tab.label}
+                {tab.count !== undefined && tab.count > 0 && (
+                  <span className="ml-2 text-xs text-muted-foreground tabular-nums">{tab.count}</span>
+                )}
               </TabsTrigger>
             ))}
           </TabsList>
 
-          {/* All Content Tab */}
-          <TabsContent value="all" className="space-y-2">
-            {/* Books */}
-            <ContentSection
-              title="Livres & Essais"
-              icon={<Book className="h-5 w-5" />}
-              count={totalBooks}
-            >
+          {/* APERÇU — 3 highlights par section */}
+          <TabsContent value="overview" className="space-y-14 mt-8">
+            {/* Livres */}
+            <div>
+              <SectionHeader
+                title="Livres & essais"
+                count={totalBooks}
+                onViewAll={totalBooks > PREVIEW ? () => goToTab("books") : undefined}
+              />
               {loadingBooks ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                </div>
+                <SectionLoader />
               ) : books && books.length > 0 ? (
-                <>
-                  {(() => {
-                    const frBooks = books.filter(b => b.language === 'fr');
-                    const otherBooks = books.filter(b => b.language !== 'fr');
-                    const visible = expandedSections['books'] ? books : books.slice(0, PREVIEW_COUNT);
-                    const visibleFr = visible.filter(b => b.language === 'fr');
-                    const visibleOther = visible.filter(b => b.language !== 'fr');
-                    return (
-                      <div className="space-y-6">
-                        {visibleFr.length > 0 && (
-                          <div>
-                            <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                              <span className="text-base">🇫🇷</span>
-                              Éditions françaises
-                              <span className="text-xs font-normal text-muted-foreground">({frBooks.length})</span>
-                            </h3>
-                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                              {visibleFr.map((book) => <BookCard key={book.id} book={book} />)}
-                            </div>
-                          </div>
-                        )}
-                        {visibleOther.length > 0 && (
-                          <div>
-                            <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-                              <span className="text-base">🌍</span>
-                              Autres éditions
-                              <span className="text-xs font-normal text-muted-foreground">({otherBooks.length})</span>
-                            </h3>
-                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                              {visibleOther.map((book) => <BookCard key={book.id} book={book} />)}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-                  {books.length > PREVIEW_COUNT && (
-                    <div className="flex justify-center mt-4">
-                      <Button variant="cinema-ghost" onClick={() => toggleSection('books')} className="group">
-                        {expandedSections['books'] ? 'Voir moins' : `Voir plus (${books.length - PREVIEW_COUNT} de plus)`}
-                        <ChevronRight className={cn("h-4 w-4 transition-transform ml-1", expandedSections['books'] && "rotate-90")} />
-                      </Button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <p className="text-muted-foreground py-4">Aucun livre trouvé pour ce film.</p>
-              )}
-            </ContentSection>
-
-            {/* Behind the Scenes / Making of */}
-            <ContentSection
-              title="Behind the Scenes & Making-of"
-              icon={<Video className="h-5 w-5" />}
-              count={videos?.behindTheScenes.length || 0}
-            >
-            {loadingVideos ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                </div>
-              ) : videos?.behindTheScenes && videos.behindTheScenes.length > 0 ? (
-                <>
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {(expandedSections['bts'] ? videos.behindTheScenes : videos.behindTheScenes.slice(0, PREVIEW_COUNT)).map((video) => (
-                      <YouTubeVideoCard key={video.id} video={video} />
-                    ))}
-                  </div>
-                  {videos.behindTheScenes.length > PREVIEW_COUNT && (
-                    <div className="flex justify-center mt-4">
-                      <Button variant="cinema-ghost" onClick={() => toggleSection('bts')} className="group">
-                        {expandedSections['bts'] ? 'Voir moins' : `Voir plus (${videos.behindTheScenes.length - PREVIEW_COUNT} de plus)`}
-                        <ChevronRight className={cn("h-4 w-4 transition-transform ml-1", expandedSections['bts'] && "rotate-90")} />
-                      </Button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <p className="text-muted-foreground py-4">No behind-the-scenes content found. Check the "All Videos" section below.</p>
-              )}
-            </ContentSection>
-
-            {/* Video Essays / Analysis */}
-            <ContentSection
-              title="Video Essays & Analyses"
-              icon={<Play className="h-5 w-5" />}
-              count={videos?.analysis.length || 0}
-            >
-            {loadingVideos ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                </div>
-              ) : videos?.analysis && videos.analysis.length > 0 ? (
-                <>
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {(expandedSections['analysis'] ? videos.analysis : videos.analysis.slice(0, PREVIEW_COUNT)).map((video) => (
-                      <YouTubeVideoCard key={video.id} video={video} />
-                    ))}
-                  </div>
-                  {videos.analysis.length > PREVIEW_COUNT && (
-                    <div className="flex justify-center mt-4">
-                      <Button variant="cinema-ghost" onClick={() => toggleSection('analysis')} className="group">
-                        {expandedSections['analysis'] ? 'Voir moins' : `Voir plus (${videos.analysis.length - PREVIEW_COUNT} de plus)`}
-                        <ChevronRight className={cn("h-4 w-4 transition-transform ml-1", expandedSections['analysis'] && "rotate-90")} />
-                      </Button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <p className="text-muted-foreground py-4">No video essays found. Check the "All Videos" section below.</p>
-              )}
-            </ContentSection>
-
-            {/* Podcasts */}
-            <ContentSection
-              title="Podcasts"
-              icon={<Headphones className="h-5 w-5" />}
-              count={totalPodcasts}
-            >
-              {loadingPodcasts ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                </div>
-              ) : podcasts && podcasts.length > 0 ? (
-                <>
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {(expandedSections['podcasts'] ? podcasts : podcasts.slice(0, PREVIEW_COUNT)).map((podcast) => (
-                      <PodcastCard key={podcast.id} episode={podcast} variant="compact" />
-                    ))}
-                  </div>
-                  {podcasts.length > PREVIEW_COUNT && (
-                    <div className="flex justify-center mt-4">
-                      <Button variant="cinema-ghost" onClick={() => toggleSection('podcasts')} className="group">
-                        {expandedSections['podcasts'] ? 'Voir moins' : `Voir plus (${podcasts.length - PREVIEW_COUNT} de plus)`}
-                        <ChevronRight className={cn("h-4 w-4 transition-transform ml-1", expandedSections['podcasts'] && "rotate-90")} />
-                      </Button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <p className="text-muted-foreground py-4">Aucun podcast trouvé pour ce film.</p>
-              )}
-            </ContentSection>
-
-            {/* Articles */}
-            <ContentSection
-              title="Articles & Critiques"
-              icon={<FileText className="h-5 w-5" />}
-              count={mockArticles.length}
-            >
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {mockArticles.map((article) => (
-                  <ContentCard key={article.id} item={article} variant="compact" />
-                ))}
-              </div>
-            </ContentSection>
-
-            {/* Interviews */}
-            <ContentSection
-              title="Interviews & Q&A"
-              icon={<Mic className="h-5 w-5" />}
-              count={videos?.interviews.length || 0}
-            >
-            {loadingVideos ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                </div>
-              ) : videos?.interviews && videos.interviews.length > 0 ? (
-                <>
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {(expandedSections['interviews'] ? videos.interviews : videos.interviews.slice(0, PREVIEW_COUNT)).map((video) => (
-                      <YouTubeVideoCard key={video.id} video={video} variant="compact" />
-                    ))}
-                  </div>
-                  {videos.interviews.length > PREVIEW_COUNT && (
-                    <div className="flex justify-center mt-4">
-                      <Button variant="cinema-ghost" onClick={() => toggleSection('interviews')} className="group">
-                        {expandedSections['interviews'] ? 'Voir moins' : `Voir plus (${videos.interviews.length - PREVIEW_COUNT} de plus)`}
-                        <ChevronRight className={cn("h-4 w-4 transition-transform ml-1", expandedSections['interviews'] && "rotate-90")} />
-                      </Button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <p className="text-muted-foreground py-4">No interviews found. Check the "All Videos" section below.</p>
-              )}
-            </ContentSection>
-
-            {/* Physical Media Editions */}
-            <PhysicalMediaSection movieId={film.id} filmTitle={film.title} originalTitle={film.originalTitle} filmYear={film.year} />
-
-            {/* All Videos (uncategorized or reviews) */}
-            {videos && (videos.other.length > 0 || videos.reviews.length > 0) && (
-              <ContentSection
-                title="More Videos"
-                icon={<Play className="h-5 w-5" />}
-                count={(videos.other.length || 0) + (videos.reviews.length || 0)}
-              >
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {[...videos.reviews, ...videos.other].map((video) => (
-                    <YouTubeVideoCard key={video.id} video={video} />
+                  {books.slice(0, PREVIEW).map((book) => (
+                    <BookCard key={book.id} book={book} />
                   ))}
                 </div>
-              </ContentSection>
+              ) : (
+                <EmptyState message="Aucun livre trouvé." />
+              )}
+            </div>
+
+            {/* Behind the scenes */}
+            {(loadingVideos || totalBts > 0) && (
+              <div>
+                <SectionHeader
+                  title="Coulisses & making-of"
+                  count={totalBts}
+                  onViewAll={totalBts > PREVIEW ? () => goToTab("videos") : undefined}
+                />
+                {loadingVideos ? (
+                  <SectionLoader />
+                ) : (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {videos!.behindTheScenes.slice(0, PREVIEW).map((video) => (
+                      <YouTubeVideoCard key={video.id} video={video} />
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
+
+            {/* Analyses */}
+            {(loadingVideos || totalAnalysis > 0) && (
+              <div>
+                <SectionHeader
+                  title="Analyses & essais vidéo"
+                  count={totalAnalysis}
+                  onViewAll={totalAnalysis > PREVIEW ? () => goToTab("videos") : undefined}
+                />
+                {loadingVideos ? (
+                  <SectionLoader />
+                ) : (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {videos!.analysis.slice(0, PREVIEW).map((video) => (
+                      <YouTubeVideoCard key={video.id} video={video} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Podcasts */}
+            {(loadingPodcasts || totalPodcasts > 0) && (
+              <div>
+                <SectionHeader
+                  title="Podcasts"
+                  count={totalPodcasts}
+                  onViewAll={totalPodcasts > PREVIEW ? () => goToTab("podcasts") : undefined}
+                />
+                {loadingPodcasts ? (
+                  <SectionLoader />
+                ) : (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {podcasts!.slice(0, PREVIEW).map((p) => (
+                      <PodcastCard key={p.id} episode={p} variant="compact" />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Interviews */}
+            {totalInterviews > 0 && (
+              <div>
+                <SectionHeader
+                  title="Interviews"
+                  count={totalInterviews}
+                  onViewAll={totalInterviews > PREVIEW ? () => goToTab("videos") : undefined}
+                />
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {videos!.interviews.slice(0, PREVIEW).map((video) => (
+                    <YouTubeVideoCard key={video.id} video={video} variant="compact" />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Aperçu éditions */}
+            <div>
+              <SectionHeader
+                title="Éditions physiques"
+                onViewAll={() => goToTab("editions")}
+              />
+              <PhysicalMediaSection
+                movieId={film.id}
+                filmTitle={film.title}
+                originalTitle={film.originalTitle}
+                filmYear={film.year}
+              />
+            </div>
           </TabsContent>
 
-          {/* Individual content tabs */}
-          <TabsContent value="books">
+          {/* LIVRES */}
+          <TabsContent value="books" className="mt-8">
             {loadingBooks ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 text-primary animate-spin" />
-              </div>
+              <SectionLoader />
             ) : books && books.length > 0 ? (
               (() => {
-                const frBooks = books.filter(b => b.language === 'fr');
-                const otherBooks = books.filter(b => b.language !== 'fr');
+                const frBooks = books.filter((b) => b.language === "fr");
+                const otherBooks = books.filter((b) => b.language !== "fr");
                 return (
-                  <div className="space-y-8">
+                  <div className="space-y-12">
                     {frBooks.length > 0 && (
                       <div>
-                        <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
-                          <span>🇫🇷</span> Éditions françaises
-                          <span className="text-xs font-normal text-muted-foreground">({frBooks.length})</span>
-                        </h3>
+                        <SectionHeader title="Éditions françaises" count={frBooks.length} />
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                           {frBooks.map((book) => <BookCard key={book.id} book={book} />)}
                         </div>
@@ -627,10 +478,7 @@ export default function FilmDeepDive() {
                     )}
                     {otherBooks.length > 0 && (
                       <div>
-                        <h3 className="text-base font-semibold text-muted-foreground mb-4 flex items-center gap-2">
-                          <span>🌍</span> Autres éditions
-                          <span className="text-xs font-normal text-muted-foreground">({otherBooks.length})</span>
-                        </h3>
+                        <SectionHeader title="Autres éditions" count={otherBooks.length} />
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                           {otherBooks.map((book) => <BookCard key={book.id} book={book} />)}
                         </div>
@@ -640,145 +488,105 @@ export default function FilmDeepDive() {
                 );
               })()
             ) : (
-              <p className="text-muted-foreground py-8 text-center">Aucun livre trouvé pour ce film.</p>
+              <EmptyState message="Aucun livre trouvé pour ce film." />
             )}
           </TabsContent>
 
-          <TabsContent value="docs">
+          {/* VIDÉOS — toutes catégories regroupées */}
+          <TabsContent value="videos" className="space-y-12 mt-8">
             {loadingVideos ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 text-primary animate-spin" />
-              </div>
-            ) : videos?.behindTheScenes && videos.behindTheScenes.length > 0 ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {videos.behindTheScenes.map((video) => (
-                  <YouTubeVideoCard key={video.id} video={video} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground mb-4">No behind-the-scenes content found for this film.</p>
-                {videos?.all && videos.all.length > 0 && (
-                  <>
-                    <p className="text-sm text-muted-foreground mb-6">Here are all available videos:</p>
+              <SectionLoader />
+            ) : videos && videos.all.length > 0 ? (
+              <>
+                {totalBts > 0 && (
+                  <div>
+                    <SectionHeader title="Coulisses & making-of" count={totalBts} />
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {videos.all.slice(0, 6).map((video) => (
-                        <YouTubeVideoCard key={video.id} video={video} />
-                      ))}
+                      {videos.behindTheScenes.map((v) => <YouTubeVideoCard key={v.id} video={v} />)}
                     </div>
-                  </>
+                  </div>
                 )}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="youtube">
-            {loadingVideos ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 text-primary animate-spin" />
-              </div>
-            ) : videos?.all && videos.all.length > 0 ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {videos.all.map((video) => (
-                  <YouTubeVideoCard key={video.id} video={video} />
-                ))}
-              </div>
+                {totalAnalysis > 0 && (
+                  <div>
+                    <SectionHeader title="Analyses" count={totalAnalysis} />
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {videos.analysis.map((v) => <YouTubeVideoCard key={v.id} video={v} />)}
+                    </div>
+                  </div>
+                )}
+                {totalInterviews > 0 && (
+                  <div>
+                    <SectionHeader title="Interviews" count={totalInterviews} />
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {videos.interviews.map((v) => <YouTubeVideoCard key={v.id} video={v} />)}
+                    </div>
+                  </div>
+                )}
+                {(videos.other.length > 0 || videos.reviews.length > 0) && (
+                  <div>
+                    <SectionHeader title="Autres" count={videos.other.length + videos.reviews.length} />
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {[...videos.reviews, ...videos.other].map((v) => <YouTubeVideoCard key={v.id} video={v} />)}
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
-              <p className="text-muted-foreground py-8 text-center">No videos found for this film.</p>
+              <EmptyState message="Aucune vidéo trouvée." />
             )}
           </TabsContent>
 
-          <TabsContent value="podcasts">
+          {/* PODCASTS */}
+          <TabsContent value="podcasts" className="mt-8">
             {loadingPodcasts ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 text-primary animate-spin" />
-              </div>
+              <SectionLoader />
             ) : podcasts && podcasts.length > 0 ? (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {podcasts.map((podcast) => (
-                  <PodcastCard key={podcast.id} episode={podcast} />
-                ))}
+                {podcasts.map((p) => <PodcastCard key={p.id} episode={p} />)}
               </div>
             ) : (
-              <p className="text-muted-foreground py-8 text-center">Aucun podcast trouvé pour ce film.</p>
+              <EmptyState message="Aucun podcast trouvé." />
             )}
           </TabsContent>
 
-          <TabsContent value="articles">
+          {/* ÉDITIONS */}
+          <TabsContent value="editions" className="mt-8">
+            <PhysicalMediaSection
+              movieId={film.id}
+              filmTitle={film.title}
+              originalTitle={film.originalTitle}
+              filmYear={film.year}
+            />
+          </TabsContent>
+
+          {/* ARTICLES */}
+          <TabsContent value="articles" className="mt-8">
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {mockArticles.map((article) => (
                 <ContentCard key={article.id} item={article} />
               ))}
             </div>
           </TabsContent>
-
-          <TabsContent value="interviews">
-            {loadingVideos ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 text-primary animate-spin" />
-              </div>
-            ) : videos?.interviews && videos.interviews.length > 0 ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {videos.interviews.map((video) => (
-                  <YouTubeVideoCard key={video.id} video={video} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground mb-4">No interviews found for this film.</p>
-                {videos?.all && videos.all.length > 0 && (
-                  <>
-                    <p className="text-sm text-muted-foreground mb-6">Here are all available videos:</p>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {videos.all.slice(0, 6).map((video) => (
-                        <YouTubeVideoCard key={video.id} video={video} />
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="editions">
-            <PhysicalMediaSection movieId={film.id} filmTitle={film.title} originalTitle={film.originalTitle} filmYear={film.year} />
-          </TabsContent>
         </Tabs>
       </section>
 
       {/* Similar Films */}
-      <section className="border-t border-border/50 py-16 px-6">
-        <div className="container mx-auto">
-          <div className="flex items-end justify-between mb-8">
-            <div>
-              <h2 className="font-display text-2xl font-bold text-foreground mb-2">
-                Similar Films to Explore
-              </h2>
-              <p className="text-muted-foreground">
-                Continue your cinematic journey
-              </p>
-            </div>
-            <Button variant="cinema-ghost" className="group">
-              View all
-              <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </Button>
+      {similarFilms.length > 0 && (
+        <section className="border-t border-border/40 py-16">
+          <div className="container mx-auto px-6">
+            <SectionHeader title="Films similaires" />
+            {loadingSimilar ? (
+              <SectionLoader />
+            ) : (
+              <div className="flex gap-6 overflow-x-auto pb-4 -mx-6 px-6">
+                {similarFilms.map((f) => (
+                  <FilmCard key={f.id} film={f} size="md" />
+                ))}
+              </div>
+            )}
           </div>
-
-          {loadingSimilar ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 text-primary animate-spin" />
-            </div>
-          ) : similarFilms.length > 0 ? (
-            <div className="flex gap-6 overflow-x-auto pb-4 -mx-6 px-6">
-              {similarFilms.map((f) => (
-                <FilmCard key={f.id} film={f} size="md" />
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground">No similar films found.</p>
-          )}
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 }
