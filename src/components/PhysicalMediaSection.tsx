@@ -1,4 +1,5 @@
-import { Disc3, ExternalLink, Calendar, ShoppingBag, AlertCircle, Store, Search } from "lucide-react";
+import { Disc3, ExternalLink, Calendar, AlertCircle, Store, ChevronDown } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ContentSection } from "@/components/ContentSection";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +32,83 @@ const RETAILER_COLORS: Record<string, string> = {
   "Spectrum Films": "text-violet-400",
 };
 
+const TOP_COUNT = 3;
+
+function EditionCard({ edition, featured = false }: { edition: FrenchEdition; featured?: boolean }) {
+  return (
+    <a
+      href={edition.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cn(
+        "group flex gap-4 rounded-xl bg-muted/20 border border-border/50 hover:border-primary/40 hover:bg-muted/40 transition-all overflow-hidden",
+        featured ? "p-4" : "p-3"
+      )}
+    >
+      {edition.image ? (
+        <img
+          src={edition.image}
+          alt={edition.title}
+          loading="lazy"
+          className={cn(
+            "object-cover rounded-md flex-shrink-0 bg-muted shadow-md",
+            featured ? "w-28 h-36" : "w-16 h-20"
+          )}
+          onError={(e) => {
+            const img = e.target as HTMLImageElement;
+            img.style.display = 'none';
+            img.parentElement?.querySelector('[data-fallback]')?.removeAttribute('hidden');
+          }}
+        />
+      ) : null}
+      {!edition.image && (
+        <div
+          data-fallback
+          className={cn(
+            "flex items-center justify-center rounded-md flex-shrink-0 bg-muted/50",
+            featured ? "w-28 h-36" : "w-16 h-20"
+          )}
+        >
+          <Store className={cn("h-6 w-6", RETAILER_COLORS[edition.retailer] || "text-muted-foreground")} />
+        </div>
+      )}
+      <div className="flex-1 min-w-0 flex flex-col justify-between">
+        <div>
+          <div className="flex items-start justify-between gap-2">
+            <Badge
+              variant="outline"
+              className={cn("text-[10px] font-semibold", FORMAT_COLORS[edition.format] || FORMAT_COLORS["DVD"])}
+            >
+              {edition.format}
+            </Badge>
+            <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+          </div>
+          <p className={cn(
+            "font-medium text-foreground leading-tight mt-2 line-clamp-2",
+            featured ? "text-sm" : "text-xs"
+          )}>
+            {edition.title}
+          </p>
+          {featured && edition.description && (
+            <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">
+              {edition.description}
+            </p>
+          )}
+        </div>
+        <p className={cn(
+          "font-medium mt-2",
+          featured ? "text-xs" : "text-[11px]",
+          RETAILER_COLORS[edition.retailer] || "text-muted-foreground"
+        )}>
+          {edition.retailer}
+        </p>
+      </div>
+    </a>
+  );
+}
+
 export function PhysicalMediaSection({ movieId, filmTitle, originalTitle, filmYear }: PhysicalMediaSectionProps) {
+  const [showAll, setShowAll] = useState(false);
   const {
     upcomingReleases,
     hasPhysicalRelease,
@@ -62,12 +139,9 @@ export function PhysicalMediaSection({ movieId, filmTitle, originalTitle, filmYe
   const hasUpcoming = upcomingReleases.length > 0;
   const hasEditions = frenchEditions && frenchEditions.length > 0;
 
-  // Group editions by format
-  const editionsByFormat = (frenchEditions || []).reduce<Record<string, FrenchEdition[]>>((acc, ed) => {
-    if (!acc[ed.format]) acc[ed.format] = [];
-    acc[ed.format].push(ed);
-    return acc;
-  }, {});
+  const sortedEditions = frenchEditions || [];
+  const topEditions = sortedEditions.slice(0, TOP_COUNT);
+  const restEditions = sortedEditions.slice(TOP_COUNT);
 
   const totalCount = (frenchEditions?.length || 0) + (hasUpcoming ? 1 : 0);
 
@@ -131,62 +205,35 @@ export function PhysicalMediaSection({ movieId, filmTitle, originalTitle, filmYe
 
       {/* Real French editions from search */}
       {hasEditions ? (
-        <div className="space-y-6">
-          {Object.entries(editionsByFormat).map(([format, editions]) => (
-            <div key={format}>
-              <div className="flex items-center gap-2 mb-3">
-                <Badge
-                  variant="outline"
-                  className={cn("text-xs font-semibold", FORMAT_COLORS[format] || FORMAT_COLORS["DVD"])}
-                >
-                  {format}
-                </Badge>
-                <span className="text-xs text-muted-foreground">
-                  {editions.length} édition{editions.length > 1 ? "s" : ""} trouvée{editions.length > 1 ? "s" : ""}
-                </span>
-              </div>
-              <div className="grid gap-3">
-                {editions.map((edition, i) => (
-                  <a
-                    key={i}
-                    href={edition.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex items-start gap-4 p-4 rounded-xl bg-muted/20 border border-border/50 hover:border-primary/30 hover:bg-muted/40 transition-all"
-                  >
-                    {edition.image ? (
-                      <img
-                        src={edition.image}
-                        alt={edition.title}
-                        className="w-16 h-20 object-cover rounded-md flex-shrink-0 bg-muted"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                      />
-                    ) : (
-                      <Store className={cn("h-5 w-5 mt-0.5 flex-shrink-0", RETAILER_COLORS[edition.retailer] || "text-muted-foreground")} />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="font-medium text-foreground text-sm leading-tight truncate">
-                            {edition.title}
-                          </p>
-                          <p className={cn("text-xs font-medium mt-0.5", RETAILER_COLORS[edition.retailer] || "text-muted-foreground")}>
-                            {edition.retailer}
-                          </p>
-                        </div>
-                        <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-                      </div>
-                      {edition.description && (
-                        <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">
-                          {edition.description}
-                        </p>
-                      )}
-                    </div>
-                  </a>
-                ))}
-              </div>
-            </div>
-          ))}
+        <div className="space-y-4">
+          {/* Featured: top relevant editions */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {topEditions.map((edition, i) => (
+              <EditionCard key={`top-${i}`} edition={edition} featured />
+            ))}
+          </div>
+
+          {/* Rest: collapsed */}
+          {restEditions.length > 0 && (
+            <>
+              {showAll && (
+                <div className="grid gap-2 sm:grid-cols-2 pt-2 border-t border-border/40">
+                  {restEditions.map((edition, i) => (
+                    <EditionCard key={`rest-${i}`} edition={edition} />
+                  ))}
+                </div>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAll((v) => !v)}
+                className="w-full text-muted-foreground hover:text-foreground"
+              >
+                {showAll ? "Voir moins" : `Voir ${restEditions.length} édition${restEditions.length > 1 ? "s" : ""} de plus`}
+                <ChevronDown className={cn("h-4 w-4 ml-1 transition-transform", showAll && "rotate-180")} />
+              </Button>
+            </>
+          )}
         </div>
       ) : !hasUpcoming ? (
         <p className="text-muted-foreground py-4">
