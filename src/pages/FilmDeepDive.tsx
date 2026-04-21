@@ -475,41 +475,37 @@ export default function FilmDeepDive() {
             )}
           </TabsContent>
 
-          {/* VIDÉOS — toutes catégories regroupées */}
+          {/* VIDÉOS — 2 sections éditoriales */}
           <TabsContent value="videos" className="space-y-12 mt-8">
             {loadingVideos ? (
               <SectionLoader />
             ) : videos && videos.all.length > 0 ? (
               <>
-                {totalBts > 0 && (
+                {totalProduction > 0 && (
                   <div>
-                    <SectionHeader title="Coulisses & making-of" count={totalBts} />
+                    <SectionHeader
+                      title="Autour du tournage"
+                      count={totalProduction}
+                    />
+                    <p className="text-sm text-muted-foreground -mt-4 mb-6 max-w-2xl">
+                      Making-of, coulisses et entretiens avec celles et ceux qui ont fait le film.
+                    </p>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {videos.behindTheScenes.map((v) => <YouTubeVideoCard key={v.id} video={v} />)}
+                      {videos.production.map((v) => <YouTubeVideoCard key={v.id} video={v} />)}
                     </div>
                   </div>
                 )}
-                {totalAnalysis > 0 && (
+                {totalEditorial > 0 && (
                   <div>
-                    <SectionHeader title="Analyses" count={totalAnalysis} />
+                    <SectionHeader
+                      title="Regards & analyses"
+                      count={totalEditorial}
+                    />
+                    <p className="text-sm text-muted-foreground -mt-4 mb-6 max-w-2xl">
+                      Présentations, masterclass, vidéos-essais et Q&A — pour réfléchir le film à la manière des cinémathèques.
+                    </p>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {videos.analysis.map((v) => <YouTubeVideoCard key={v.id} video={v} />)}
-                    </div>
-                  </div>
-                )}
-                {totalInterviews > 0 && (
-                  <div>
-                    <SectionHeader title="Interviews" count={totalInterviews} />
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {videos.interviews.map((v) => <YouTubeVideoCard key={v.id} video={v} />)}
-                    </div>
-                  </div>
-                )}
-                {(videos.other.length > 0 || videos.reviews.length > 0) && (
-                  <div>
-                    <SectionHeader title="Autres" count={videos.other.length + videos.reviews.length} />
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {[...videos.reviews, ...videos.other].map((v) => <YouTubeVideoCard key={v.id} video={v} />)}
+                      {videos.editorial.map((v) => <YouTubeVideoCard key={v.id} video={v} />)}
                     </div>
                   </div>
                 )}
