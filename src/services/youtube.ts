@@ -88,10 +88,10 @@ const premiumChannels = [
   'cinéma le champo', 'le champo', 'cinemalechampo',
   'le balzac', 'mac mahon', 'reflet médicis', 'reflet medicis',
   'le christine', 'le grand action', 'studio 28', 'studio des ursulines',
-  'la filmothèque', 'la filmotheque', 'le luminor', 'l''escurial',
+  'la filmothèque', 'la filmotheque', 'le luminor', "l'escurial",
   'cinéma du panthéon', 'cinema du pantheon', 'le brady', 'mk2',
   'gaumont rive gauche', 'pathé live', 'le saint-andré-des-arts',
-  'l''arlequin', 'le nouveau latina', 'majestic bastille',
+  "l'arlequin", 'le nouveau latina', 'majestic bastille',
   'forum des images', 'la cinémathèque française', 'cinematheque francaise',
   // Studios & distributors with quality BTS content
   'warner bros', 'universal pictures', 'paramount',
