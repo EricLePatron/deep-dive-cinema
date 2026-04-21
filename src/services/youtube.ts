@@ -211,23 +211,33 @@ function getVideoQualityScore(video: YouTubeVideo): number {
   const channelLower = video.channelTitle.toLowerCase();
   const combined = titleLower + ' ' + descLower;
   
-  // Premium channel bonus (+30 points)
+  // Premium channel bonus (+50 points) — strong editorial signal
   if (premiumChannels.some(ch => channelLower.includes(ch))) {
-    score += 30;
+    score += 50;
   }
-  
+
+  // STRONG editorial format: "présenté par", "introduit par", "séance" — exactly the
+  // cinémathèque introductions we want to surface (+40 points)
+  const cinemathequeFormats = [
+    'présenté par', 'présentée par', 'introduit par', 'introduite par',
+    'présentation de', 'séance présentée', 'avant-séance', 'leçon de cinéma',
+    'masterclass', 'ciné-club', 'cine-club',
+  ];
+  if (cinemathequeFormats.some(kw => combined.includes(kw))) {
+    score += 40;
+  }
+
   // Premium content keywords bonus (+5 per keyword, max 25)
   const contentMatches = premiumContentKeywords.filter(kw => combined.includes(kw));
   score += Math.min(contentMatches.length * 5, 25);
-  
-  // VIEW COUNT is now a major factor (up to 50 points)
-  if (video.viewCount > 10000000) score += 50;       // 10M+ views
-  else if (video.viewCount > 5000000) score += 45;   // 5M+ views
-  else if (video.viewCount > 1000000) score += 40;   // 1M+ views
-  else if (video.viewCount > 500000) score += 35;    // 500K+ views
-  else if (video.viewCount > 100000) score += 25;    // 100K+ views
-  else if (video.viewCount > 50000) score += 15;     // 50K+ views
-  else if (video.viewCount > 10000) score += 10;     // 10K+ views
+
+  // VIEW COUNT — kept as a soft signal only (max 20). Niche cinémathèque
+  // content has very few views but high editorial value, so we don't let
+  // popularity dominate.
+  if (video.viewCount > 1000000) score += 20;
+  else if (video.viewCount > 100000) score += 15;
+  else if (video.viewCount > 10000) score += 10;
+  else if (video.viewCount > 1000) score += 5;
   
   // DURATION bonus - longer content is better for cinephiles (up to 30 points)
   const minutes = getVideoDurationMinutes(video);
