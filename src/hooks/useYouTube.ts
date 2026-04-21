@@ -6,11 +6,10 @@ import {
 } from "@/services/youtube";
 
 export interface CategorizedVideos {
-  analysis: YouTubeVideo[];
-  behindTheScenes: YouTubeVideo[];
-  interviews: YouTubeVideo[];
-  reviews: YouTubeVideo[];
-  other: YouTubeVideo[];
+  /** Tournage, making-of, BTS, interviews acteurs/réalisateurs/équipe */
+  production: YouTubeVideo[];
+  /** Analyses, présentations, masterclass, Q&A, vidéos-essais (style cinémathèque) */
+  editorial: YouTubeVideo[];
   all: YouTubeVideo[];
 }
 

@@ -134,6 +134,32 @@ function isPremiumChannel(video: YouTubeVideo): boolean {
   return premiumChannels.some(ch => channelLower.includes(ch));
 }
 
+// Heuristic: is this video French-language content?
+// Detects French chars/words in title + description, plus known French channels.
+const frenchChannelHints = [
+  'arte', 'cahiers du cinéma', 'cinémathèque', 'cinematheque', 'institut lumière',
+  'le cercle', 'blow up', 'télérama', 'telerama', 'positif', 'la septième obsession',
+  'sofilm', 'mad movies', 'les inrocks', 'allociné', 'allocine', 'france culture',
+  'france inter', 'mk2', 'forum des images', 'la fémis', 'femis', 'unifrance'
+];
+const frenchWordHints = [
+  ' le ', ' la ', ' les ', ' un ', ' une ', ' des ', ' du ', ' de la ',
+  'avec ', 'pour ', 'sans ', 'cinéma', 'cinema français', 'réalisateur', 'réalisatrice',
+  'tournage', 'entretien', 'rencontre', 'présentation', 'analyse', 'décryptage',
+  'critique', 'séance', 'cinémathèque', 'film français', 'long-métrage', 'court-métrage'
+];
+function isFrenchContent(video: YouTubeVideo): boolean {
+  const channelLower = video.channelTitle.toLowerCase();
+  if (frenchChannelHints.some(h => channelLower.includes(h))) return true;
+  const text = ` ${video.title.toLowerCase()} ${video.description.toLowerCase()} `;
+  // Strong signal: accented chars typical of French
+  const accentMatches = (text.match(/[éèêëàâäîïôöûüçœ]/g) || []).length;
+  if (accentMatches >= 3) return true;
+  // Multiple French stopwords / vocabulary hits
+  const hits = frenchWordHints.filter(w => text.includes(w)).length;
+  return hits >= 2;
+}
+
 // Filter out low-quality/marketing content
 function isHighQualityContent(video: YouTubeVideo, minDuration: number = 20): boolean {
   const titleLower = video.title.toLowerCase();
@@ -211,14 +237,27 @@ export async function searchFilmVideos(filmTitle: string, year?: number, directo
   const yearStr = year ? ` ${year}` : '';
   // Include director name for better accuracy (crucial for films with common titles)
   const directorStr = director ? ` ${director}` : '';
-  
-  // Use cinephile-focused query terms with emphasis on interviews and Q&A
-  // Adding director name helps disambiguate films like "L'Étranger" (common title)
-  const query = `${filmTitle}${directorStr}${yearStr} interview OR making of OR cinematography OR analysis OR behind the scenes`;
-  
-  console.log('YouTube search query:', query);
-  
-  const videos = await searchYouTubeVideos(query, 50);
+
+  // Editorial / cinémathèque style: presentations, analyses, masterclass + production: tournage, making-of, interviews
+  // We run two queries (FR-leaning + EN) to maximise French content presence then merge & dedupe.
+  const queryFr = `${filmTitle}${directorStr}${yearStr} présentation OR analyse OR masterclass OR entretien OR rencontre OR making of OR tournage`;
+  const queryEn = `${filmTitle}${directorStr}${yearStr} presentation OR analysis OR video essay OR masterclass OR interview OR making of OR behind the scenes`;
+
+  console.log('YouTube search queries:', { queryFr, queryEn });
+
+  const [frVideos, enVideos] = await Promise.all([
+    searchYouTubeVideos(queryFr, 30).catch(() => [] as YouTubeVideo[]),
+    searchYouTubeVideos(queryEn, 30).catch(() => [] as YouTubeVideo[]),
+  ]);
+
+  // Dedupe by id, FR results first so they win on conflict
+  const seen = new Set<string>();
+  const videos: YouTubeVideo[] = [];
+  for (const v of [...frVideos, ...enVideos]) {
+    if (seen.has(v.id)) continue;
+    seen.add(v.id);
+    videos.push(v);
+  }
   
   console.log(`Found ${videos.length} raw videos from YouTube`);
   
@@ -250,120 +289,92 @@ export async function searchFilmVideos(filmTitle: string, year?: number, directo
   
   console.log(`After filtering: ${filteredVideos.length} videos`);
   
-  // Sort by quality score (views + duration + premium content)
-  return filteredVideos.sort((a, b) => getVideoQualityScore(b) - getVideoQualityScore(a));
+  // Sort: French content first, then by quality score
+  return filteredVideos.sort((a, b) => {
+    const aFr = isFrenchContent(a) ? 1 : 0;
+    const bFr = isFrenchContent(b) ? 1 : 0;
+    if (aFr !== bFr) return bFr - aFr;
+    return getVideoQualityScore(b) - getVideoQualityScore(a);
+  });
 }
 
-// Categorize videos by type based on title/description keywords
+// Categorize videos into 2 editorial buckets:
+// - production: tournage, making-of, BTS, interviews acteurs/réalisateurs/équipe
+// - editorial: analyses, présentations, masterclass, Q&A, vidéos-essais (style cinémathèque)
 export function categorizeVideos(videos: YouTubeVideo[]): {
-  analysis: YouTubeVideo[];
-  behindTheScenes: YouTubeVideo[];
-  interviews: YouTubeVideo[];
-  reviews: YouTubeVideo[];
-  other: YouTubeVideo[];
+  production: YouTubeVideo[];
+  editorial: YouTubeVideo[];
 } {
-  // Interviews & Q&A - prioritize masterclasses and crew interviews
-  const interviewKeywords = [
-    'masterclass', 'master class', 'q&a', 'q & a', 'qa session',
-    'interview', 'entrevue', 'entretien', 'in conversation', 'roundtable',
-    'actors on actors', 'press conference', 'press junket',
-    'director interview', 'cast interview', 'discusses', 'talks about',
-    'cinematographer', 'roger deakins', 'director of photography',
-    'oscar-winning', 'academy award', 'conversation with',
-    'rencontre', 'échange', 'parle de'
-  ];
-  
-  // Making of & Behind the scenes - prioritize set visits and production documentaries
-  const btsKeywords = [
-    'making of', 'behind the scenes', 'bts', 'inside the making',
-    'how they made', 'created with', 'set visit', 'set tour',
-    'toured the set', 'on set', 'production design', 'production designer',
-    'vfx', 'visual effects', 'special effects', 'practical effects',
-    'documentary', 'featurette', 'coulisses', 'fabrication', 'tournage',
-    'special feature', 'bonus feature', 'dans les coulisses',
-    // Cinematography & technical craft
-    'cinematography of', 'cinematography behind', 'shooting on film',
-    'anamorphic', 'lighting', 'color grading', 'color palette',
-    'sound design', 'sound editing', 'sound mix', 're-recording',
-    'dolby creator', 'creator talks', 'dolby vision', 'dolby atmos',
-    'academy conversation', 'academy conversations',
-    'costume design', 'wardrobe', 'art direction', 'set decoration',
-    'stunt', 'choreography', 'fight choreography',
-    'editing process', 'editorial', 'post-production', 'post production',
-    'score', 'scoring', 'original score', 'film score',
-    'lens', 'lenses', 'camera work', 'camera setup',
-    'from obsession', 'crafting', 'building the world'
-  ];
-  
-  // Analysis & video essays
-  const analysisKeywords = [
-    'analysis', 'explained', 'breakdown', 'essay', 'meaning',
-    'symbolism', 'deep dive', 'théorie', 'analyse', 'décryptage',
-    'philosophy', 'themes', 'cinematography', 'directing',
-    'visual style', 'technique', 'storytelling', 'explication',
-    'comprendre', 'pourquoi'
-  ];
-  
-  const reviewKeywords = [
-    'critique', 'review in-depth', 'film analysis', 'retrospective', 
-    'avis détaillé', 'criterion', 'tribute', 'legacy', 'mon avis',
-    'que vaut', 'vaut-il'
+  // Production: how the film was made + people who made it talking about it
+  const productionKeywords = [
+    // Making-of & set
+    'making of', 'making-of', 'behind the scenes', 'bts', 'on set', 'set visit',
+    'set tour', 'inside the making', 'how they made', 'featurette', 'documentary',
+    'special feature', 'bonus feature',
+    'tournage', 'coulisses', 'dans les coulisses', 'fabrication', 'reportage tournage',
+    // Crew / craft
+    'production design', 'vfx', 'visual effects', 'practical effects', 'special effects',
+    'cinematography of', 'shooting on film', 'anamorphic', 'lighting', 'color grading',
+    'sound design', 'sound editing', 'sound mix', 'costume design', 'art direction',
+    'editing process', 'post-production', 'post production', 'score', 'scoring',
+    'film score', 'original score', 'stunt', 'choreography',
+    'directeur photo', 'chef opérateur', 'monteur', 'monteuse', 'compositeur',
+    'décors', 'costumes', 'cascades',
+    // Interviews of cast / crew
+    'interview', 'entrevue', 'entretien', 'rencontre avec', 'rencontre entre',
+    'press conference', 'press junket', 'roundtable', 'actors on actors',
+    'director interview', 'cast interview', 'conférence de presse',
   ];
 
-  const categorized = {
-    analysis: [] as YouTubeVideo[],
-    behindTheScenes: [] as YouTubeVideo[],
-    interviews: [] as YouTubeVideo[],
-    reviews: [] as YouTubeVideo[],
-    other: [] as YouTubeVideo[],
-  };
+  // Editorial: cinephile analysis, presentations, video essays — the cinémathèque tone
+  const editorialKeywords = [
+    // Analysis / essays
+    'analysis', 'analyse', 'décryptage', 'video essay', 'vidéo essai', 'essai vidéo',
+    'explained', 'explication', 'breakdown', 'deep dive', 'meaning', 'symbolism',
+    'symbolique', 'thèmes', 'themes', 'philosophy', 'philosophie', 'lecture du film',
+    // Presentations / Q&A / talks
+    'présentation', 'presentation', 'présenté par', 'présente', 'introduction',
+    'masterclass', 'master class', 'conférence', 'conference', 'lecture',
+    'q&a', 'q & a', 'qa session', 'questions answers',
+    'in conversation', 'conversation with', 'talks about', 'discusses',
+    // Cinémathèque / institutions
+    'cinémathèque', 'cinematheque', 'forum des images', 'institut lumière',
+    'criterion', 'retrospective', 'rétrospective', 'tribute', 'hommage',
+    // Reviews / critiques
+    'critique', 'review in-depth', 'film analysis', 'mon avis', 'que vaut', 'vaut-il',
+  ];
+
+  const production: YouTubeVideo[] = [];
+  const editorial: YouTubeVideo[] = [];
+  const unknown: YouTubeVideo[] = [];
 
   for (const video of videos) {
-    const titleLower = video.title.toLowerCase();
-    const descLower = video.description.toLowerCase();
-    const channelLower = video.channelTitle.toLowerCase();
-    const combined = titleLower + ' ' + descLower;
+    const combined = (video.title + ' ' + video.description).toLowerCase();
+    const prodScore = productionKeywords.filter(kw => combined.includes(kw)).length;
+    const editScore = editorialKeywords.filter(kw => combined.includes(kw)).length;
 
-    // Count keyword matches for each category
-    const interviewScore = interviewKeywords.filter(kw => combined.includes(kw)).length;
-    const btsScore = btsKeywords.filter(kw => combined.includes(kw)).length;
-    const analysisScore = analysisKeywords.filter(kw => combined.includes(kw)).length;
-    const reviewScore = reviewKeywords.filter(kw => combined.includes(kw)).length;
-    
-    // Find the highest scoring category
-    const maxScore = Math.max(interviewScore, btsScore, analysisScore, reviewScore);
-    
-    if (maxScore === 0) {
-      categorized.other.push(video);
-    } else if (interviewScore === maxScore) {
-      categorized.interviews.push(video);
-    } else if (btsScore === maxScore) {
-      categorized.behindTheScenes.push(video);
-    } else if (analysisScore === maxScore) {
-      categorized.analysis.push(video);
-    } else if (reviewScore === maxScore) {
-      categorized.reviews.push(video);
+    if (prodScore === 0 && editScore === 0) {
+      unknown.push(video);
+    } else if (editScore > prodScore) {
+      editorial.push(video);
     } else {
-      categorized.other.push(video);
+      production.push(video);
     }
   }
 
-  // Sort each category by quality score (views + duration)
-  Object.keys(categorized).forEach(key => {
-    categorized[key as keyof typeof categorized].sort((a, b) => getVideoQualityScore(b) - getVideoQualityScore(a));
-  });
+  // Distribute unknown content roughly between buckets to avoid losing it,
+  // skewing toward editorial (the editorial line of the product).
+  unknown.forEach((v, i) => (i % 2 === 0 ? editorial : production).push(v));
 
-  // FALLBACK: Ensure each category has content by pulling from 'other' if empty
-  const minPerCategory = 2;
-  const categories: (keyof typeof categorized)[] = ['interviews', 'behindTheScenes', 'analysis', 'reviews'];
-  
-  for (const category of categories) {
-    if (categorized[category].length < minPerCategory && categorized.other.length > 0) {
-      const needed = minPerCategory - categorized[category].length;
-      const toMove = categorized.other.splice(0, Math.min(needed, categorized.other.length));
-      categorized[category].push(...toMove);
-    }
-  }
+  // Sort each bucket: French first, then quality
+  const sortFn = (a: YouTubeVideo, b: YouTubeVideo) => {
+    const aFr = isFrenchContent(a) ? 1 : 0;
+    const bFr = isFrenchContent(b) ? 1 : 0;
+    if (aFr !== bFr) return bFr - aFr;
+    return getVideoQualityScore(b) - getVideoQualityScore(a);
+  };
+  production.sort(sortFn);
+  editorial.sort(sortFn);
 
-  return categorized;
+  return { production, editorial };
 }
