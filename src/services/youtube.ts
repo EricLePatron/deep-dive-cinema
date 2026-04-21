@@ -65,6 +65,20 @@ const premiumChannels = [
   'sag-aftra', 'actors on actors', 'variety',
   'hollywood reporter', 'indiewire', 'film comment',
   'sight and sound', 'little white lies', 'mubi',
+  // International cinémathèques & repertory cinemas (NYC, London, Berlin, Bologna…)
+  'film at lincoln center', 'filmlinc', 'film society of lincoln center',
+  'museum of the moving image', 'moma', 'the museum of modern art',
+  'metrograph', 'ifc center', 'film forum', 'bam', 'bamcinematek',
+  'brooklyn academy of music', 'anthology film archives', 'quad cinema',
+  'ucla film', 'harvard film archive', 'academy museum',
+  'national film theatre', 'bfi southbank', 'ica london', 'close-up film',
+  'deutsche kinemathek', 'arsenal berlin', 'filmmuseum', 'austrian film museum',
+  'eye filmmuseum', 'cineteca di bologna', 'il cinema ritrovato',
+  'cinémathèque suisse', 'cinematheque ontario', 'tokyo filmex',
+  // Cross-interviews / craft roundtables
+  'variety studio', 'close up with the hollywood reporter', 'thr roundtable',
+  'the hollywood reporter', 'directors on directors', 'screen talks',
+  'off camera with sam jones', 'talks at google film', 'aero theatre',
   // Quality distributors
   'a24', 'neon', 'searchlight', 'focus features',
   'arrow video', 'shout factory', 'kino lorber',
@@ -281,20 +295,27 @@ export async function searchFilmVideos(
   // then merge & dedupe. FR results are kept first to win on conflict.
   const queryFrCinematheque = `${titleVariants}${directorStr} "présenté par" OR "présentation" OR "introduit par" OR cinémathèque OR "ciné-club" OR masterclass`;
   const queryFr = `${titleVariants}${directorStr}${yearStr} analyse OR décryptage OR entretien OR rencontre OR tournage OR "making of"`;
+  // International cinémathèques & repertory Q&As (NYC, London, Berlin, Bologna…)
+  const queryIntlCinematheque = `${titleVariants}${directorStr} ("q&a" OR "in conversation" OR "introduction" OR retrospective OR restoration) (filmlinc OR "lincoln center" OR metrograph OR moma OR "film forum" OR bamcinematek OR "bfi" OR "cinémathèque" OR cineteca)`;
+  // Cross-interviews / craft roundtables (Variety, THR, Actors on Actors…)
+  const queryRoundtable = `${titleVariants}${directorStr} ("actors on actors" OR roundtable OR "close up with" OR "directors on directors" OR "screen talks")`;
   const queryEn = `${titleVariants}${directorStr}${yearStr} presentation OR analysis OR "video essay" OR masterclass OR interview OR "making of" OR "behind the scenes"`;
 
-  console.log('YouTube search queries:', { queryFrCinematheque, queryFr, queryEn });
+  console.log('YouTube search queries:', { queryFrCinematheque, queryFr, queryIntlCinematheque, queryRoundtable, queryEn });
 
-  const [frCinemaVideos, frVideos, enVideos] = await Promise.all([
-    searchYouTubeVideos(queryFrCinematheque, 25).catch(() => [] as YouTubeVideo[]),
-    searchYouTubeVideos(queryFr, 25).catch(() => [] as YouTubeVideo[]),
-    searchYouTubeVideos(queryEn, 25).catch(() => [] as YouTubeVideo[]),
+  const [frCinemaVideos, frVideos, intlCinemaVideos, roundtableVideos, enVideos] = await Promise.all([
+    searchYouTubeVideos(queryFrCinematheque, 20).catch(() => [] as YouTubeVideo[]),
+    searchYouTubeVideos(queryFr, 20).catch(() => [] as YouTubeVideo[]),
+    searchYouTubeVideos(queryIntlCinematheque, 20).catch(() => [] as YouTubeVideo[]),
+    searchYouTubeVideos(queryRoundtable, 15).catch(() => [] as YouTubeVideo[]),
+    searchYouTubeVideos(queryEn, 20).catch(() => [] as YouTubeVideo[]),
   ]);
 
-  // Dedupe by id, FR results first so they win on conflict
+  // Dedupe by id. Order matters: FR cinémathèque first, then FR, then international
+  // cinémathèques, then premium roundtables, then generic EN. Earlier entries win.
   const seen = new Set<string>();
   const videos: YouTubeVideo[] = [];
-  for (const v of [...frCinemaVideos, ...frVideos, ...enVideos]) {
+  for (const v of [...frCinemaVideos, ...frVideos, ...intlCinemaVideos, ...roundtableVideos, ...enVideos]) {
     if (seen.has(v.id)) continue;
     seen.add(v.id);
     videos.push(v);
@@ -363,7 +384,7 @@ export function categorizeVideos(videos: YouTubeVideo[]): {
     'décors', 'costumes', 'cascades',
     // Interviews of cast / crew
     'interview', 'entrevue', 'entretien', 'rencontre avec', 'rencontre entre',
-    'press conference', 'press junket', 'roundtable', 'actors on actors',
+    'press conference', 'press junket', 'press tour',
     'director interview', 'cast interview', 'conférence de presse',
   ];
 
@@ -380,9 +401,15 @@ export function categorizeVideos(videos: YouTubeVideo[]): {
     'in conversation', 'conversation with', 'talks about', 'discusses',
   'présenté par', 'présentation de', 'introduit par', 'séance présentée',
   'avant-séance', 'ciné-club', 'cine-club', 'leçon de cinéma',
+    // Cross-interviews & roundtables (editorial format, not production BTS)
+    'actors on actors', 'directors on directors', 'roundtable',
+    'close up with', 'screen talks', 'in conversation with',
     // Cinémathèque / institutions
     'cinémathèque', 'cinematheque', 'forum des images', 'institut lumière',
     'criterion', 'retrospective', 'rétrospective', 'tribute', 'hommage',
+    'film at lincoln center', 'lincoln center', 'metrograph', 'film forum',
+    'bamcinematek', 'bam cinema', 'moma', 'anthology film archives',
+    'academy museum', 'bfi southbank', 'cineteca', 'arsenal berlin',
     // Reviews / critiques
     'critique', 'review in-depth', 'film analysis', 'mon avis', 'que vaut', 'vaut-il',
   ];
