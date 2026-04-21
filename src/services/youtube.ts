@@ -84,6 +84,15 @@ const premiumChannels = [
   'télérama', 'positif', 'cinémathèque', 'institut lumière',
   'le cercle', 'blow up', 'analyse film', 'cinéaste',
   'la septième obsession', 'sofilm', 'mad movies',
+  // French independent cinemas (cinémathèque-style introductions)
+  'cinéma le champo', 'le champo', 'cinemalechampo',
+  'le balzac', 'mac mahon', 'reflet médicis', 'reflet medicis',
+  'le christine', 'le grand action', 'studio 28', 'studio des ursulines',
+  'la filmothèque', 'la filmotheque', 'le luminor', 'l''escurial',
+  'cinéma du panthéon', 'cinema du pantheon', 'le brady', 'mk2',
+  'gaumont rive gauche', 'pathé live', 'le saint-andré-des-arts',
+  'l''arlequin', 'le nouveau latina', 'majestic bastille',
+  'forum des images', 'la cinémathèque française', 'cinematheque francaise',
   // Studios & distributors with quality BTS content
   'warner bros', 'universal pictures', 'paramount',
   'sony pictures', 'lionsgate', 'mgm',
