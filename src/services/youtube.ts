@@ -149,7 +149,14 @@ const frenchChannelHints = [
   'arte', 'cahiers du cinéma', 'cinémathèque', 'cinematheque', 'institut lumière',
   'le cercle', 'blow up', 'télérama', 'telerama', 'positif', 'la septième obsession',
   'sofilm', 'mad movies', 'les inrocks', 'allociné', 'allocine', 'france culture',
-  'france inter', 'mk2', 'forum des images', 'la fémis', 'femis', 'unifrance'
+  'france inter', 'mk2', 'forum des images', 'la fémis', 'femis', 'unifrance',
+  // French independent cinemas
+  'le champo', 'cinemalechampo', 'le balzac', 'mac mahon', 'reflet médicis',
+  'reflet medicis', 'le christine', 'le grand action', 'studio 28',
+  'studio des ursulines', 'filmothèque', 'filmotheque', 'le luminor',
+  'escurial', 'cinéma du panthéon', 'cinema du pantheon', 'le brady',
+  'gaumont rive gauche', 'saint-andré-des-arts', 'saint andre des arts',
+  'arlequin', 'nouveau latina', 'majestic bastille'
 ];
 const frenchWordHints = [
   ' le ', ' la ', ' les ', ' un ', ' une ', ' des ', ' du ', ' de la ',
