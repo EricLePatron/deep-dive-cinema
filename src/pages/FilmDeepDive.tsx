@@ -366,19 +366,19 @@ export default function FilmDeepDive() {
               )}
             </div>
 
-            {/* Behind the scenes */}
-            {(loadingVideos || totalBts > 0) && (
+            {/* Autour du tournage : making-of, coulisses, interviews équipe */}
+            {(loadingVideos || totalProduction > 0) && (
               <div>
                 <SectionHeader
-                  title="Coulisses & making-of"
-                  count={totalBts}
-                  onViewAll={totalBts > PREVIEW ? () => goToTab("videos") : undefined}
+                  title="Autour du tournage"
+                  count={totalProduction}
+                  onViewAll={totalProduction > PREVIEW ? () => goToTab("videos") : undefined}
                 />
                 {loadingVideos ? (
                   <SectionLoader />
                 ) : (
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {videos!.behindTheScenes.slice(0, PREVIEW).map((video) => (
+                    {videos!.production.slice(0, PREVIEW).map((video) => (
                       <YouTubeVideoCard key={video.id} video={video} />
                     ))}
                   </div>
@@ -386,19 +386,19 @@ export default function FilmDeepDive() {
               </div>
             )}
 
-            {/* Analyses */}
-            {(loadingVideos || totalAnalysis > 0) && (
+            {/* Regards & analyses : présentations, masterclass, vidéos-essais */}
+            {(loadingVideos || totalEditorial > 0) && (
               <div>
                 <SectionHeader
-                  title="Analyses & essais vidéo"
-                  count={totalAnalysis}
-                  onViewAll={totalAnalysis > PREVIEW ? () => goToTab("videos") : undefined}
+                  title="Regards & analyses"
+                  count={totalEditorial}
+                  onViewAll={totalEditorial > PREVIEW ? () => goToTab("videos") : undefined}
                 />
                 {loadingVideos ? (
                   <SectionLoader />
                 ) : (
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {videos!.analysis.slice(0, PREVIEW).map((video) => (
+                    {videos!.editorial.slice(0, PREVIEW).map((video) => (
                       <YouTubeVideoCard key={video.id} video={video} />
                     ))}
                   </div>
@@ -423,22 +423,6 @@ export default function FilmDeepDive() {
                     ))}
                   </div>
                 )}
-              </div>
-            )}
-
-            {/* Interviews */}
-            {totalInterviews > 0 && (
-              <div>
-                <SectionHeader
-                  title="Interviews"
-                  count={totalInterviews}
-                  onViewAll={totalInterviews > PREVIEW ? () => goToTab("videos") : undefined}
-                />
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {videos!.interviews.slice(0, PREVIEW).map((video) => (
-                    <YouTubeVideoCard key={video.id} video={video} variant="compact" />
-                  ))}
-                </div>
               </div>
             )}
 
