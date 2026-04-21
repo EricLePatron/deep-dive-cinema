@@ -397,11 +397,41 @@ export default function FilmDeepDive() {
                 </div>
               ) : books && books.length > 0 ? (
                 <>
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {(expandedSections['books'] ? books : books.slice(0, PREVIEW_COUNT)).map((book) => (
-                      <BookCard key={book.id} book={book} />
-                    ))}
-                  </div>
+                  {(() => {
+                    const frBooks = books.filter(b => b.language === 'fr');
+                    const otherBooks = books.filter(b => b.language !== 'fr');
+                    const visible = expandedSections['books'] ? books : books.slice(0, PREVIEW_COUNT);
+                    const visibleFr = visible.filter(b => b.language === 'fr');
+                    const visibleOther = visible.filter(b => b.language !== 'fr');
+                    return (
+                      <div className="space-y-6">
+                        {visibleFr.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                              <span className="text-base">🇫🇷</span>
+                              Éditions françaises
+                              <span className="text-xs font-normal text-muted-foreground">({frBooks.length})</span>
+                            </h3>
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                              {visibleFr.map((book) => <BookCard key={book.id} book={book} />)}
+                            </div>
+                          </div>
+                        )}
+                        {visibleOther.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                              <span className="text-base">🌍</span>
+                              Autres éditions
+                              <span className="text-xs font-normal text-muted-foreground">({otherBooks.length})</span>
+                            </h3>
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                              {visibleOther.map((book) => <BookCard key={book.id} book={book} />)}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                   {books.length > PREVIEW_COUNT && (
                     <div className="flex justify-center mt-4">
                       <Button variant="cinema-ghost" onClick={() => toggleSection('books')} className="group">
@@ -579,11 +609,36 @@ export default function FilmDeepDive() {
                 <Loader2 className="h-8 w-8 text-primary animate-spin" />
               </div>
             ) : books && books.length > 0 ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {books.map((book) => (
-                  <BookCard key={book.id} book={book} />
-                ))}
-              </div>
+              (() => {
+                const frBooks = books.filter(b => b.language === 'fr');
+                const otherBooks = books.filter(b => b.language !== 'fr');
+                return (
+                  <div className="space-y-8">
+                    {frBooks.length > 0 && (
+                      <div>
+                        <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
+                          <span>🇫🇷</span> Éditions françaises
+                          <span className="text-xs font-normal text-muted-foreground">({frBooks.length})</span>
+                        </h3>
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {frBooks.map((book) => <BookCard key={book.id} book={book} />)}
+                        </div>
+                      </div>
+                    )}
+                    {otherBooks.length > 0 && (
+                      <div>
+                        <h3 className="text-base font-semibold text-muted-foreground mb-4 flex items-center gap-2">
+                          <span>🌍</span> Autres éditions
+                          <span className="text-xs font-normal text-muted-foreground">({otherBooks.length})</span>
+                        </h3>
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {otherBooks.map((book) => <BookCard key={book.id} book={book} />)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()
             ) : (
               <p className="text-muted-foreground py-8 text-center">Aucun livre trouvé pour ce film.</p>
             )}
