@@ -16,6 +16,9 @@ interface BookResult {
   infoLink: string;
   category: 'film' | 'director' | 'cast' | 'genre';
   relevanceScore: number;
+  language: string;
+  isbn: string | null;
+  retailers: { name: string; url: string }[];
 }
 
 async function searchGoogleBooks(query: string, maxResults = 10, lang?: string): Promise<any[]> {
@@ -32,10 +35,21 @@ function mapBookItem(item: any, category: BookResult['category'], score: number)
   const imageLinks = info.imageLinks || {};
   const lang = info.language || 'unknown';
   const langBonus = lang === 'fr' ? 40 : lang === 'en' ? 0 : -10;
+
+  // Extract ISBN
+  const identifiers = info.industryIdentifiers || [];
+  const isbn13 = identifiers.find((i: any) => i.type === 'ISBN_13')?.identifier;
+  const isbn10 = identifiers.find((i: any) => i.type === 'ISBN_10')?.identifier;
+  const isbn = isbn13 || isbn10 || null;
+
+  const title = info.title || 'Unknown';
+  const authors = info.authors || [];
+  const retailers = buildRetailerLinks(title, authors, isbn, lang);
+
   return {
     id: item.id,
-    title: info.title || 'Unknown',
-    authors: info.authors || [],
+    title,
+    authors,
     description: info.description || info.subtitle || '',
     publisher: info.publisher || '',
     publishedDate: info.publishedDate || '',
@@ -43,7 +57,32 @@ function mapBookItem(item: any, category: BookResult['category'], score: number)
     infoLink: info.infoLink || info.previewLink || '',
     category,
     relevanceScore: score + langBonus,
+    language: lang,
+    isbn,
+    retailers,
   };
+}
+
+function buildRetailerLinks(title: string, authors: string[], isbn: string | null, lang: string): { name: string; url: string }[] {
+  const query = encodeURIComponent(`${title} ${authors.slice(0, 1).join(' ')}`.trim());
+  const isbnQ = isbn ? encodeURIComponent(isbn) : null;
+
+  // French-language books: prioritize FR retailers
+  if (lang === 'fr') {
+    return [
+      { name: 'Fnac', url: isbnQ ? `https://www.fnac.com/SearchResult/ResultList.aspx?Search=${isbnQ}` : `https://www.fnac.com/SearchResult/ResultList.aspx?Search=${query}` },
+      { name: 'Cultura', url: `https://www.cultura.com/catalogsearch/result/?q=${isbnQ || query}` },
+      { name: 'Amazon.fr', url: isbnQ ? `https://www.amazon.fr/s?k=${isbnQ}` : `https://www.amazon.fr/s?k=${query}&i=stripbooks` },
+      { name: 'Decitre', url: `https://www.decitre.fr/rechercher/result?q=${isbnQ || query}` },
+    ];
+  }
+
+  // English / other
+  return [
+    { name: 'Amazon', url: isbnQ ? `https://www.amazon.com/s?k=${isbnQ}` : `https://www.amazon.com/s?k=${query}&i=stripbooks` },
+    { name: 'Fnac', url: `https://www.fnac.com/SearchResult/ResultList.aspx?Search=${isbnQ || query}` },
+    { name: 'Amazon.fr', url: `https://www.amazon.fr/s?k=${isbnQ || query}` },
+  ];
 }
 
 async function aiRankBooks(
