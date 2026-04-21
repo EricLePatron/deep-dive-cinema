@@ -134,6 +134,32 @@ function isPremiumChannel(video: YouTubeVideo): boolean {
   return premiumChannels.some(ch => channelLower.includes(ch));
 }
 
+// Heuristic: is this video French-language content?
+// Detects French chars/words in title + description, plus known French channels.
+const frenchChannelHints = [
+  'arte', 'cahiers du cinéma', 'cinémathèque', 'cinematheque', 'institut lumière',
+  'le cercle', 'blow up', 'télérama', 'telerama', 'positif', 'la septième obsession',
+  'sofilm', 'mad movies', 'les inrocks', 'allociné', 'allocine', 'france culture',
+  'france inter', 'mk2', 'forum des images', 'la fémis', 'femis', 'unifrance'
+];
+const frenchWordHints = [
+  ' le ', ' la ', ' les ', ' un ', ' une ', ' des ', ' du ', ' de la ',
+  'avec ', 'pour ', 'sans ', 'cinéma', 'cinema français', 'réalisateur', 'réalisatrice',
+  'tournage', 'entretien', 'rencontre', 'présentation', 'analyse', 'décryptage',
+  'critique', 'séance', 'cinémathèque', 'film français', 'long-métrage', 'court-métrage'
+];
+function isFrenchContent(video: YouTubeVideo): boolean {
+  const channelLower = video.channelTitle.toLowerCase();
+  if (frenchChannelHints.some(h => channelLower.includes(h))) return true;
+  const text = ` ${video.title.toLowerCase()} ${video.description.toLowerCase()} `;
+  // Strong signal: accented chars typical of French
+  const accentMatches = (text.match(/[éèêëàâäîïôöûüçœ]/g) || []).length;
+  if (accentMatches >= 3) return true;
+  // Multiple French stopwords / vocabulary hits
+  const hits = frenchWordHints.filter(w => text.includes(w)).length;
+  return hits >= 2;
+}
+
 // Filter out low-quality/marketing content
 function isHighQualityContent(video: YouTubeVideo, minDuration: number = 20): boolean {
   const titleLower = video.title.toLowerCase();
