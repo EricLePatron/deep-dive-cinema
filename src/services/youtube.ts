@@ -211,14 +211,27 @@ export async function searchFilmVideos(filmTitle: string, year?: number, directo
   const yearStr = year ? ` ${year}` : '';
   // Include director name for better accuracy (crucial for films with common titles)
   const directorStr = director ? ` ${director}` : '';
-  
-  // Use cinephile-focused query terms with emphasis on interviews and Q&A
-  // Adding director name helps disambiguate films like "L'Étranger" (common title)
-  const query = `${filmTitle}${directorStr}${yearStr} interview OR making of OR cinematography OR analysis OR behind the scenes`;
-  
-  console.log('YouTube search query:', query);
-  
-  const videos = await searchYouTubeVideos(query, 50);
+
+  // Editorial / cinémathèque style: presentations, analyses, masterclass + production: tournage, making-of, interviews
+  // We run two queries (FR-leaning + EN) to maximise French content presence then merge & dedupe.
+  const queryFr = `${filmTitle}${directorStr}${yearStr} présentation OR analyse OR masterclass OR entretien OR rencontre OR making of OR tournage`;
+  const queryEn = `${filmTitle}${directorStr}${yearStr} presentation OR analysis OR video essay OR masterclass OR interview OR making of OR behind the scenes`;
+
+  console.log('YouTube search queries:', { queryFr, queryEn });
+
+  const [frVideos, enVideos] = await Promise.all([
+    searchYouTubeVideos(queryFr, 30).catch(() => [] as YouTubeVideo[]),
+    searchYouTubeVideos(queryEn, 30).catch(() => [] as YouTubeVideo[]),
+  ]);
+
+  // Dedupe by id, FR results first so they win on conflict
+  const seen = new Set<string>();
+  const videos: YouTubeVideo[] = [];
+  for (const v of [...frVideos, ...enVideos]) {
+    if (seen.has(v.id)) continue;
+    seen.add(v.id);
+    videos.push(v);
+  }
   
   console.log(`Found ${videos.length} raw videos from YouTube`);
   
@@ -250,8 +263,13 @@ export async function searchFilmVideos(filmTitle: string, year?: number, directo
   
   console.log(`After filtering: ${filteredVideos.length} videos`);
   
-  // Sort by quality score (views + duration + premium content)
-  return filteredVideos.sort((a, b) => getVideoQualityScore(b) - getVideoQualityScore(a));
+  // Sort: French content first, then by quality score
+  return filteredVideos.sort((a, b) => {
+    const aFr = isFrenchContent(a) ? 1 : 0;
+    const bFr = isFrenchContent(b) ? 1 : 0;
+    if (aFr !== bFr) return bFr - aFr;
+    return getVideoQualityScore(b) - getVideoQualityScore(a);
+  });
 }
 
 // Categorize videos by type based on title/description keywords
