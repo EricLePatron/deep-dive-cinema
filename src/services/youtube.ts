@@ -353,6 +353,8 @@ export function categorizeVideos(videos: YouTubeVideo[]): {
     'masterclass', 'master class', 'conférence', 'conference', 'lecture',
     'q&a', 'q & a', 'qa session', 'questions answers',
     'in conversation', 'conversation with', 'talks about', 'discusses',
+  'présenté par', 'présentation de', 'introduit par', 'séance présentée',
+  'avant-séance', 'ciné-club', 'cine-club', 'leçon de cinéma',
     // Cinémathèque / institutions
     'cinémathèque', 'cinematheque', 'forum des images', 'institut lumière',
     'criterion', 'retrospective', 'rétrospective', 'tribute', 'hommage',
