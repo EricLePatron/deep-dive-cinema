@@ -357,7 +357,15 @@ export default function FilmDeepDive() {
                 <SectionLoader />
               ) : books && books.length > 0 ? (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {books.slice(0, PREVIEW).map((book) => (
+                  {[...books]
+                    .sort((a, b) => {
+                      const aFr = a.language === 'fr' ? 1 : 0;
+                      const bFr = b.language === 'fr' ? 1 : 0;
+                      if (aFr !== bFr) return bFr - aFr;
+                      return b.relevanceScore - a.relevanceScore;
+                    })
+                    .slice(0, PREVIEW)
+                    .map((book) => (
                     <BookCard key={book.id} book={book} />
                   ))}
                 </div>
