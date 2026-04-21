@@ -65,6 +65,20 @@ const premiumChannels = [
   'sag-aftra', 'actors on actors', 'variety',
   'hollywood reporter', 'indiewire', 'film comment',
   'sight and sound', 'little white lies', 'mubi',
+  // International cinémathèques & repertory cinemas (NYC, London, Berlin, Bologna…)
+  'film at lincoln center', 'filmlinc', 'film society of lincoln center',
+  'museum of the moving image', 'moma', 'the museum of modern art',
+  'metrograph', 'ifc center', 'film forum', 'bam', 'bamcinematek',
+  'brooklyn academy of music', 'anthology film archives', 'quad cinema',
+  'ucla film', 'harvard film archive', 'academy museum',
+  'national film theatre', 'bfi southbank', 'ica london', 'close-up film',
+  'deutsche kinemathek', 'arsenal berlin', 'filmmuseum', 'austrian film museum',
+  'eye filmmuseum', 'cineteca di bologna', 'il cinema ritrovato',
+  'cinémathèque suisse', 'cinematheque ontario', 'tokyo filmex',
+  // Cross-interviews / craft roundtables
+  'variety studio', 'close up with the hollywood reporter', 'thr roundtable',
+  'the hollywood reporter', 'directors on directors', 'screen talks',
+  'off camera with sam jones', 'talks at google film', 'aero theatre',
   // Quality distributors
   'a24', 'neon', 'searchlight', 'focus features',
   'arrow video', 'shout factory', 'kino lorber',
