@@ -290,32 +290,24 @@ export async function searchFilmVideos(
     ? `("${filmTitle}" OR "${originalTitle}")`
     : `"${filmTitle}"`;
 
-  // Editorial / cinémathèque style: presentations, analyses, masterclass + production: tournage, making-of, interviews
-  // We run three queries: a focused FR cinémathèque query, a broader FR query, and an EN query,
-  // then merge & dedupe. FR results are kept first to win on conflict.
-  const queryFrCinematheque = `${titleVariants}${directorStr} "présenté par" OR "présentation" OR "introduit par" OR cinémathèque OR "ciné-club" OR masterclass`;
-  const queryFr = `${titleVariants}${directorStr}${yearStr} analyse OR décryptage OR entretien OR rencontre OR tournage OR "making of"`;
-  // International cinémathèques & repertory Q&As (NYC, London, Berlin, Bologna…)
-  const queryIntlCinematheque = `${titleVariants}${directorStr} ("q&a" OR "in conversation" OR "introduction" OR retrospective OR restoration) (filmlinc OR "lincoln center" OR metrograph OR moma OR "film forum" OR bamcinematek OR "bfi" OR "cinémathèque" OR cineteca)`;
-  // Cross-interviews / craft roundtables (Variety, THR, Actors on Actors…)
-  const queryRoundtable = `${titleVariants}${directorStr} ("actors on actors" OR roundtable OR "close up with" OR "directors on directors" OR "screen talks")`;
-  const queryEn = `${titleVariants}${directorStr}${yearStr} presentation OR analysis OR "video essay" OR masterclass OR interview OR "making of" OR "behind the scenes"`;
+  // To stay within the YouTube API quota (10k units / day, ~100 units per search),
+  // we run only TWO consolidated queries: one French (cinémathèque + analyses + tournage),
+  // one international (institutional Q&As + roundtables + analyses).
+  // FR results are kept first so they win on conflict.
+  const queryFr = `${titleVariants}${directorStr}${yearStr} (présentation OR cinémathèque OR "ciné-club" OR masterclass OR analyse OR décryptage OR entretien OR rencontre OR tournage OR "making of")`;
+  const queryEn = `${titleVariants}${directorStr}${yearStr} ("q&a" OR "in conversation" OR retrospective OR "actors on actors" OR roundtable OR "close up with" OR analysis OR "video essay" OR masterclass OR interview OR "making of" OR "behind the scenes")`;
 
-  console.log('YouTube search queries:', { queryFrCinematheque, queryFr, queryIntlCinematheque, queryRoundtable, queryEn });
+  console.log('YouTube search queries:', { queryFr, queryEn });
 
-  const [frCinemaVideos, frVideos, intlCinemaVideos, roundtableVideos, enVideos] = await Promise.all([
-    searchYouTubeVideos(queryFrCinematheque, 20).catch(() => [] as YouTubeVideo[]),
-    searchYouTubeVideos(queryFr, 20).catch(() => [] as YouTubeVideo[]),
-    searchYouTubeVideos(queryIntlCinematheque, 20).catch(() => [] as YouTubeVideo[]),
-    searchYouTubeVideos(queryRoundtable, 15).catch(() => [] as YouTubeVideo[]),
-    searchYouTubeVideos(queryEn, 20).catch(() => [] as YouTubeVideo[]),
+  const [frVideos, enVideos] = await Promise.all([
+    searchYouTubeVideos(queryFr, 25).catch(() => [] as YouTubeVideo[]),
+    searchYouTubeVideos(queryEn, 25).catch(() => [] as YouTubeVideo[]),
   ]);
 
-  // Dedupe by id. Order matters: FR cinémathèque first, then FR, then international
-  // cinémathèques, then premium roundtables, then generic EN. Earlier entries win.
+  // Dedupe by id. FR results first so they win on conflict.
   const seen = new Set<string>();
   const videos: YouTubeVideo[] = [];
-  for (const v of [...frCinemaVideos, ...frVideos, ...intlCinemaVideos, ...roundtableVideos, ...enVideos]) {
+  for (const v of [...frVideos, ...enVideos]) {
     if (seen.has(v.id)) continue;
     seen.add(v.id);
     videos.push(v);

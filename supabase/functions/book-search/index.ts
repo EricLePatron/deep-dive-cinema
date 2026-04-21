@@ -189,8 +189,15 @@ ${JSON.stringify(booksForAI, null, 1)}`;
       }
     }
 
-    // Filter out irrelevant books (strict threshold)
-    return books.filter(b => b.relevanceScore >= 60);
+    // Filter out irrelevant books (moderate threshold so niche / classic films
+    // still surface relevant editions). If too strict we kill the section entirely.
+    const filtered = books.filter(b => b.relevanceScore >= 40);
+    // Fallback: if AI scored everything too low (rare film, sparse data),
+    // keep the top-ranked results anyway so the user always sees something.
+    if (filtered.length < 3) {
+      return [...books].sort((a, b) => b.relevanceScore - a.relevanceScore).slice(0, 6);
+    }
+    return filtered;
   } catch (e) {
     console.error("AI ranking error:", e);
     return books;
