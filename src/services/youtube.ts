@@ -259,27 +259,42 @@ function getVideoQualityScore(video: YouTubeVideo): number {
 }
 
 // Search for all types of film content in a single, optimized query
-export async function searchFilmVideos(filmTitle: string, year?: number, director?: string): Promise<YouTubeVideo[]> {
+export async function searchFilmVideos(
+  filmTitle: string,
+  year?: number,
+  director?: string,
+  originalTitle?: string,
+): Promise<YouTubeVideo[]> {
   const yearStr = year ? ` ${year}` : '';
   // Include director name for better accuracy (crucial for films with common titles)
   const directorStr = director ? ` ${director}` : '';
 
+  // Use original title when distinct (e.g. "Roma città aperta" vs "Rome ville ouverte"),
+  // because French cinéma intros / cinémathèque presentations often reference the
+  // localized title while institutional content uses the original.
+  const titleVariants = originalTitle && originalTitle.toLowerCase() !== filmTitle.toLowerCase()
+    ? `("${filmTitle}" OR "${originalTitle}")`
+    : `"${filmTitle}"`;
+
   // Editorial / cinémathèque style: presentations, analyses, masterclass + production: tournage, making-of, interviews
-  // We run two queries (FR-leaning + EN) to maximise French content presence then merge & dedupe.
-  const queryFr = `${filmTitle}${directorStr}${yearStr} présentation OR analyse OR masterclass OR entretien OR rencontre OR making of OR tournage`;
-  const queryEn = `${filmTitle}${directorStr}${yearStr} presentation OR analysis OR video essay OR masterclass OR interview OR making of OR behind the scenes`;
+  // We run three queries: a focused FR cinémathèque query, a broader FR query, and an EN query,
+  // then merge & dedupe. FR results are kept first to win on conflict.
+  const queryFrCinematheque = `${titleVariants}${directorStr} "présenté par" OR "présentation" OR "introduit par" OR cinémathèque OR "ciné-club" OR masterclass`;
+  const queryFr = `${titleVariants}${directorStr}${yearStr} analyse OR décryptage OR entretien OR rencontre OR tournage OR "making of"`;
+  const queryEn = `${titleVariants}${directorStr}${yearStr} presentation OR analysis OR "video essay" OR masterclass OR interview OR "making of" OR "behind the scenes"`;
 
-  console.log('YouTube search queries:', { queryFr, queryEn });
+  console.log('YouTube search queries:', { queryFrCinematheque, queryFr, queryEn });
 
-  const [frVideos, enVideos] = await Promise.all([
-    searchYouTubeVideos(queryFr, 30).catch(() => [] as YouTubeVideo[]),
-    searchYouTubeVideos(queryEn, 30).catch(() => [] as YouTubeVideo[]),
+  const [frCinemaVideos, frVideos, enVideos] = await Promise.all([
+    searchYouTubeVideos(queryFrCinematheque, 25).catch(() => [] as YouTubeVideo[]),
+    searchYouTubeVideos(queryFr, 25).catch(() => [] as YouTubeVideo[]),
+    searchYouTubeVideos(queryEn, 25).catch(() => [] as YouTubeVideo[]),
   ]);
 
   // Dedupe by id, FR results first so they win on conflict
   const seen = new Set<string>();
   const videos: YouTubeVideo[] = [];
-  for (const v of [...frVideos, ...enVideos]) {
+  for (const v of [...frCinemaVideos, ...frVideos, ...enVideos]) {
     if (seen.has(v.id)) continue;
     seen.add(v.id);
     videos.push(v);
