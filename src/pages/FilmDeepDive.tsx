@@ -94,7 +94,7 @@ export default function FilmDeepDive() {
   const filmYear = film?.year;
   const filmDirector = film?.director || "";
 
-  const { data: videos, isLoading: loadingVideos } = useFilmVideos(filmTitle, filmYear, filmDirector);
+  const { data: videos, isLoading: loadingVideos } = useFilmVideos(filmTitle, filmYear, filmDirector, film?.originalTitle);
   const { data: podcasts, isLoading: loadingPodcasts } = useFilmPodcasts(filmTitle, filmDirector);
 
   const castNames = film?.cast?.map((c) => c.name) || [];
