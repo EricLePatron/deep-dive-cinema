@@ -109,9 +109,8 @@ export default function FilmDeepDive() {
   );
 
   const totalBooks = books?.length || 0;
-  const totalBts = videos?.behindTheScenes.length || 0;
-  const totalAnalysis = videos?.analysis.length || 0;
-  const totalInterviews = videos?.interviews.length || 0;
+  const totalProduction = videos?.production.length || 0;
+  const totalEditorial = videos?.editorial.length || 0;
   const totalPodcasts = podcasts?.length || 0;
 
   const goToTab = useCallback((tab: string) => {
