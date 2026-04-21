@@ -12,6 +12,9 @@ export interface BookResult {
   infoLink: string;
   category: 'film' | 'director' | 'cast' | 'genre';
   relevanceScore: number;
+  language: string;
+  isbn: string | null;
+  retailers: { name: string; url: string }[];
 }
 
 interface BookSearchResponse {
