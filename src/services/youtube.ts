@@ -84,6 +84,15 @@ const premiumChannels = [
   'télérama', 'positif', 'cinémathèque', 'institut lumière',
   'le cercle', 'blow up', 'analyse film', 'cinéaste',
   'la septième obsession', 'sofilm', 'mad movies',
+  // French independent cinemas (cinémathèque-style introductions)
+  'cinéma le champo', 'le champo', 'cinemalechampo',
+  'le balzac', 'mac mahon', 'reflet médicis', 'reflet medicis',
+  'le christine', 'le grand action', 'studio 28', 'studio des ursulines',
+  'la filmothèque', 'la filmotheque', 'le luminor', "l'escurial",
+  'cinéma du panthéon', 'cinema du pantheon', 'le brady', 'mk2',
+  'gaumont rive gauche', 'pathé live', 'le saint-andré-des-arts',
+  "l'arlequin", 'le nouveau latina', 'majestic bastille',
+  'forum des images', 'la cinémathèque française', 'cinematheque francaise',
   // Studios & distributors with quality BTS content
   'warner bros', 'universal pictures', 'paramount',
   'sony pictures', 'lionsgate', 'mgm',
@@ -140,7 +149,14 @@ const frenchChannelHints = [
   'arte', 'cahiers du cinéma', 'cinémathèque', 'cinematheque', 'institut lumière',
   'le cercle', 'blow up', 'télérama', 'telerama', 'positif', 'la septième obsession',
   'sofilm', 'mad movies', 'les inrocks', 'allociné', 'allocine', 'france culture',
-  'france inter', 'mk2', 'forum des images', 'la fémis', 'femis', 'unifrance'
+  'france inter', 'mk2', 'forum des images', 'la fémis', 'femis', 'unifrance',
+  // French independent cinemas
+  'le champo', 'cinemalechampo', 'le balzac', 'mac mahon', 'reflet médicis',
+  'reflet medicis', 'le christine', 'le grand action', 'studio 28',
+  'studio des ursulines', 'filmothèque', 'filmotheque', 'le luminor',
+  'escurial', 'cinéma du panthéon', 'cinema du pantheon', 'le brady',
+  'gaumont rive gauche', 'saint-andré-des-arts', 'saint andre des arts',
+  'arlequin', 'nouveau latina', 'majestic bastille'
 ];
 const frenchWordHints = [
   ' le ', ' la ', ' les ', ' un ', ' une ', ' des ', ' du ', ' de la ',
@@ -195,23 +211,33 @@ function getVideoQualityScore(video: YouTubeVideo): number {
   const channelLower = video.channelTitle.toLowerCase();
   const combined = titleLower + ' ' + descLower;
   
-  // Premium channel bonus (+30 points)
+  // Premium channel bonus (+50 points) — strong editorial signal
   if (premiumChannels.some(ch => channelLower.includes(ch))) {
-    score += 30;
+    score += 50;
   }
-  
+
+  // STRONG editorial format: "présenté par", "introduit par", "séance" — exactly the
+  // cinémathèque introductions we want to surface (+40 points)
+  const cinemathequeFormats = [
+    'présenté par', 'présentée par', 'introduit par', 'introduite par',
+    'présentation de', 'séance présentée', 'avant-séance', 'leçon de cinéma',
+    'masterclass', 'ciné-club', 'cine-club',
+  ];
+  if (cinemathequeFormats.some(kw => combined.includes(kw))) {
+    score += 40;
+  }
+
   // Premium content keywords bonus (+5 per keyword, max 25)
   const contentMatches = premiumContentKeywords.filter(kw => combined.includes(kw));
   score += Math.min(contentMatches.length * 5, 25);
-  
-  // VIEW COUNT is now a major factor (up to 50 points)
-  if (video.viewCount > 10000000) score += 50;       // 10M+ views
-  else if (video.viewCount > 5000000) score += 45;   // 5M+ views
-  else if (video.viewCount > 1000000) score += 40;   // 1M+ views
-  else if (video.viewCount > 500000) score += 35;    // 500K+ views
-  else if (video.viewCount > 100000) score += 25;    // 100K+ views
-  else if (video.viewCount > 50000) score += 15;     // 50K+ views
-  else if (video.viewCount > 10000) score += 10;     // 10K+ views
+
+  // VIEW COUNT — kept as a soft signal only (max 20). Niche cinémathèque
+  // content has very few views but high editorial value, so we don't let
+  // popularity dominate.
+  if (video.viewCount > 1000000) score += 20;
+  else if (video.viewCount > 100000) score += 15;
+  else if (video.viewCount > 10000) score += 10;
+  else if (video.viewCount > 1000) score += 5;
   
   // DURATION bonus - longer content is better for cinephiles (up to 30 points)
   const minutes = getVideoDurationMinutes(video);
@@ -233,27 +259,42 @@ function getVideoQualityScore(video: YouTubeVideo): number {
 }
 
 // Search for all types of film content in a single, optimized query
-export async function searchFilmVideos(filmTitle: string, year?: number, director?: string): Promise<YouTubeVideo[]> {
+export async function searchFilmVideos(
+  filmTitle: string,
+  year?: number,
+  director?: string,
+  originalTitle?: string,
+): Promise<YouTubeVideo[]> {
   const yearStr = year ? ` ${year}` : '';
   // Include director name for better accuracy (crucial for films with common titles)
   const directorStr = director ? ` ${director}` : '';
 
+  // Use original title when distinct (e.g. "Roma città aperta" vs "Rome ville ouverte"),
+  // because French cinéma intros / cinémathèque presentations often reference the
+  // localized title while institutional content uses the original.
+  const titleVariants = originalTitle && originalTitle.toLowerCase() !== filmTitle.toLowerCase()
+    ? `("${filmTitle}" OR "${originalTitle}")`
+    : `"${filmTitle}"`;
+
   // Editorial / cinémathèque style: presentations, analyses, masterclass + production: tournage, making-of, interviews
-  // We run two queries (FR-leaning + EN) to maximise French content presence then merge & dedupe.
-  const queryFr = `${filmTitle}${directorStr}${yearStr} présentation OR analyse OR masterclass OR entretien OR rencontre OR making of OR tournage`;
-  const queryEn = `${filmTitle}${directorStr}${yearStr} presentation OR analysis OR video essay OR masterclass OR interview OR making of OR behind the scenes`;
+  // We run three queries: a focused FR cinémathèque query, a broader FR query, and an EN query,
+  // then merge & dedupe. FR results are kept first to win on conflict.
+  const queryFrCinematheque = `${titleVariants}${directorStr} "présenté par" OR "présentation" OR "introduit par" OR cinémathèque OR "ciné-club" OR masterclass`;
+  const queryFr = `${titleVariants}${directorStr}${yearStr} analyse OR décryptage OR entretien OR rencontre OR tournage OR "making of"`;
+  const queryEn = `${titleVariants}${directorStr}${yearStr} presentation OR analysis OR "video essay" OR masterclass OR interview OR "making of" OR "behind the scenes"`;
 
-  console.log('YouTube search queries:', { queryFr, queryEn });
+  console.log('YouTube search queries:', { queryFrCinematheque, queryFr, queryEn });
 
-  const [frVideos, enVideos] = await Promise.all([
-    searchYouTubeVideos(queryFr, 30).catch(() => [] as YouTubeVideo[]),
-    searchYouTubeVideos(queryEn, 30).catch(() => [] as YouTubeVideo[]),
+  const [frCinemaVideos, frVideos, enVideos] = await Promise.all([
+    searchYouTubeVideos(queryFrCinematheque, 25).catch(() => [] as YouTubeVideo[]),
+    searchYouTubeVideos(queryFr, 25).catch(() => [] as YouTubeVideo[]),
+    searchYouTubeVideos(queryEn, 25).catch(() => [] as YouTubeVideo[]),
   ]);
 
   // Dedupe by id, FR results first so they win on conflict
   const seen = new Set<string>();
   const videos: YouTubeVideo[] = [];
-  for (const v of [...frVideos, ...enVideos]) {
+  for (const v of [...frCinemaVideos, ...frVideos, ...enVideos]) {
     if (seen.has(v.id)) continue;
     seen.add(v.id);
     videos.push(v);
@@ -337,6 +378,8 @@ export function categorizeVideos(videos: YouTubeVideo[]): {
     'masterclass', 'master class', 'conférence', 'conference', 'lecture',
     'q&a', 'q & a', 'qa session', 'questions answers',
     'in conversation', 'conversation with', 'talks about', 'discusses',
+  'présenté par', 'présentation de', 'introduit par', 'séance présentée',
+  'avant-séance', 'ciné-club', 'cine-club', 'leçon de cinéma',
     // Cinémathèque / institutions
     'cinémathèque', 'cinematheque', 'forum des images', 'institut lumière',
     'criterion', 'retrospective', 'rétrospective', 'tribute', 'hommage',
