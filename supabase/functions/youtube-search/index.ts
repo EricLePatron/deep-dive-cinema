@@ -48,6 +48,14 @@ serve(async (req) => {
     if (!searchResponse.ok) {
       const errorText = await searchResponse.text();
       console.error('YouTube API error:', errorText);
+      // Quota exceeded → return empty list so the UI can degrade gracefully
+      // instead of bubbling a 500 that breaks the whole page.
+      if (searchResponse.status === 403 && errorText.includes('quota')) {
+        console.warn('YouTube quota exceeded — returning empty result set');
+        return new Response(JSON.stringify({ videos: [], quotaExceeded: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
       throw new Error(`YouTube API error: ${searchResponse.status}`);
     }
 
@@ -77,6 +85,29 @@ serve(async (req) => {
     if (!videosResponse.ok) {
       const errorText = await videosResponse.text();
       console.error('YouTube Videos API error:', errorText);
+      // Quota exceeded on videos.list → fall back to search snippet data
+      // (no duration / viewCount, but at least we can show videos).
+      if (videosResponse.status === 403 && errorText.includes('quota')) {
+        console.warn('YouTube videos.list quota exceeded — falling back to search snippets');
+        const fallbackVideos = searchData.items
+          .filter((item: any) => item.id.videoId)
+          .map((item: any) => ({
+            id: item.id.videoId,
+            title: item.snippet.title,
+            description: item.snippet.description,
+            channelTitle: item.snippet.channelTitle,
+            channelId: item.snippet.channelId,
+            publishedAt: item.snippet.publishedAt,
+            thumbnailUrl: item.snippet.thumbnails?.high?.url || item.snippet.thumbnails?.default?.url,
+            duration: '10:00', // unknown — assume passes the 5-min filter
+            viewCount: 0,
+            likeCount: 0,
+            url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
+          }));
+        return new Response(JSON.stringify({ videos: fallbackVideos, quotaExceeded: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
       throw new Error(`YouTube Videos API error: ${videosResponse.status}`);
     }
 
