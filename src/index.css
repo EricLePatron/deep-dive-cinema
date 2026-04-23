@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Nunito:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -25,7 +25,7 @@
     --border: 0 0% 90%;
     --input: 0 0% 90%;
     --ring: 0 0% 8%;
-    --radius: 0.125rem;
+    --radius: 0.75rem;
   }
 
   .dark {
@@ -60,42 +60,44 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', sans-serif;
-    font-feature-settings: 'ss01', 'cv11';
+    font-family: 'Nunito', system-ui, sans-serif;
+    font-feature-settings: 'ss01';
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Instrument Serif', serif;
-    font-weight: 400;
-    letter-spacing: -0.01em;
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 500;
+    font-variation-settings: "SOFT" 100, "WONK" 0, "opsz" 96;
+    letter-spacing: -0.015em;
   }
 }
 
 @layer utilities {
   .font-display {
-    font-family: 'Instrument Serif', serif;
-    font-weight: 400;
-    letter-spacing: -0.01em;
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 500;
+    font-variation-settings: "SOFT" 100, "WONK" 0, "opsz" 96;
+    letter-spacing: -0.015em;
   }
 
   .font-body {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Nunito', system-ui, sans-serif;
   }
 
-  /* Editorial micro-label — MUBI Notebook style */
+  /* Editorial micro-label — softer, more accessible */
   .editorial-label {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Nunito', system-ui, sans-serif;
     text-transform: uppercase;
-    letter-spacing: 0.2em;
-    font-size: 10px;
-    font-weight: 500;
+    letter-spacing: 0.14em;
+    font-size: 11px;
+    font-weight: 600;
     color: hsl(var(--muted-foreground));
   }
 
-  /* Posters: near-square corners, 2:3 ratio */
+  /* Posters: softly rounded, 2:3 ratio */
   .poster-frame {
     aspect-ratio: 2 / 3;
-    border-radius: 2px;
+    border-radius: 10px;
     overflow: hidden;
     background: hsl(var(--muted));
   }

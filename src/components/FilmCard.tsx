@@ -26,7 +26,7 @@ export function FilmCard({ film, size = "md" }: FilmCardProps) {
       to={`/film/${film.id}`}
       className={cn("group flex-shrink-0 block", sizeClasses[size])}
     >
-      <div className="relative overflow-hidden rounded-sm aspect-[2/3] bg-muted transition-opacity duration-200 group-hover:opacity-85">
+      <div className="relative overflow-hidden rounded-xl aspect-[2/3] bg-muted transition-opacity duration-200 group-hover:opacity-85">
         {film.posterUrl ? (
           <img
             src={film.posterUrl}

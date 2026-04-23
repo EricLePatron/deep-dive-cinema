@@ -59,13 +59,13 @@ export default {
         },
       },
       fontFamily: {
-        display: ["'Instrument Serif'", "serif"],
-        body: ["'Inter'", "sans-serif"],
+        display: ["'Fraunces'", "Georgia", "serif"],
+        body: ["'Nunito'", "system-ui", "sans-serif"],
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "calc(var(--radius) + 2px)",
-        sm: "calc(var(--radius) - 1px)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
       keyframes: {
         "accordion-down": {
