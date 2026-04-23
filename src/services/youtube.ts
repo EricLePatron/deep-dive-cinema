@@ -291,23 +291,30 @@ export async function searchFilmVideos(
     : `"${filmTitle}"`;
 
   // To stay within the YouTube API quota (10k units / day, ~100 units per search),
-  // we run only TWO consolidated queries: one French (cinémathèque + analyses + tournage),
-  // one international (institutional Q&As + roundtables + analyses).
-  // FR results are kept first so they win on conflict.
+  // we run THREE consolidated queries:
+  //   1. queryIntro — narrow French cinéphile intro (no director/year so low-metadata
+  //      cinémathèque presentations like "ROME VILLE OUVERTE présenté par Matthieu
+  //      Macheret" on Cinéma Le Champo are surfaced even though they have empty
+  //      descriptions and don't mention the director or year).
+  //   2. queryFr   — broad French (cinémathèque + analyses + tournage), with director/year.
+  //   3. queryEn   — international (institutional Q&As + roundtables + analyses).
+  // Intro results come FIRST so cinémathèque-style introductions outrank everything.
+  const queryIntro = `${titleVariants} ("présenté par" OR "présentée par" OR "introduit par" OR "introduite par" OR "présentation de" OR "séance présentée" OR "avant-séance" OR "ciné-club" OR "leçon de cinéma")`;
   const queryFr = `${titleVariants}${directorStr}${yearStr} (présentation OR cinémathèque OR "ciné-club" OR masterclass OR analyse OR décryptage OR entretien OR rencontre OR tournage OR "making of")`;
   const queryEn = `${titleVariants}${directorStr}${yearStr} ("q&a" OR "in conversation" OR retrospective OR "actors on actors" OR roundtable OR "close up with" OR analysis OR "video essay" OR masterclass OR interview OR "making of" OR "behind the scenes")`;
 
-  console.log('YouTube search queries:', { queryFr, queryEn });
+  console.log('YouTube search queries:', { queryIntro, queryFr, queryEn });
 
-  const [frVideos, enVideos] = await Promise.all([
+  const [introVideos, frVideos, enVideos] = await Promise.all([
+    searchYouTubeVideos(queryIntro, 15).catch(() => [] as YouTubeVideo[]),
     searchYouTubeVideos(queryFr, 25).catch(() => [] as YouTubeVideo[]),
     searchYouTubeVideos(queryEn, 25).catch(() => [] as YouTubeVideo[]),
   ]);
 
-  // Dedupe by id. FR results first so they win on conflict.
+  // Dedupe by id. Intro results first, then FR, then EN — earlier wins on conflict.
   const seen = new Set<string>();
   const videos: YouTubeVideo[] = [];
-  for (const v of [...frVideos, ...enVideos]) {
+  for (const v of [...introVideos, ...frVideos, ...enVideos]) {
     if (seen.has(v.id)) continue;
     seen.add(v.id);
     videos.push(v);
