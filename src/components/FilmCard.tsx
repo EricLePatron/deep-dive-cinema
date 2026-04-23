@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Star, Film as FilmIcon } from "lucide-react";
+import { Film as FilmIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface FilmCardProps {
@@ -16,20 +16,17 @@ interface FilmCardProps {
 
 export function FilmCard({ film, size = "md" }: FilmCardProps) {
   const sizeClasses = {
-    sm: "w-28 md:w-32",
-    md: "w-32 md:w-40 snap-start",
-    lg: "w-40 md:w-48",
+    sm: "w-24 md:w-28",
+    md: "w-28 md:w-36 snap-start",
+    lg: "w-36 md:w-44",
   };
 
   return (
     <Link
       to={`/film/${film.id}`}
-      className={cn(
-        "group flex-shrink-0 block",
-        sizeClasses[size]
-      )}
+      className={cn("group flex-shrink-0 block", sizeClasses[size])}
     >
-      <div className="relative overflow-hidden rounded-xl aspect-[2/3] bg-muted transition-transform duration-300 group-hover:scale-105 poster-shadow">
+      <div className="relative overflow-hidden rounded-sm aspect-[2/3] bg-muted transition-opacity duration-200 group-hover:opacity-85">
         {film.posterUrl ? (
           <img
             src={film.posterUrl}
@@ -39,26 +36,16 @@ export function FilmCard({ film, size = "md" }: FilmCardProps) {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <FilmIcon className="h-10 w-10 text-muted-foreground" />
+            <FilmIcon className="h-8 w-8 text-muted-foreground" />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-          {film.rating !== undefined && film.rating > 0 && (
-            <div className="flex items-center gap-1 text-primary">
-              <Star className="h-3.5 w-3.5 fill-primary" />
-              <span className="text-sm font-medium">{film.rating.toFixed(1)}</span>
-            </div>
-          )}
-        </div>
       </div>
-      <div className="mt-3 space-y-1">
-        <h3 className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
+      <div className="mt-2.5">
+        <h3 className="text-[13px] font-medium text-foreground truncate leading-snug">
           {film.title}
         </h3>
-        <p className="text-sm text-muted-foreground">
-          {film.year > 0 ? film.year : "Unknown year"}
-          {film.director && ` • ${film.director}`}
+        <p className="text-[11px] text-muted-foreground tabular-nums mt-0.5">
+          {film.year > 0 ? film.year : "—"}
         </p>
       </div>
     </Link>

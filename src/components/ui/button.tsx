@@ -5,28 +5,28 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-sm text-sm font-medium ring-offset-background transition-opacity duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        default: "bg-primary text-primary-foreground hover:opacity-90",
+        destructive: "bg-destructive text-destructive-foreground hover:opacity-90",
+        outline: "border border-border bg-transparent hover:bg-muted/40",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-        // Cinema-specific variants
-        cinema: "bg-primary text-primary-foreground font-semibold hover:bg-primary/90 shadow-lg hover:shadow-xl hover:shadow-primary/20 transition-all",
-        "cinema-outline": "border-2 border-primary/60 text-primary bg-transparent hover:bg-primary/10 hover:border-primary font-medium",
-        "cinema-ghost": "text-foreground/80 hover:text-foreground hover:bg-muted/50",
-        "cinema-gold": "bg-gradient-to-r from-amber-500 to-amber-600 text-primary-foreground font-semibold shadow-lg hover:shadow-xl hover:shadow-amber-500/30 hover:scale-[1.02] active:scale-[0.98]",
+        ghost: "hover:bg-muted/40",
+        link: "text-foreground underline-offset-4 hover:underline",
+        // Cinéphile editorial variants — minimal, MUBI-inspired
+        cinema: "bg-foreground text-background font-medium hover:opacity-85",
+        "cinema-outline": "border border-foreground/30 text-foreground bg-transparent hover:border-foreground hover:bg-foreground/5",
+        "cinema-ghost": "text-foreground/70 hover:text-foreground hover:bg-foreground/5",
+        "cinema-gold": "bg-foreground text-background font-medium hover:opacity-85",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        xl: "h-14 rounded-lg px-10 text-base",
-        icon: "h-10 w-10",
+        default: "h-9 px-4 py-2",
+        sm: "h-8 px-3 text-xs",
+        lg: "h-10 px-6",
+        xl: "h-12 px-8 text-base",
+        icon: "h-9 w-9",
       },
     },
     defaultVariants: {
