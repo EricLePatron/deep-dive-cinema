@@ -312,9 +312,9 @@ export default function FilmDeepDive() {
       </section>
 
       {/* Tabs : Aperçu + onglets dédiés */}
-      <section id="content" className="container mx-auto px-6 py-12">
+      <section id="content" className="container mx-auto px-6 py-14">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-10">
-          <TabsList className="bg-transparent p-0 border-b border-border/40 rounded-none h-auto w-full justify-start gap-1 flex-wrap">
+          <TabsList className="bg-transparent p-0 border-b border-border rounded-none h-auto w-full justify-start gap-0 flex-wrap">
             {[
               { id: "overview", label: "Aperçu" },
               { id: "books", label: "Livres", count: totalBooks },
@@ -327,14 +327,14 @@ export default function FilmDeepDive() {
                 key={tab.id}
                 value={tab.id}
                 className={cn(
-                  "rounded-none px-4 py-3 text-sm font-medium border-b-2 border-transparent bg-transparent shadow-none",
+                  "rounded-none px-5 py-3 text-[13px] font-medium uppercase tracking-[0.15em] border-b border-transparent bg-transparent shadow-none -mb-px",
                   "data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none",
                   "data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground"
                 )}
               >
                 {tab.label}
                 {tab.count !== undefined && tab.count > 0 && (
-                  <span className="ml-2 text-xs text-muted-foreground tabular-nums">{tab.count}</span>
+                  <span className="ml-2 text-[10px] text-muted-foreground tabular-nums">{tab.count}</span>
                 )}
               </TabsTrigger>
             ))}
