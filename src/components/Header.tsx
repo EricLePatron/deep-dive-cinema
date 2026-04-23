@@ -64,8 +64,8 @@ export function Header() {
         <div className="flex items-center justify-between h-14">
           {/* Wordmark logo */}
           <Link to="/" className="group flex-shrink-0">
-            <span className="font-display text-2xl tracking-tight leading-none">
-              Deep<span className="italic">dive</span>
+            <span className="font-display text-2xl font-semibold tracking-tight leading-none">
+              Deep<span className="italic font-normal">dive</span>
             </span>
           </Link>
 
@@ -79,7 +79,7 @@ export function Header() {
                 <Button
                   variant="cinema-ghost"
                   size="icon"
-                  className="rounded-sm flex-shrink-0"
+                  className="rounded-full flex-shrink-0"
                   onClick={() => setSearchOpen(false)}
                 >
                   <X className="h-4 w-4" />
@@ -93,7 +93,7 @@ export function Header() {
             <Button
               variant="cinema-ghost"
               size="icon"
-              className="rounded-sm"
+              className="rounded-full"
               onClick={() => setSearchOpen(true)}
               aria-label="Rechercher"
             >
@@ -107,12 +107,12 @@ export function Header() {
                   alt=""
                   className="w-7 h-7 rounded-full"
                 />
-                <Button variant="cinema-ghost" size="icon" className="rounded-sm" onClick={handleSignOut} aria-label="Se déconnecter">
+                <Button variant="cinema-ghost" size="icon" className="rounded-full" onClick={handleSignOut} aria-label="Se déconnecter">
                   <LogOut className="h-4 w-4" />
                 </Button>
               </div>
             ) : (
-              <Button variant="cinema-outline" size="sm" onClick={handleSignIn} className="ml-2 editorial-label !text-[10px]">
+              <Button variant="cinema-outline" size="sm" onClick={handleSignIn} className="ml-2 editorial-label !text-[11px]">
                 Sign In
               </Button>
             )}
