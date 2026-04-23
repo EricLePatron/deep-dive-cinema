@@ -355,7 +355,13 @@ export default function FilmDeepDive() {
       </section>
 
       {/* Tabs : Aperçu + onglets dédiés */}
-      <section id="content" className="container mx-auto px-6 py-14">
+      <section id="content" className="container mx-auto px-6 py-10 md:py-14">
+        <div className="mb-6">
+          <p className="editorial-label mb-2">— Explorer</p>
+          <h2 className="font-display text-3xl md:text-4xl text-foreground tracking-tight">
+            Tout autour du film
+          </h2>
+        </div>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-10">
           <TabsList className="bg-transparent p-0 border-b border-border rounded-none h-auto w-full justify-start gap-0 flex-wrap">
             {[
