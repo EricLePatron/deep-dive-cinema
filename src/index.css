@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,64 +6,50 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 30 10% 10%;
-    --card: 0 0% 98%;
-    --card-foreground: 30 10% 10%;
+    --background: 0 0% 98%;
+    --foreground: 0 0% 8%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 8%;
     --popover: 0 0% 100%;
-    --popover-foreground: 30 10% 10%;
-    --primary: 38 92% 50%;
-    --primary-foreground: 0 0% 5%;
-    --secondary: 30 20% 94%;
-    --secondary-foreground: 30 10% 20%;
-    --muted: 30 15% 92%;
-    --muted-foreground: 30 10% 45%;
-    --accent: 38 92% 50%;
-    --accent-foreground: 0 0% 5%;
+    --popover-foreground: 0 0% 8%;
+    --primary: 0 0% 8%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 94%;
+    --secondary-foreground: 0 0% 12%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 42%;
+    --accent: 154 100% 41%;
+    --accent-foreground: 0 0% 8%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 30 15% 88%;
-    --input: 30 15% 88%;
-    --ring: 38 92% 50%;
-    --radius: 0.5rem;
-
-    /* Custom cinema tokens */
-    --cinema-gold: 38 92% 50%;
-    --cinema-gold-soft: 38 70% 65%;
-    --cinema-warm: 30 40% 20%;
-    --cinema-surface: 0 0% 98%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 8%;
+    --radius: 0.125rem;
   }
 
   .dark {
-    --background: 220 20% 6%;
-    --foreground: 40 20% 95%;
-    --card: 220 18% 10%;
-    --card-foreground: 40 20% 95%;
-    --popover: 220 20% 8%;
-    --popover-foreground: 40 20% 95%;
-    --primary: 38 92% 55%;
-    --primary-foreground: 220 20% 6%;
-    --secondary: 220 15% 15%;
-    --secondary-foreground: 40 20% 90%;
-    --muted: 220 15% 18%;
-    --muted-foreground: 220 10% 55%;
-    --accent: 38 92% 55%;
-    --accent-foreground: 220 20% 6%;
+    /* MUBI-inspired editorial dark palette */
+    --background: 0 0% 5%;
+    --foreground: 40 15% 94%;
+    --card: 0 0% 7%;
+    --card-foreground: 40 15% 94%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 40 15% 94%;
+    --primary: 40 15% 94%;
+    --primary-foreground: 0 0% 5%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 40 15% 90%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 55%;
+    /* Letterboxd-ish muted green for ratings/badges */
+    --accent: 154 100% 41%;
+    --accent-foreground: 0 0% 5%;
     --destructive: 0 62% 45%;
     --destructive-foreground: 0 0% 98%;
-    --border: 220 15% 18%;
-    --input: 220 15% 18%;
-    --ring: 38 92% 55%;
-
-    /* Custom cinema tokens - dark */
-    --cinema-gold: 38 92% 55%;
-    --cinema-gold-soft: 38 70% 45%;
-    --cinema-warm: 30 30% 85%;
-    --cinema-surface: 220 18% 10%;
-    --cinema-surface-elevated: 220 16% 14%;
-    --cinema-surface-hover: 220 14% 18%;
-    --cinema-gradient-start: 220 20% 6%;
-    --cinema-gradient-end: 220 25% 3%;
+    --border: 0 0% 12%;
+    --input: 0 0% 14%;
+    --ring: 40 15% 94%;
   }
 }
 
@@ -75,81 +61,68 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', sans-serif;
+    font-feature-settings: 'ss01', 'cv11';
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Instrument Serif', serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
   }
 }
 
 @layer utilities {
   .font-display {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Instrument Serif', serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
   }
 
   .font-body {
     font-family: 'Inter', sans-serif;
   }
 
-  .text-cinema-gold {
-    color: hsl(var(--cinema-gold));
+  /* Editorial micro-label — MUBI Notebook style */
+  .editorial-label {
+    font-family: 'Inter', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-size: 10px;
+    font-weight: 500;
+    color: hsl(var(--muted-foreground));
   }
 
-  .bg-cinema-gold {
-    background-color: hsl(var(--cinema-gold));
+  /* Posters: near-square corners, 2:3 ratio */
+  .poster-frame {
+    aspect-ratio: 2 / 3;
+    border-radius: 2px;
+    overflow: hidden;
+    background: hsl(var(--muted));
   }
 
-  .bg-cinema-surface {
-    background-color: hsl(var(--cinema-surface));
+  /* Letterboxd-style accent (rating green) */
+  .text-accent-rating {
+    color: hsl(var(--accent));
   }
 
-  .bg-cinema-surface-elevated {
-    background-color: hsl(var(--cinema-surface-elevated));
-  }
-
-  .cinema-gradient {
-    background: linear-gradient(
-      180deg,
-      hsl(var(--cinema-gradient-start)) 0%,
-      hsl(var(--cinema-gradient-end)) 100%
-    );
-  }
-
-  .cinema-gradient-radial {
-    background: radial-gradient(
-      ellipse at top,
-      hsl(220 20% 12%) 0%,
-      hsl(220 20% 6%) 70%
-    );
-  }
-
-  .cinema-glow {
-    box-shadow: 0 0 60px -15px hsl(var(--cinema-gold) / 0.3);
-  }
-
-  .cinema-text-glow {
-    text-shadow: 0 0 40px hsl(var(--cinema-gold) / 0.5);
-  }
-
-  .poster-shadow {
-    box-shadow: 
-      0 25px 50px -12px rgba(0, 0, 0, 0.6),
-      0 12px 24px -8px rgba(0, 0, 0, 0.4);
+  /* Subtle separator */
+  .editorial-rule {
+    border-top: 1px solid hsl(var(--border));
   }
 
   .glass-panel {
-    background: hsl(220 18% 10% / 0.8);
-    backdrop-filter: blur(20px);
-    border: 1px solid hsl(220 15% 20% / 0.5);
+    background: hsl(var(--background) / 0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid hsl(var(--border));
   }
 
+  /* Flat content card — no elevation, just space */
   .content-card {
-    @apply bg-cinema-surface-elevated rounded-lg border border-border/50 transition-all duration-300;
+    @apply bg-transparent transition-opacity duration-200;
   }
 
   .content-card:hover {
-    @apply bg-cinema-surface-hover border-primary/30;
-    transform: translateY(-2px);
+    opacity: 0.85;
   }
 }
 
@@ -160,79 +133,63 @@
 }
 
 .dark ::-webkit-scrollbar-track {
-  background: hsl(220 20% 8%);
+  background: hsl(0 0% 5%);
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: hsl(220 15% 25%);
+  background: hsl(0 0% 18%);
   border-radius: 4px;
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: hsl(220 15% 35%);
+  background: hsl(0 0% 25%);
 }
 
-/* Animations */
-@keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
+/* Animations — fades only, no vertical movement */
 @keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-.animate-fade-in-up {
-  animation: fade-in-up 0.6s ease-out forwards;
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 .animate-fade-in {
-  animation: fade-in 0.4s ease-out forwards;
+  animation: fade-in 0.5s ease-out forwards;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out forwards;
 }
 
 .animate-shimmer {
   background: linear-gradient(
     90deg,
-    hsl(220 15% 15%) 0%,
-    hsl(220 15% 20%) 50%,
-    hsl(220 15% 15%) 100%
+    hsl(0 0% 10%) 0%,
+    hsl(0 0% 14%) 50%,
+    hsl(0 0% 10%) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
 
-/* Stagger children animations */
 .stagger-children > * {
   opacity: 0;
-  animation: fade-in-up 0.5s ease-out forwards;
+  animation: fade-in 0.4s ease-out forwards;
 }
-
-.stagger-children > *:nth-child(1) { animation-delay: 0.1s; }
-.stagger-children > *:nth-child(2) { animation-delay: 0.2s; }
-.stagger-children > *:nth-child(3) { animation-delay: 0.3s; }
-.stagger-children > *:nth-child(4) { animation-delay: 0.4s; }
-.stagger-children > *:nth-child(5) { animation-delay: 0.5s; }
-.stagger-children > *:nth-child(6) { animation-delay: 0.6s; }
+.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
 
 /* PWA safe areas */
 .safe-top { padding-top: env(safe-area-inset-top, 0px); }

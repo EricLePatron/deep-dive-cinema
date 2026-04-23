@@ -1,4 +1,4 @@
-import { Headphones, Play, ExternalLink, Radio } from "lucide-react";
+import { Headphones, Play, Radio } from "lucide-react";
 import { PodcastEpisode, formatPodcastDate } from "@/services/podcast";
 import { cn } from "@/lib/utils";
 
@@ -15,17 +15,12 @@ export function PodcastCard({ episode, variant = 'default' }: PodcastCardProps) 
       href={episode.episodeUrl || episode.audioUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className={cn(
-        "group block rounded-xl overflow-hidden transition-all duration-300",
-        "bg-muted/30 hover:bg-muted/50 border border-border/50 hover:border-primary/30",
-        "hover:shadow-lg hover:shadow-primary/5",
-        isCompact ? "p-3" : "p-4"
-      )}
+      className="group block pt-4 border-t border-border/60 transition-opacity hover:opacity-90"
     >
-      <div className={cn("flex gap-4", isCompact ? "items-center" : "items-start")}>
+      <div className={cn("flex gap-4", isCompact ? "items-start" : "items-start")}>
         {/* Thumbnail */}
         <div className={cn(
-          "relative flex-shrink-0 rounded-lg overflow-hidden bg-muted",
+          "relative flex-shrink-0 rounded-sm overflow-hidden bg-muted",
           isCompact ? "w-16 h-16" : "w-20 h-20"
         )}>
           {episode.thumbnailUrl ? (
@@ -39,65 +34,50 @@ export function PodcastCard({ episode, variant = 'default' }: PodcastCardProps) 
               <Headphones className="h-6 w-6 text-muted-foreground" />
             </div>
           )}
-          
-          {/* Play overlay */}
-          <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Play className="h-6 w-6 text-white fill-white" />
+
+          <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-colors">
+            <Play className="h-5 w-5 text-foreground fill-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
-          
-          {/* Radio France badge */}
+
           {episode.isRadioFrance && (
-            <div className="absolute top-1 left-1 bg-primary/90 rounded px-1.5 py-0.5 flex items-center gap-1">
-              <Radio className="h-2.5 w-2.5 text-primary-foreground" />
-              <span className="text-[9px] font-medium text-primary-foreground">RF</span>
+            <div className="absolute top-1 left-1 bg-background/90 rounded-sm px-1 py-0.5 flex items-center gap-0.5">
+              <Radio className="h-2 w-2 text-foreground" />
+              <span className="text-[8px] font-medium text-foreground tracking-wider">RF</span>
             </div>
           )}
         </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
+          <div className="editorial-label mb-1.5 truncate">
+            {episode.podcastName}
+          </div>
           <h3 className={cn(
-            "font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors",
-            isCompact ? "text-sm" : "text-base"
+            "font-medium text-foreground leading-snug line-clamp-2",
+            isCompact ? "text-sm" : "text-[15px]"
           )}>
             {episode.title}
           </h3>
-          
-          <p className={cn(
-            "text-muted-foreground mt-1",
-            isCompact ? "text-xs" : "text-sm"
-          )}>
-            {episode.podcastName}
-          </p>
-          
+
           {!isCompact && episode.description && (
-            <p className="text-xs text-muted-foreground/70 mt-2 line-clamp-2">
+            <p className="text-xs text-muted-foreground mt-2 line-clamp-2 leading-relaxed">
               {episode.description}
             </p>
           )}
 
-          {/* Meta info */}
-          <div className={cn(
-            "flex items-center gap-3 text-muted-foreground",
-            isCompact ? "mt-1 text-xs" : "mt-2 text-xs"
-          )}>
+          <div className="flex items-center gap-2 mt-2 text-[11px] text-muted-foreground tabular-nums">
             {episode.durationFormatted && (
               <span className="flex items-center gap-1">
                 <Headphones className="h-3 w-3" />
                 {episode.durationFormatted}
               </span>
             )}
+            {episode.durationFormatted && episode.publishedAt && <span className="text-border">·</span>}
             {episode.publishedAt && (
               <span>{formatPodcastDate(episode.publishedAt)}</span>
             )}
           </div>
         </div>
-
-        {/* External link icon */}
-        <ExternalLink className={cn(
-          "flex-shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity",
-          isCompact ? "h-4 w-4" : "h-5 w-5"
-        )} />
       </div>
     </a>
   );
