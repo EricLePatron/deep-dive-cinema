@@ -238,7 +238,7 @@ function getVideoQualityScore(video: YouTubeVideo): number {
     'masterclass', 'ciné-club', 'cine-club',
   ];
   if (cinemathequeFormats.some(kw => combined.includes(kw))) {
-    score += 40;
+    score += 80;
   }
 
   // Premium content keywords bonus (+5 per keyword, max 25)
