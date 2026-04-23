@@ -85,6 +85,7 @@ export default function FilmDeepDive() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
+  const [synopsisExpanded, setSynopsisExpanded] = useState(false);
 
   const movieId = id ? parseInt(id, 10) : undefined;
   const { data: film, isLoading, error } = useMovieDetails(movieId);
@@ -164,132 +165,174 @@ export default function FilmDeepDive() {
     <div className="dark min-h-screen bg-background">
       <Header />
 
-      {/* Hero immersif minimaliste */}
-      <section className="relative min-h-[85vh] flex items-end overflow-hidden">
-        {film.backdropUrl ? (
-          <img
-            src={film.backdropUrl}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-        ) : (
-          <div className="absolute inset-0 bg-muted" />
-        )}
-        {/* Gradient overlays — monochrome, dramatic */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/85 to-background/10" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/70 via-background/20 to-transparent" />
+      {/* Hero compact — backdrop + identité du film */}
+      <section className="relative pt-14">
+        {/* Backdrop ambiance, hauteur réduite */}
+        <div className="relative h-[42vh] md:h-[55vh] min-h-[320px] overflow-hidden">
+          {film.backdropUrl ? (
+            <img
+              src={film.backdropUrl}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-muted" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/20" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background/40 via-transparent to-background/40" />
 
-        {/* Top nav */}
-        <div className="absolute top-20 left-0 right-0 z-20 container mx-auto px-6">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Retour
-          </Link>
+          {/* Retour */}
+          <div className="absolute top-6 left-0 right-0 z-20 container mx-auto px-6">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 text-foreground/80 hover:text-foreground transition-colors text-sm"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Retour
+            </Link>
+          </div>
         </div>
 
-        {/* Hero content — centered minimal */}
-        <div className="relative z-10 container mx-auto px-6 pb-20">
-          <div className="max-w-3xl">
-            {/* Year + runtime + rating */}
-            <div className="editorial-label flex items-center gap-3 mb-5">
-              <span>{film.year}</span>
-              {film.runtime > 0 && (
-                <>
-                  <span className="text-border">/</span>
-                  <span className="flex items-center gap-1.5">
-                    <Clock className="h-3 w-3" />
-                    {film.runtime} min
-                  </span>
-                </>
-              )}
-              {film.rating > 0 && (
-                <>
-                  <span className="text-border">/</span>
-                  <span className="flex items-center gap-1.5">
-                    <Star className="h-3 w-3 fill-foreground text-foreground" />
-                    {film.rating.toFixed(1)}
-                  </span>
-                </>
-              )}
-            </div>
-
-            {/* Title */}
-            <h1 className="font-display text-6xl md:text-8xl text-foreground tracking-tight leading-[0.95] mb-6">
-              {film.title}
-            </h1>
-
-            {/* Director */}
-            {film.director && (
-              <Link
-                to={`/director/${film.directorId}`}
-                className="inline-flex items-center gap-2 text-base text-foreground/80 hover:text-foreground transition-colors mb-8"
-              >
-                <span className="editorial-label">Un film de</span>
-                <span className="font-display text-xl underline-offset-4 hover:underline">{film.director}</span>
-              </Link>
-            )}
-
-            {/* Letterboxd badge */}
-            {letterboxdEntry && (
-              <div className="editorial-label flex items-center gap-2 mb-8 text-foreground/80">
-                <Eye className="h-3 w-3" />
-                <span>
-                  — Vu sur Letterboxd
-                  {letterboxdEntry.rating > 0 && ` / ★ ${letterboxdEntry.rating}/5`}
-                </span>
+        {/* Bloc identité — superposé en bas du backdrop, poster + titre */}
+        <div className="container mx-auto px-6 -mt-32 md:-mt-40 relative z-10">
+          <div className="flex flex-col md:flex-row gap-8 md:gap-10 items-start">
+            {/* Poster */}
+            {film.posterUrl && (
+              <div className="w-36 md:w-52 flex-shrink-0 rounded-xl overflow-hidden shadow-2xl ring-1 ring-border/40">
+                <img
+                  src={film.posterUrl}
+                  alt={film.title}
+                  className="w-full h-auto"
+                />
               </div>
             )}
 
-            {/* Actions */}
-            <div className="flex items-center gap-2">
-              <Button variant="cinema-outline" size="default">
-                <Bookmark className="h-4 w-4" />
-                Sauvegarder
-              </Button>
-              <Button variant="cinema-ghost" size="default">
-                <Share2 className="h-4 w-4" />
-                Partager
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+            {/* Identité */}
+            <div className="flex-1 min-w-0 pt-2 md:pt-20">
+              <h1 className="font-display text-4xl md:text-6xl text-foreground tracking-tight leading-[1] mb-3">
+                {film.title}
+              </h1>
+              {film.originalTitle && film.originalTitle !== film.title && (
+                <p className="font-display italic text-lg md:text-xl text-muted-foreground mb-4">
+                  {film.originalTitle}
+                </p>
+              )}
 
-      {/* Synopsis + meta band */}
-      <section className="border-b border-border py-14">
-        <div className="container mx-auto px-6">
-          <div className="grid md:grid-cols-3 gap-14 max-w-6xl">
-            {/* Synopsis */}
-            <div className="md:col-span-2">
-              <h3 className="editorial-label mb-4">— Synopsis</h3>
-              <p className="font-display text-xl md:text-2xl text-foreground/90 leading-relaxed">
-                {film.synopsis}
-              </p>
+              {/* Métadonnées en ligne */}
+              <div className="editorial-label flex flex-wrap items-center gap-x-3 gap-y-2 mb-5 text-foreground/80">
+                <span>{film.year}</span>
+                {film.runtime > 0 && (
+                  <>
+                    <span className="text-border">·</span>
+                    <span className="flex items-center gap-1.5">
+                      <Clock className="h-3 w-3" />
+                      {film.runtime} min
+                    </span>
+                  </>
+                )}
+                {film.rating > 0 && (
+                  <>
+                    <span className="text-border">·</span>
+                    <span className="flex items-center gap-1.5">
+                      <Star className="h-3 w-3 fill-foreground text-foreground" />
+                      {film.rating.toFixed(1)}
+                    </span>
+                  </>
+                )}
+                {letterboxdEntry && (
+                  <>
+                    <span className="text-border">·</span>
+                    <span className="flex items-center gap-1.5">
+                      <Eye className="h-3 w-3" />
+                      Vu{letterboxdEntry.rating > 0 && ` · ★ ${letterboxdEntry.rating}/5`}
+                    </span>
+                  </>
+                )}
+              </div>
+
+              {/* Réalisateur */}
+              {film.director && (
+                <Link
+                  to={`/director/${film.directorId}`}
+                  className="inline-flex items-baseline gap-2 mb-5 group"
+                >
+                  <span className="editorial-label">Réalisé par</span>
+                  <span className="font-display text-xl text-foreground group-hover:underline underline-offset-4">
+                    {film.director}
+                  </span>
+                </Link>
+              )}
+
+              {/* Genres en pastilles */}
               {film.genres.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-8">
+                <div className="flex flex-wrap gap-2 mb-6">
                   {film.genres.map((genre) => (
                     <span
                       key={genre}
-                      className="editorial-label px-2 py-1 border border-border"
+                      className="text-xs px-3 py-1 rounded-full border border-border text-foreground/80"
                     >
                       {genre}
                     </span>
                   ))}
                 </div>
               )}
-            </div>
 
-            {/* Cast */}
+              {/* Actions */}
+              <div className="flex items-center gap-2">
+                <Button variant="cinema-outline" size="sm">
+                  <Bookmark className="h-4 w-4" />
+                  Sauvegarder
+                </Button>
+                <Button variant="cinema-ghost" size="sm">
+                  <Share2 className="h-4 w-4" />
+                  Partager
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Synopsis + Casting — bandeau dense et organisé */}
+      <section className="border-b border-border/60 mt-12 md:mt-16 py-10 md:py-14">
+        <div className="container mx-auto px-6">
+          <div className="grid md:grid-cols-12 gap-10 md:gap-12">
+            {/* Synopsis : tronqué + expand */}
+            {film.synopsis && (
+              <div className="md:col-span-7">
+                <h3 className="editorial-label mb-4">Synopsis</h3>
+                <p
+                  className={cn(
+                    "font-display text-xl md:text-2xl text-foreground/90 leading-[1.45]",
+                    !synopsisExpanded && "line-clamp-4"
+                  )}
+                >
+                  {film.synopsis}
+                </p>
+                {film.synopsis.length > 240 && (
+                  <button
+                    onClick={() => setSynopsisExpanded((v) => !v)}
+                    className="editorial-label mt-4 text-foreground hover:opacity-70 transition-opacity"
+                  >
+                    {synopsisExpanded ? "— Réduire" : "— Lire la suite"}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Casting : grille compacte avec photos */}
             {film.cast.length > 0 && (
-              <div>
-                <h3 className="editorial-label mb-4">— Distribution</h3>
-                <div className="space-y-3">
-                  {film.cast.slice(0, 5).map((member) => (
-                    <div key={member.name} className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-sm overflow-hidden bg-muted flex-shrink-0">
+              <div className="md:col-span-5">
+                <div className="flex items-baseline justify-between mb-4">
+                  <h3 className="editorial-label">Distribution</h3>
+                  <span className="editorial-label tabular-nums text-muted-foreground/60">
+                    {film.cast.length}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                  {film.cast.slice(0, 6).map((member) => (
+                    <div key={member.name} className="flex items-center gap-3 min-w-0">
+                      <div className="w-11 h-11 rounded-full overflow-hidden bg-muted flex-shrink-0 ring-1 ring-border/60">
                         {member.photoUrl ? (
                           <img src={member.photoUrl} alt={member.name} className="w-full h-full object-cover" />
                         ) : (
@@ -298,9 +341,9 @@ export default function FilmDeepDive() {
                           </div>
                         )}
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{member.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{member.character}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-foreground truncate leading-tight">{member.name}</p>
+                        <p className="text-xs text-muted-foreground truncate leading-tight mt-0.5">{member.character}</p>
                       </div>
                     </div>
                   ))}
