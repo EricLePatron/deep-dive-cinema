@@ -113,7 +113,7 @@ export function Header() {
               </div>
             ) : (
               <Button variant="cinema-outline" size="sm" onClick={handleSignIn} className="ml-2 editorial-label !text-[11px]">
-                Sign In
+                Se connecter
               </Button>
             )}
           </div>

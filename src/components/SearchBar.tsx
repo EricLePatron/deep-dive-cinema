@@ -69,7 +69,7 @@ export function SearchBar({ onSelectFilm, variant = "hero" }: SearchBarProps) {
         <Input
           ref={inputRef}
           type="text"
-          placeholder="Search for a film to explore..."
+          placeholder="Rechercher un film à explorer…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => debouncedQuery.length > 0 && setIsOpen(true)}
