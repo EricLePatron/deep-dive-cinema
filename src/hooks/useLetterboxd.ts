@@ -10,6 +10,8 @@ export interface LetterboxdFilm {
   rating: number;
   watchedDate: string;
   link: string;
+  tmdbMovieId: number | null;
+  pubDate: string;
 }
 
 export function useLetterboxdProfile() {
@@ -92,6 +94,7 @@ export function useLetterboxdFeed(username: string | undefined) {
       return data.films;
     },
     enabled: !!username,
-    staleTime: 1000 * 60 * 15,
+    staleTime: 1000 * 60 * 2,
+    refetchOnWindowFocus: true,
   });
 }
