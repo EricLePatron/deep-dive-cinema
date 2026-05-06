@@ -7,6 +7,7 @@ import { searchFilmVideos } from "@/services/youtube";
 import { YouTubeVideo } from "@/services/youtube";
 import { getPosterUrl } from "@/services/tmdb";
 import { cn } from "@/lib/utils";
+import { useVideoFeedback } from "@/hooks/useVideoFeedback";
 
 interface DiaryFilm {
   id: number;
@@ -31,10 +32,11 @@ function formatViewCount(count: number): string {
 
 export function DiaryContentHighlights({ films }: { films: DiaryFilm[] }) {
   const [expanded, setExpanded] = useState(false);
+  const { downIds } = useVideoFeedback();
 
   // Fetch top video for each film (max 4 initially)
   const { data: filmsWithContent, isLoading } = useQuery({
-    queryKey: ["diary-content-highlights", films.map(f => f.id)],
+    queryKey: ["diary-content-highlights", films.map(f => f.id), Array.from(downIds).sort()],
     queryFn: async (): Promise<FilmWithContent[]> => {
       const results: FilmWithContent[] = [];
       // Fetch for top 6 films in parallel
@@ -42,7 +44,8 @@ export function DiaryContentHighlights({ films }: { films: DiaryFilm[] }) {
       const videoPromises = toFetch.map(async (film) => {
         try {
           const videos = await searchFilmVideos(film.title, film.year, film.director);
-          return { film, topVideo: videos[0] || null };
+          const filtered = videos.filter((v) => !downIds.has(v.id));
+          return { film, topVideo: filtered[0] || null };
         } catch {
           return { film, topVideo: null };
         }
