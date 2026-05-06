@@ -69,6 +69,8 @@ export function useVideoFeedback() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["video-feedback"] });
+      qc.invalidateQueries({ queryKey: ["video-feedback-stats"] });
+      qc.invalidateQueries({ queryKey: ["diary-content-highlights"] });
     },
   });
 
