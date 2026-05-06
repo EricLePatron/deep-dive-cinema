@@ -10,6 +10,8 @@ export interface LetterboxdFilm {
   rating: number;
   watchedDate: string;
   link: string;
+  tmdbMovieId: number | null;
+  pubDate: string;
 }
 
 export function useLetterboxdProfile() {
