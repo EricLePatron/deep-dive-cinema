@@ -97,7 +97,7 @@ export async function searchMovies(query: string, page = 1): Promise<TMDBSearchR
 
 export async function getMovieDetails(movieId: number): Promise<TMDBMovie> {
   const response = await fetch(
-    `${TMDB_BASE_URL}/movie/${movieId}?api_key=${TMDB_API_KEY}`
+    `${TMDB_BASE_URL}/movie/${movieId}?api_key=${TMDB_API_KEY}&language=fr-FR`
   );
   
   if (!response.ok) {
@@ -109,7 +109,7 @@ export async function getMovieDetails(movieId: number): Promise<TMDBMovie> {
 
 export async function getMovieCredits(movieId: number): Promise<TMDBCredits> {
   const response = await fetch(
-    `${TMDB_BASE_URL}/movie/${movieId}/credits?api_key=${TMDB_API_KEY}`
+    `${TMDB_BASE_URL}/movie/${movieId}/credits?api_key=${TMDB_API_KEY}&language=fr-FR`
   );
   
   if (!response.ok) {

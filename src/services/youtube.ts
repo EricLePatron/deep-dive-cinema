@@ -283,12 +283,17 @@ export async function searchFilmVideos(
   // Include director name for better accuracy (crucial for films with common titles)
   const directorStr = director ? ` ${director}` : '';
 
-  // Use original title when distinct (e.g. "Roma città aperta" vs "Rome ville ouverte"),
+  // Use original title when distinct (e.g. "Roma città aperta" vs "Rome, ville ouverte"),
   // because French cinéma intros / cinémathèque presentations often reference the
   // localized title while institutional content uses the original.
-  const titleVariants = originalTitle && originalTitle.toLowerCase() !== filmTitle.toLowerCase()
-    ? `("${filmTitle}" OR "${originalTitle}")`
-    : `"${filmTitle}"`;
+  // Strip punctuation inside the quoted phrase so e.g. `"Rome, ville ouverte"` also
+  // matches the Champo video titled `ROME VILLE OUVERTE …`.
+  const cleanForQuery = (t: string) => t.replace(/[,;:!?."']/g, '').trim();
+  const filmTitleQ = cleanForQuery(filmTitle);
+  const originalTitleQ = originalTitle ? cleanForQuery(originalTitle) : '';
+  const titleVariants = originalTitleQ && originalTitleQ.toLowerCase() !== filmTitleQ.toLowerCase()
+    ? `("${filmTitleQ}" OR "${originalTitleQ}")`
+    : `"${filmTitleQ}"`;
 
   // To stay within the YouTube API quota (10k units / day, ~100 units per search),
   // we run THREE consolidated queries:
@@ -321,7 +326,21 @@ export async function searchFilmVideos(
   }
   
   console.log(`Found ${videos.length} raw videos from YouTube`);
-  
+
+  // RELEVANCE GUARD — drop videos that don't actually mention the film.
+  // Without this, when the queries return few hits we surface totally
+  // off-topic videos (Clash of Clans, gorilla, etc.).
+  const titleTokens = [filmTitle, originalTitle].filter(Boolean).map(t =>
+    t!.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  );
+  const isRelevant = (v: YouTubeVideo): boolean => {
+    const hay = `${v.title} ${v.description}`.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    // Premium / cinémathèque channels: trust the channel — they don't post off-topic content.
+    if (isPremiumChannel(v)) return true;
+    // Otherwise require the film title (FR or original) to appear somewhere.
+    return titleTokens.some(t => t.length >= 3 && hay.includes(t));
+  };
+
   // Filter out marketing content but be less aggressive
   let filteredVideos = videos.filter(v => {
     const titleLower = v.title.toLowerCase();
@@ -335,17 +354,16 @@ export async function searchFilmVideos(
     // Exclude videos shorter than 5 minutes
     const minutes = getVideoDurationMinutes(v);
     if (minutes < 5) return false;
-    
+
+    if (!isRelevant(v)) return false;
+
     return true;
   });
-  
-  // If too aggressive, fallback but still enforce 5min minimum
-  if (filteredVideos.length < 5) {
-    filteredVideos = videos.filter(v => getVideoDurationMinutes(v) >= 5);
-  }
-  // Ultimate fallback: all videos
+
+  // Fallback: relax duration but KEEP the relevance guard. We'd rather show
+  // nothing than off-topic content (gorilla / Clash of Clans / etc.).
   if (filteredVideos.length < 3) {
-    filteredVideos = videos;
+    filteredVideos = videos.filter(v => isRelevant(v) && getVideoDurationMinutes(v) >= 3);
   }
   
   console.log(`After filtering: ${filteredVideos.length} videos`);
