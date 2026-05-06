@@ -8,6 +8,8 @@ import { YouTubeVideo } from "@/services/youtube";
 import { getPosterUrl } from "@/services/tmdb";
 import { cn } from "@/lib/utils";
 import { useVideoFeedback } from "@/hooks/useVideoFeedback";
+import { supabase } from "@/integrations/supabase/client";
+import { GLOBAL_HIDE_THRESHOLD } from "@/hooks/useVideoStats";
 
 interface DiaryFilm {
   id: number;
@@ -32,11 +34,16 @@ function formatViewCount(count: number): string {
 
 export function DiaryContentHighlights({ films }: { films: DiaryFilm[] }) {
   const [expanded, setExpanded] = useState(false);
-  const { downIds } = useVideoFeedback();
+  const { downIds, upIds } = useVideoFeedback();
 
   // Fetch top video for each film (max 4 initially)
   const { data: filmsWithContent, isLoading } = useQuery({
-    queryKey: ["diary-content-highlights", films.map(f => f.id), Array.from(downIds).sort()],
+    queryKey: [
+      "diary-content-highlights",
+      films.map((f) => f.id),
+      Array.from(downIds).sort(),
+      Array.from(upIds).sort(),
+    ],
     queryFn: async (): Promise<FilmWithContent[]> => {
       const results: FilmWithContent[] = [];
       // Fetch for top 6 films in parallel
@@ -44,8 +51,28 @@ export function DiaryContentHighlights({ films }: { films: DiaryFilm[] }) {
       const videoPromises = toFetch.map(async (film) => {
         try {
           const videos = await searchFilmVideos(film.title, film.year, film.director);
-          const filtered = videos.filter((v) => !downIds.has(v.id));
-          return { film, topVideo: filtered[0] || null };
+          let candidates = videos.filter((v) => !downIds.has(v.id));
+          if (candidates.length === 0) return { film, topVideo: null };
+          // Pull global feedback to filter heavily-downvoted videos
+          const ids = candidates.map((v) => v.id);
+          const { data: statsRows } = await supabase.rpc("get_video_feedback_stats", { video_ids: ids });
+          const stats = new Map<string, { ups: number; downs: number }>();
+          for (const r of (statsRows || []) as Array<{ video_id: string; ups: number; downs: number }>) {
+            stats.set(r.video_id, { ups: Number(r.ups), downs: Number(r.downs) });
+          }
+          candidates = candidates.filter((v) => {
+            const s = stats.get(v.id);
+            return !s || s.downs - s.ups < GLOBAL_HIDE_THRESHOLD;
+          });
+          // Sort: user upvote → crowd score → original order
+          candidates.sort((a, b) => {
+            const sa = stats.get(a.id) ?? { ups: 0, downs: 0 };
+            const sb = stats.get(b.id) ?? { ups: 0, downs: 0 };
+            const score = (id: string, s: { ups: number; downs: number }) =>
+              (upIds.has(id) ? 100 : 0) + (s.ups - s.downs) * 5;
+            return score(b.id, sb) - score(a.id, sa);
+          });
+          return { film, topVideo: candidates[0] || null };
         } catch {
           return { film, topVideo: null };
         }
