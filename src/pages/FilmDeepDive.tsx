@@ -32,6 +32,7 @@ import { useFilmVideos } from "@/hooks/useYouTube";
 import { useFilmPodcasts } from "@/hooks/usePodcast";
 import { useLetterboxdProfile, useLetterboxdFeed } from "@/hooks/useLetterboxd";
 import { useVideoFeedback } from "@/hooks/useVideoFeedback";
+import { useVideoStats, applyFeedbackRanking } from "@/hooks/useVideoStats";
 import { getPosterUrl } from "@/services/tmdb";
 import { mockArticles } from "@/data/mockData";
 import { useFilmBooks } from "@/hooks/useFilmBooks";
@@ -98,22 +99,22 @@ export default function FilmDeepDive() {
 
   const { data: rawVideos, isLoading: loadingVideos } = useFilmVideos(filmTitle, filmYear, filmDirector, film?.originalTitle);
   const { downIds, upIds } = useVideoFeedback();
+  const allIds = rawVideos?.all.map((v) => v.id) ?? [];
+  const { data: stats } = useVideoStats(allIds);
 
-  // Apply user feedback: hide downvoted videos, surface upvoted ones first.
+  // Apply feedback to ranking: hide user downvotes + heavily-downvoted globally,
+  // boost user upvotes + crowd-favored videos.
   const videos = rawVideos
     ? (() => {
-        const filterAndSort = (list: any[]) => {
-          const kept = list.filter((v) => !downIds.has(v.id));
-          return kept.sort((a, b) => {
-            const au = upIds.has(a.id) ? 1 : 0;
-            const bu = upIds.has(b.id) ? 1 : 0;
-            return bu - au;
-          });
+        const opts = {
+          stats: stats ?? new Map(),
+          userDownIds: downIds,
+          userUpIds: upIds,
         };
         return {
-          all: filterAndSort(rawVideos.all),
-          production: filterAndSort(rawVideos.production),
-          editorial: filterAndSort(rawVideos.editorial),
+          all: applyFeedbackRanking(rawVideos.all, opts),
+          production: applyFeedbackRanking(rawVideos.production, opts),
+          editorial: applyFeedbackRanking(rawVideos.editorial, opts),
         };
       })()
     : undefined;
