@@ -73,7 +73,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_video_feedback_stats: {
+        Args: { video_ids: string[] }
+        Returns: {
+          downs: number
+          ups: number
+          video_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
