@@ -5,7 +5,7 @@ import { DiaryContentHighlights } from "@/components/DiaryContentHighlights";
 import { Header } from "@/components/Header";
 import { useNowPlayingMovies, useTrendingMovies } from "@/hooks/useTMDB";
 import { useLetterboxdProfile, useLetterboxdFeed } from "@/hooks/useLetterboxd";
-import { getPosterUrl, getBackdropUrl, searchMovies } from "@/services/tmdb";
+import { getPosterUrl, getBackdropUrl, searchMovies, getMovieDetails } from "@/services/tmdb";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
@@ -34,29 +34,40 @@ const Index = () => {
   const nowPlayingFilms = nowPlaying?.results.slice(0, 10).map(toFilmCard) || [];
   const trendingFilms = trending?.results.slice(0, 10).map(toFilmCard) || [];
 
-  // Personalized: recent diary films resolved to TMDB
+  // Personalized: most recently watched diary films, true chronological order
   const recentRatedFilms = (() => {
     if (!letterboxdFilms) return [];
-    const now = new Date();
-    const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-    return letterboxdFilms
-      .filter(f => f.watchedDate && new Date(f.watchedDate) >= oneMonthAgo)
-      .sort((a, b) => b.rating - a.rating)
+    return [...letterboxdFilms]
+      .sort((a, b) => {
+        const da = new Date(a.watchedDate || a.pubDate || 0).getTime();
+        const db = new Date(b.watchedDate || b.pubDate || 0).getTime();
+        return db - da;
+      })
       .slice(0, 8);
   })();
 
-  const recentTitles = recentRatedFilms.map(f => f.filmTitle);
+  const recentKey = recentRatedFilms.map(f => `${f.tmdbMovieId ?? f.filmTitle}:${f.watchedDate}`).join("|");
 
   const { data: personalizedFilms, isLoading: loadingPersonalized } = useQuery({
-    queryKey: ["personalized-diary", recentTitles],
+    queryKey: ["personalized-diary", recentKey],
     queryFn: async () => {
       const results: any[] = [];
       const seen = new Set<number>();
       for (const film of recentRatedFilms) {
-        const search = await searchMovies(film.filmTitle);
-        const match = search.results.find(
-          (m: any) => m.release_date?.startsWith(film.filmYear)
-        ) || search.results[0];
+        let match: any = null;
+        if (film.tmdbMovieId && !seen.has(film.tmdbMovieId)) {
+          try {
+            match = await getMovieDetails(film.tmdbMovieId);
+          } catch {
+            match = null;
+          }
+        }
+        if (!match) {
+          const search = await searchMovies(film.filmTitle);
+          match = search.results.find(
+            (m: any) => m.release_date?.startsWith(film.filmYear)
+          ) || search.results[0];
+        }
         if (match && !seen.has(match.id)) {
           seen.add(match.id);
           results.push({
@@ -69,7 +80,7 @@ const Index = () => {
       return results;
     },
     enabled: recentRatedFilms.length > 0,
-    staleTime: 1000 * 60 * 15,
+    staleTime: 1000 * 60 * 5,
   });
 
   // Hero spotlight
