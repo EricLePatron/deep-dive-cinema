@@ -328,17 +328,30 @@ export async function searchFilmVideos(
   console.log(`Found ${videos.length} raw videos from YouTube`);
 
   // RELEVANCE GUARD — drop videos that don't actually mention the film.
-  // Without this, when the queries return few hits we surface totally
-  // off-topic videos (Clash of Clans, gorilla, etc.).
-  const titleTokens = [filmTitle, originalTitle].filter(Boolean).map(t =>
-    t!.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-  );
+  // Stricter logic: a film title can collide with common words (e.g. "The Last
+  // Blood" matched a "Cherry Bomb Blood Python" video via the description).
+  // We require either:
+  //   - a premium/cinémathèque channel (trusted), OR
+  //   - the film title appears in the video TITLE, OR
+  //   - the film title appears in the description AND (year OR director name) too.
+  const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const titleTokens = [filmTitle, originalTitle]
+    .filter(Boolean)
+    .map(t => norm(t!))
+    .filter(t => t.length >= 3);
+  const directorN = director ? norm(director) : '';
+  const yearN = year ? String(year) : '';
   const isRelevant = (v: YouTubeVideo): boolean => {
-    const hay = `${v.title} ${v.description}`.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    // Premium / cinémathèque channels: trust the channel — they don't post off-topic content.
     if (isPremiumChannel(v)) return true;
-    // Otherwise require the film title (FR or original) to appear somewhere.
-    return titleTokens.some(t => t.length >= 3 && hay.includes(t));
+    const titleN = norm(v.title);
+    const descN = norm(v.description);
+    const inTitle = titleTokens.some(t => titleN.includes(t));
+    if (inTitle) return true;
+    const inDesc = titleTokens.some(t => descN.includes(t));
+    if (!inDesc) return false;
+    // Description match must be corroborated by year or director to avoid false positives
+    return (!!yearN && (titleN.includes(yearN) || descN.includes(yearN))) ||
+           (!!directorN && (titleN.includes(directorN) || descN.includes(directorN)));
   };
 
   // Filter out marketing content but be less aggressive
@@ -360,11 +373,8 @@ export async function searchFilmVideos(
     return true;
   });
 
-  // Fallback: relax duration but KEEP the relevance guard. We'd rather show
-  // nothing than off-topic content (gorilla / Clash of Clans / etc.).
-  if (filteredVideos.length < 3) {
-    filteredVideos = videos.filter(v => isRelevant(v) && getVideoDurationMinutes(v) >= 3);
-  }
+  // No fallback that bypasses relevance. Better to show nothing than off-topic
+  // content (gorilla / Cherry Bomb Python / Clash of Clans / etc.).
   
   console.log(`After filtering: ${filteredVideos.length} videos`);
   
