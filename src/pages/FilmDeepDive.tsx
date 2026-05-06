@@ -453,7 +453,7 @@ export default function FilmDeepDive() {
                 ) : (
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {videos!.production.slice(0, PREVIEW).map((video) => (
-                      <YouTubeVideoCard key={video.id} video={video} />
+                      <YouTubeVideoCard key={video.id} video={video} filmTmdbId={film.id} />
                     ))}
                   </div>
                 )}
@@ -473,7 +473,7 @@ export default function FilmDeepDive() {
                 ) : (
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {videos!.editorial.slice(0, PREVIEW).map((video) => (
-                      <YouTubeVideoCard key={video.id} video={video} />
+                      <YouTubeVideoCard key={video.id} video={video} filmTmdbId={film.id} />
                     ))}
                   </div>
                 )}
@@ -565,7 +565,7 @@ export default function FilmDeepDive() {
                       Making-of, coulisses et entretiens avec celles et ceux qui ont fait le film.
                     </p>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {videos.production.map((v) => <YouTubeVideoCard key={v.id} video={v} />)}
+                      {videos.production.map((v) => <YouTubeVideoCard key={v.id} video={v} filmTmdbId={film.id} />)}
                     </div>
                   </div>
                 )}
@@ -579,7 +579,7 @@ export default function FilmDeepDive() {
                       Présentations, masterclass, vidéos-essais et Q&A — pour réfléchir le film à la manière des cinémathèques.
                     </p>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {videos.editorial.map((v) => <YouTubeVideoCard key={v.id} video={v} />)}
+                      {videos.editorial.map((v) => <YouTubeVideoCard key={v.id} video={v} filmTmdbId={film.id} />)}
                     </div>
                   </div>
                 )}
