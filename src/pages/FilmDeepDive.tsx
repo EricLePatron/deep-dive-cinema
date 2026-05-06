@@ -31,6 +31,7 @@ import { useMovieDetails, useSimilarMovies } from "@/hooks/useTMDB";
 import { useFilmVideos } from "@/hooks/useYouTube";
 import { useFilmPodcasts } from "@/hooks/usePodcast";
 import { useLetterboxdProfile, useLetterboxdFeed } from "@/hooks/useLetterboxd";
+import { useVideoFeedback } from "@/hooks/useVideoFeedback";
 import { getPosterUrl } from "@/services/tmdb";
 import { mockArticles } from "@/data/mockData";
 import { useFilmBooks } from "@/hooks/useFilmBooks";
@@ -95,7 +96,27 @@ export default function FilmDeepDive() {
   const filmYear = film?.year;
   const filmDirector = film?.director || "";
 
-  const { data: videos, isLoading: loadingVideos } = useFilmVideos(filmTitle, filmYear, filmDirector, film?.originalTitle);
+  const { data: rawVideos, isLoading: loadingVideos } = useFilmVideos(filmTitle, filmYear, filmDirector, film?.originalTitle);
+  const { downIds, upIds } = useVideoFeedback();
+
+  // Apply user feedback: hide downvoted videos, surface upvoted ones first.
+  const videos = rawVideos
+    ? (() => {
+        const filterAndSort = (list: any[]) => {
+          const kept = list.filter((v) => !downIds.has(v.id));
+          return kept.sort((a, b) => {
+            const au = upIds.has(a.id) ? 1 : 0;
+            const bu = upIds.has(b.id) ? 1 : 0;
+            return bu - au;
+          });
+        };
+        return {
+          all: filterAndSort(rawVideos.all),
+          production: filterAndSort(rawVideos.production),
+          editorial: filterAndSort(rawVideos.editorial),
+        };
+      })()
+    : undefined;
   const { data: podcasts, isLoading: loadingPodcasts } = useFilmPodcasts(filmTitle, filmDirector);
 
   const castNames = film?.cast?.map((c) => c.name) || [];
