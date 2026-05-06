@@ -40,7 +40,6 @@ serve(async (req) => {
     searchUrl.searchParams.set('type', type);
     searchUrl.searchParams.set('maxResults', maxResults.toString());
     searchUrl.searchParams.set('key', YOUTUBE_API_KEY);
-    searchUrl.searchParams.set('relevanceLanguage', 'en');
     searchUrl.searchParams.set('safeSearch', 'moderate');
 
     const searchResponse = await fetch(searchUrl.toString());
