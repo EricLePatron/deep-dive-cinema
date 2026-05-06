@@ -54,6 +54,8 @@ Deno.serve(async (req) => {
       rating: number;
       watchedDate: string;
       link: string;
+      tmdbMovieId: number | null;
+      pubDate: string;
     }> = [];
 
     // Extract items from RSS
@@ -77,6 +79,7 @@ Deno.serve(async (req) => {
       const filmYearMatch = item.match(/<letterboxd:filmYear>(\d{4})<\/letterboxd:filmYear>/);
       const ratingMatch = item.match(/<letterboxd:memberRating>([\d.]+)<\/letterboxd:memberRating>/);
       const watchedDateMatch = item.match(/<letterboxd:watchedDate>([\d-]+)<\/letterboxd:watchedDate>/);
+      const tmdbIdMatch = item.match(/<tmdb:movieId>(\d+)<\/tmdb:movieId>/);
 
       if (filmTitleMatch) {
         films.push({
@@ -86,6 +89,8 @@ Deno.serve(async (req) => {
           rating: ratingMatch ? parseFloat(ratingMatch[1]) : 0,
           watchedDate: watchedDateMatch ? watchedDateMatch[1] : pubDate,
           link,
+          tmdbMovieId: tmdbIdMatch ? parseInt(tmdbIdMatch[1], 10) : null,
+          pubDate,
         });
       }
     }
