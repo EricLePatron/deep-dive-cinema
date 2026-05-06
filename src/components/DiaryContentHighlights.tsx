@@ -36,7 +36,7 @@ export function DiaryContentHighlights({ films }: { films: DiaryFilm[] }) {
 
   // Fetch top video for each film (max 4 initially)
   const { data: filmsWithContent, isLoading } = useQuery({
-    queryKey: ["diary-content-highlights", films.map(f => f.id)],
+    queryKey: ["diary-content-highlights", films.map(f => f.id), Array.from(downIds).sort()],
     queryFn: async (): Promise<FilmWithContent[]> => {
       const results: FilmWithContent[] = [];
       // Fetch for top 6 films in parallel
