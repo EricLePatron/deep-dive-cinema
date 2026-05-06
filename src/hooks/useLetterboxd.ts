@@ -94,6 +94,7 @@ export function useLetterboxdFeed(username: string | undefined) {
       return data.films;
     },
     enabled: !!username,
-    staleTime: 1000 * 60 * 15,
+    staleTime: 1000 * 60 * 2,
+    refetchOnWindowFocus: true,
   });
 }
