@@ -1,10 +1,13 @@
-import { Play, Eye } from "lucide-react";
+import { Play, Eye, ThumbsUp, ThumbsDown } from "lucide-react";
 import { YouTubeVideo } from "@/services/youtube";
 import { cn } from "@/lib/utils";
+import { useVideoFeedback, VideoRating } from "@/hooks/useVideoFeedback";
+import { toast } from "sonner";
 
 interface YouTubeVideoCardProps {
   video: YouTubeVideo;
   variant?: "default" | "compact";
+  filmTmdbId?: number;
 }
 
 function formatViewCount(count: number): string {
@@ -24,15 +27,34 @@ function formatDate(dateStr: string): string {
   return `${Math.floor(diffDays / 365)}ans`;
 }
 
-export function YouTubeVideoCard({ video, variant = "default" }: YouTubeVideoCardProps) {
+export function YouTubeVideoCard({ video, variant = "default", filmTmdbId }: YouTubeVideoCardProps) {
   const isCompact = variant === "compact";
+  const { user, ratings, setFeedback, isPending } = useVideoFeedback();
+  const current = ratings.get(video.id) ?? null;
+
+  const handleVote = async (e: React.MouseEvent, next: VideoRating) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      toast.error("Connectez-vous pour évaluer les vidéos.");
+      return;
+    }
+    try {
+      const target = current === next ? null : next;
+      await setFeedback({ videoId: video.id, filmTmdbId, rating: target });
+      if (target === "down") toast.success("Vidéo retirée des recommandations");
+    } catch {
+      toast.error("Impossible d'enregistrer votre vote");
+    }
+  };
 
   return (
+    <div className="group block pt-4 border-t border-border/60">
     <a
       href={video.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group block pt-4 border-t border-border/60 transition-opacity hover:opacity-90"
+      className="block transition-opacity hover:opacity-90"
     >
       {!isCompact && (
         <div className="relative aspect-video overflow-hidden rounded-sm bg-muted mb-3">
@@ -90,5 +112,38 @@ export function YouTubeVideoCard({ video, variant = "default" }: YouTubeVideoCar
         </div>
       </div>
     </a>
+
+    {/* Feedback bar */}
+    <div className="flex items-center gap-1 mt-3 pt-2">
+      <button
+        type="button"
+        onClick={(e) => handleVote(e, "up")}
+        disabled={isPending}
+        aria-label="Recommander cette vidéo"
+        className={cn(
+          "flex items-center gap-1 px-2 py-1 rounded-sm text-[11px] transition-colors",
+          current === "up"
+            ? "text-foreground bg-foreground/10"
+            : "text-muted-foreground hover:text-foreground hover:bg-foreground/5"
+        )}
+      >
+        <ThumbsUp className="h-3.5 w-3.5" />
+      </button>
+      <button
+        type="button"
+        onClick={(e) => handleVote(e, "down")}
+        disabled={isPending}
+        aria-label="Retirer des recommandations"
+        className={cn(
+          "flex items-center gap-1 px-2 py-1 rounded-sm text-[11px] transition-colors",
+          current === "down"
+            ? "text-foreground bg-foreground/10"
+            : "text-muted-foreground hover:text-foreground hover:bg-foreground/5"
+        )}
+      >
+        <ThumbsDown className="h-3.5 w-3.5" />
+      </button>
+    </div>
+    </div>
   );
 }
