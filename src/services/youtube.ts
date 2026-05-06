@@ -283,12 +283,17 @@ export async function searchFilmVideos(
   // Include director name for better accuracy (crucial for films with common titles)
   const directorStr = director ? ` ${director}` : '';
 
-  // Use original title when distinct (e.g. "Roma città aperta" vs "Rome ville ouverte"),
+  // Use original title when distinct (e.g. "Roma città aperta" vs "Rome, ville ouverte"),
   // because French cinéma intros / cinémathèque presentations often reference the
   // localized title while institutional content uses the original.
-  const titleVariants = originalTitle && originalTitle.toLowerCase() !== filmTitle.toLowerCase()
-    ? `("${filmTitle}" OR "${originalTitle}")`
-    : `"${filmTitle}"`;
+  // Strip punctuation inside the quoted phrase so e.g. `"Rome, ville ouverte"` also
+  // matches the Champo video titled `ROME VILLE OUVERTE …`.
+  const cleanForQuery = (t: string) => t.replace(/[,;:!?."']/g, '').trim();
+  const filmTitleQ = cleanForQuery(filmTitle);
+  const originalTitleQ = originalTitle ? cleanForQuery(originalTitle) : '';
+  const titleVariants = originalTitleQ && originalTitleQ.toLowerCase() !== filmTitleQ.toLowerCase()
+    ? `("${filmTitleQ}" OR "${originalTitleQ}")`
+    : `"${filmTitleQ}"`;
 
   // To stay within the YouTube API quota (10k units / day, ~100 units per search),
   // we run THREE consolidated queries:
