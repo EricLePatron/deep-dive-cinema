@@ -3,11 +3,13 @@ import { YouTubeVideo } from "@/services/youtube";
 import { cn } from "@/lib/utils";
 import { useVideoFeedback, VideoRating } from "@/hooks/useVideoFeedback";
 import { toast } from "sonner";
+import { FavoriteButton } from "@/components/FavoriteButton";
 
 interface YouTubeVideoCardProps {
   video: YouTubeVideo;
   variant?: "default" | "compact";
   filmTmdbId?: number;
+  film?: { tmdbId?: number; title?: string; posterUrl?: string | null; year?: number };
 }
 
 function formatViewCount(count: number): string {
@@ -27,10 +29,11 @@ function formatDate(dateStr: string): string {
   return `${Math.floor(diffDays / 365)}ans`;
 }
 
-export function YouTubeVideoCard({ video, variant = "default", filmTmdbId }: YouTubeVideoCardProps) {
+export function YouTubeVideoCard({ video, variant = "default", filmTmdbId, film }: YouTubeVideoCardProps) {
   const isCompact = variant === "compact";
   const { user, ratings, setFeedback, isPending } = useVideoFeedback();
   const current = ratings.get(video.id) ?? null;
+  const filmCtx = film ?? (filmTmdbId ? { tmdbId: filmTmdbId } : undefined);
 
   const handleVote = async (e: React.MouseEvent, next: VideoRating) => {
     e.preventDefault();
@@ -115,6 +118,9 @@ export function YouTubeVideoCard({ video, variant = "default", filmTmdbId }: You
 
     {/* Feedback bar */}
     <div className="flex items-center gap-1 mt-3 pt-2">
+      <FavoriteButton
+        input={{ itemType: "video", itemId: video.id, itemData: video, film: filmCtx }}
+      />
       <button
         type="button"
         onClick={(e) => handleVote(e, "up")}
