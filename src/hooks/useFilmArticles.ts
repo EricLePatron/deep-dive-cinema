@@ -8,6 +8,10 @@ export interface FilmArticle {
   description: string;
   source: string;
   sourceKind: "specialized" | "press";
+  sourceTier: 1 | 2;
+  sourceLang: "fr" | "en";
+  sourceFormat: "critique" | "archive" | "dossier-pdf";
+  sourceFree: boolean;
   image: string | null;
 }
 
