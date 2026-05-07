@@ -57,29 +57,33 @@ export function ArticleCard({
               <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent md:bg-gradient-to-r md:from-background/60 md:via-background/10 md:to-transparent" />
             </div>
           ) : null}
-          <div className={`p-8 md:p-10 flex flex-col justify-center order-2 md:order-1 ${!article.image ? "md:col-span-2" : ""}`}>
-            <div className="flex items-start justify-between gap-6 mb-5">
-          <div className="editorial-label flex items-center gap-2 text-foreground">
+          <div className={`p-5 md:p-10 flex flex-col justify-center order-2 md:order-1 ${!article.image ? "md:col-span-2" : ""}`}>
+            <div className="flex items-start justify-between gap-3 md:gap-6 mb-4 md:mb-5 pr-10 md:pr-0">
+          <div className="editorial-label flex flex-wrap items-center gap-x-2 gap-y-1 text-foreground min-w-0">
             <Icon className="h-3 w-3" />
-            <span>{article.source}</span>
+            <span className="truncate">{article.source}</span>
             <span className="text-border">·</span>
             <span>{formatLabel}</span>
             <span className="text-border">·</span>
             <span>{article.sourceLang.toUpperCase()}</span>
           </div>
-          <div className="editorial-label opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 text-foreground">
+          <div className="editorial-label hidden md:flex opacity-0 group-hover:opacity-100 transition-opacity items-center gap-1.5 text-foreground shrink-0">
             Lire
             <ArrowUpRight className="h-3.5 w-3.5" />
           </div>
         </div>
-            <h3 className="font-display text-3xl md:text-4xl text-foreground leading-[1.1] tracking-tight mb-4 group-hover:opacity-80 transition-opacity">
+            <h3 className="font-display text-2xl md:text-4xl text-foreground leading-[1.1] tracking-tight mb-3 md:mb-4 group-hover:opacity-80 transition-opacity break-words hyphens-auto">
           {article.title}
         </h3>
         {article.description && (
-              <p className="text-base text-muted-foreground font-light leading-relaxed line-clamp-3">
+              <p className="text-sm md:text-base text-muted-foreground font-light leading-relaxed line-clamp-3">
             {article.description}
           </p>
         )}
+            <div className="editorial-label md:hidden flex items-center gap-1.5 text-foreground/70 mt-4">
+              Lire l'article
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </div>
           </div>
         </div>
       </a>
