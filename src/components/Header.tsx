@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Search, X, LogOut } from "lucide-react";
+import { Search, X, LogOut, Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/SearchBar";
 import { LetterboxdLink } from "@/components/LetterboxdLink";
@@ -102,6 +102,13 @@ export function Header() {
             {user ? (
               <div className="flex items-center gap-2 ml-2">
                 <LetterboxdLink />
+                <Link
+                  to="/favoris"
+                  aria-label="Mes favoris"
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-full text-foreground/80 hover:text-foreground hover:bg-foreground/5 transition-colors"
+                >
+                  <Bookmark className="h-4 w-4" />
+                </Link>
                 <img
                   src={user.user_metadata?.avatar_url}
                   alt=""
