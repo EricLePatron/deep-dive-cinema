@@ -508,6 +508,26 @@ export default function FilmDeepDive() {
               </div>
             )}
 
+            {/* Articles — critique & analyses */}
+            {(loadingArticles || totalArticles > 0) && (
+              <div>
+                <SectionHeader
+                  title="Articles & critiques"
+                  count={totalArticles}
+                  onViewAll={totalArticles > PREVIEW ? () => goToTab("articles") : undefined}
+                />
+                {loadingArticles ? (
+                  <SectionLoader />
+                ) : (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {articles!.slice(0, PREVIEW).map((a) => (
+                      <ArticleCard key={a.id} article={a} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Aperçu éditions */}
             <div>
               <SectionHeader
