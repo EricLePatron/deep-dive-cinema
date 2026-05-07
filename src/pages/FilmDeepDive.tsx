@@ -98,6 +98,7 @@ export default function FilmDeepDive() {
   const filmTitle = film?.title || "";
   const filmYear = film?.year;
   const filmDirector = film?.director || "";
+  const filmCtx = film ? { tmdbId: film.id, title: film.title, posterUrl: film.posterUrl, year: film.year } : undefined;
 
   const { data: rawVideos, isLoading: loadingVideos } = useFilmVideos(filmTitle, filmYear, filmDirector, film?.originalTitle);
   const { downIds, upIds } = useVideoFeedback();
@@ -432,11 +433,11 @@ export default function FilmDeepDive() {
                   <SectionLoader />
                 ) : (
                   <div className="space-y-4">
-                    <ArticleCard article={articles![0]} variant="featured" />
+                    <ArticleCard article={articles![0]} variant="featured" film={filmCtx} />
                     {articles!.length > 1 && (
                       <div className="grid md:grid-cols-2 gap-4">
                         {articles!.slice(1, PREVIEW).map((a) => (
-                          <ArticleCard key={a.id} article={a} />
+                          <ArticleCard key={a.id} article={a} film={filmCtx} />
                         ))}
                       </div>
                     )}
@@ -465,7 +466,7 @@ export default function FilmDeepDive() {
                     })
                     .slice(0, PREVIEW)
                     .map((book) => (
-                    <BookCard key={book.id} book={book} />
+                    <BookCard key={book.id} book={book} film={filmCtx} />
                   ))}
                 </div>
               ) : (
@@ -486,7 +487,7 @@ export default function FilmDeepDive() {
                 ) : (
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {videos!.production.slice(0, PREVIEW).map((video) => (
-                      <YouTubeVideoCard key={video.id} video={video} filmTmdbId={film.id} />
+                      <YouTubeVideoCard key={video.id} video={video} filmTmdbId={film.id} film={filmCtx} />
                     ))}
                   </div>
                 )}
@@ -506,7 +507,7 @@ export default function FilmDeepDive() {
                 ) : (
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {videos!.editorial.slice(0, PREVIEW).map((video) => (
-                      <YouTubeVideoCard key={video.id} video={video} filmTmdbId={film.id} />
+                      <YouTubeVideoCard key={video.id} video={video} filmTmdbId={film.id} film={filmCtx} />
                     ))}
                   </div>
                 )}
@@ -526,7 +527,7 @@ export default function FilmDeepDive() {
                 ) : (
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {podcasts!.slice(0, PREVIEW).map((p) => (
-                      <PodcastCard key={p.id} episode={p} variant="compact" />
+                      <PodcastCard key={p.id} episode={p} variant="compact" film={filmCtx} />
                     ))}
                   </div>
                 )}
@@ -562,7 +563,7 @@ export default function FilmDeepDive() {
                       <div>
                         <SectionHeader title="Éditions françaises" count={frBooks.length} />
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {frBooks.map((book) => <BookCard key={book.id} book={book} />)}
+                          {frBooks.map((book) => <BookCard key={book.id} book={book} film={filmCtx} />)}
                         </div>
                       </div>
                     )}
@@ -570,7 +571,7 @@ export default function FilmDeepDive() {
                       <div>
                         <SectionHeader title="Autres éditions" count={otherBooks.length} />
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {otherBooks.map((book) => <BookCard key={book.id} book={book} />)}
+                          {otherBooks.map((book) => <BookCard key={book.id} book={book} film={filmCtx} />)}
                         </div>
                       </div>
                     )}
@@ -598,7 +599,7 @@ export default function FilmDeepDive() {
                       Making-of, coulisses et entretiens avec celles et ceux qui ont fait le film.
                     </p>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {videos.production.map((v) => <YouTubeVideoCard key={v.id} video={v} filmTmdbId={film.id} />)}
+                      {videos.production.map((v) => <YouTubeVideoCard key={v.id} video={v} filmTmdbId={film.id} film={filmCtx} />)}
                     </div>
                   </div>
                 )}
@@ -612,7 +613,7 @@ export default function FilmDeepDive() {
                       Présentations, masterclass, vidéos-essais et Q&A — pour réfléchir le film à la manière des cinémathèques.
                     </p>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {videos.editorial.map((v) => <YouTubeVideoCard key={v.id} video={v} filmTmdbId={film.id} />)}
+                      {videos.editorial.map((v) => <YouTubeVideoCard key={v.id} video={v} filmTmdbId={film.id} film={filmCtx} />)}
                     </div>
                   </div>
                 )}
@@ -628,7 +629,7 @@ export default function FilmDeepDive() {
               <SectionLoader />
             ) : podcasts && podcasts.length > 0 ? (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {podcasts.map((p) => <PodcastCard key={p.id} episode={p} />)}
+                {podcasts.map((p) => <PodcastCard key={p.id} episode={p} film={filmCtx} />)}
               </div>
             ) : (
               <EmptyState message="Aucun podcast trouvé." />
@@ -659,7 +660,7 @@ export default function FilmDeepDive() {
                       <div>
                         <SectionHeader title="Revues & médias spécialisés" count={specialized.length} />
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {specialized.map((a) => <ArticleCard key={a.id} article={a} />)}
+                          {specialized.map((a) => <ArticleCard key={a.id} article={a} film={filmCtx} />)}
                         </div>
                       </div>
                     )}
@@ -667,7 +668,7 @@ export default function FilmDeepDive() {
                       <div>
                         <SectionHeader title="Presse généraliste" count={press.length} />
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {press.map((a) => <ArticleCard key={a.id} article={a} />)}
+                          {press.map((a) => <ArticleCard key={a.id} article={a} film={filmCtx} />)}
                         </div>
                       </div>
                     )}

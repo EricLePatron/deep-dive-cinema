@@ -1,13 +1,28 @@
 import { ArrowUpRight, FileText, Archive, Download } from "lucide-react";
 import { FilmArticle } from "@/hooks/useFilmArticles";
+import { FavoriteButton } from "@/components/FavoriteButton";
+
+interface FilmContext {
+  tmdbId?: number;
+  title?: string;
+  posterUrl?: string | null;
+  year?: number;
+}
 
 export function ArticleCard({
   article,
   variant = "default",
+  film,
 }: {
   article: FilmArticle;
   variant?: "default" | "featured";
+  film?: FilmContext;
 }) {
+  const favBtn = (
+    <FavoriteButton
+      input={{ itemType: "article", itemId: article.id || article.url, itemData: article, film }}
+    />
+  );
   const isArchive = article.sourceFormat === "archive";
   const isPdf = article.sourceFormat === "dossier-pdf";
   const Icon = isArchive ? Archive : isPdf ? Download : FileText;
@@ -21,7 +36,9 @@ export function ArticleCard({
 
   if (variant === "featured") {
     return (
-      <a
+      <div className="relative group">
+        <div className="absolute top-3 right-3 z-20">{favBtn}</div>
+        <a
         href={article.url}
         target="_blank"
         rel="noopener noreferrer"
@@ -66,11 +83,14 @@ export function ArticleCard({
           </div>
         </div>
       </a>
+      </div>
     );
   }
 
   return (
-    <a
+    <div className="relative group">
+      <div className="absolute top-2 right-2 z-20">{favBtn}</div>
+      <a
       href={article.url}
       target="_blank"
       rel="noopener noreferrer"
@@ -110,5 +130,6 @@ export function ArticleCard({
       </div>
       </div>
     </a>
+    </div>
   );
 }

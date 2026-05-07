@@ -1,17 +1,23 @@
 import { Headphones, Play, Radio } from "lucide-react";
 import { PodcastEpisode, formatPodcastDate } from "@/services/podcast";
 import { cn } from "@/lib/utils";
+import { FavoriteButton } from "@/components/FavoriteButton";
 
 interface PodcastCardProps {
   episode: PodcastEpisode;
   variant?: 'default' | 'compact';
+  film?: { tmdbId?: number; title?: string; posterUrl?: string | null; year?: number };
 }
 
-export function PodcastCard({ episode, variant = 'default' }: PodcastCardProps) {
+export function PodcastCard({ episode, variant = 'default', film }: PodcastCardProps) {
   const isCompact = variant === 'compact';
 
   return (
-    <a
+    <div className="relative group">
+      <div className="absolute top-2 right-0 z-10">
+        <FavoriteButton input={{ itemType: "podcast", itemId: episode.id, itemData: episode, film }} />
+      </div>
+      <a
       href={episode.episodeUrl || episode.audioUrl}
       target="_blank"
       rel="noopener noreferrer"
@@ -80,5 +86,6 @@ export function PodcastCard({ episode, variant = 'default' }: PodcastCardProps) 
         </div>
       </div>
     </a>
+    </div>
   );
 }
