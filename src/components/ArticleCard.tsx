@@ -25,10 +25,23 @@ export function ArticleCard({
         href={article.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="group relative block bg-gradient-to-br from-foreground/[0.04] to-transparent border border-border hover:border-foreground/50 transition-all duration-300 p-8 md:p-10 overflow-hidden"
+        className="group relative block bg-gradient-to-br from-foreground/[0.04] to-transparent border border-border hover:border-foreground/50 transition-all duration-300 overflow-hidden"
       >
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-foreground/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-        <div className="flex items-start justify-between gap-6 mb-5">
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-foreground/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10" />
+        <div className="grid md:grid-cols-[1.1fr_1fr]">
+          {article.image ? (
+            <div className="relative aspect-[16/10] md:aspect-auto md:min-h-[320px] overflow-hidden bg-muted order-1 md:order-2">
+              <img
+                src={article.image}
+                alt={article.title}
+                loading="lazy"
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent md:bg-gradient-to-r md:from-background/60 md:via-background/10 md:to-transparent" />
+            </div>
+          ) : null}
+          <div className={`p-8 md:p-10 flex flex-col justify-center order-2 md:order-1 ${!article.image ? "md:col-span-2" : ""}`}>
+            <div className="flex items-start justify-between gap-6 mb-5">
           <div className="editorial-label flex items-center gap-2 text-foreground">
             <Icon className="h-3 w-3" />
             <span>{article.source}</span>
@@ -42,14 +55,16 @@ export function ArticleCard({
             <ArrowUpRight className="h-3.5 w-3.5" />
           </div>
         </div>
-        <h3 className="font-display text-3xl md:text-4xl text-foreground leading-[1.1] tracking-tight mb-4 group-hover:opacity-80 transition-opacity">
+            <h3 className="font-display text-3xl md:text-4xl text-foreground leading-[1.1] tracking-tight mb-4 group-hover:opacity-80 transition-opacity">
           {article.title}
         </h3>
         {article.description && (
-          <p className="text-base text-muted-foreground font-light leading-relaxed line-clamp-3 max-w-2xl">
+              <p className="text-base text-muted-foreground font-light leading-relaxed line-clamp-3">
             {article.description}
           </p>
         )}
+          </div>
+        </div>
       </a>
     );
   }
@@ -59,9 +74,20 @@ export function ArticleCard({
       href={article.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group relative flex flex-col h-full border border-border/60 hover:border-foreground/50 hover:bg-foreground/[0.02] transition-all duration-200 p-6 bg-background"
+      className="group relative flex flex-col h-full border border-border/60 hover:border-foreground/50 hover:bg-foreground/[0.02] transition-all duration-200 bg-background overflow-hidden"
     >
-      <div className="flex items-center justify-between gap-3 mb-4">
+      {article.image && (
+        <div className="relative aspect-[16/9] overflow-hidden bg-muted">
+          <img
+            src={article.image}
+            alt={article.title}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        </div>
+      )}
+      <div className="flex flex-col flex-1 p-6">
+        <div className="flex items-center justify-between gap-3 mb-4">
         <div className="editorial-label flex items-center gap-2 text-foreground">
           <Icon className="h-3 w-3" />
           <span>{article.source}</span>
@@ -81,6 +107,7 @@ export function ArticleCard({
       <div className="editorial-label flex items-center gap-1.5 text-foreground/60 group-hover:text-foreground transition-colors mt-auto">
         Lire l'article
         <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+      </div>
       </div>
     </a>
   );
