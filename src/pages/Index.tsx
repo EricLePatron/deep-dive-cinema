@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowRight, Compass, BookOpen, Headphones, Film as FilmIcon } from "lucide-react";
 import { FilmCard } from "@/components/FilmCard";
 import { DiaryContentHighlights } from "@/components/DiaryContentHighlights";
 import { Header } from "@/components/Header";
@@ -8,12 +8,14 @@ import { useLetterboxdProfile, useLetterboxdFeed } from "@/hooks/useLetterboxd";
 import { getPosterUrl, getBackdropUrl, searchMovies, getMovieDetails } from "@/services/tmdb";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { lovable } from "@/integrations/lovable/index";
 
 const Index = () => {
   const navigate = useNavigate();
   const { data: nowPlaying, isLoading: loadingNowPlaying } = useNowPlayingMovies();
   const { data: trending, isLoading: loadingTrending } = useTrendingMovies('week');
-  const { profile } = useLetterboxdProfile();
+  const { profile, user } = useLetterboxdProfile();
   const { data: letterboxdFilms } = useLetterboxdFeed(profile?.username);
 
   const toFilmCard = (movie: any) => ({
@@ -47,6 +49,12 @@ const Index = () => {
   })();
 
   const recentKey = recentRatedFilms.map(f => `${f.tmdbMovieId ?? f.filmTitle}:${f.watchedDate}`).join("|");
+
+  const handleSignIn = async () => {
+    await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+  };
 
   const { data: personalizedFilms, isLoading: loadingPersonalized } = useQuery({
     queryKey: ["personalized-diary", recentKey],
@@ -83,54 +91,24 @@ const Index = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  // Hero spotlight
-  const spotlight = nowPlaying?.results.find(m => m.backdrop_path) ?? null;
+  // Diary-driven spotlight: most recently watched film with a backdrop
+  const diarySpotlight = personalizedFilms?.find(f => f.backdropUrl) ?? null;
+  const hasDiary = !!personalizedFilms && personalizedFilms.length > 0;
 
   return (
     <div className="dark min-h-screen bg-background safe-top safe-bottom">
       <Header />
 
-      {/* Hero éditorial — MUBI Notebook style */}
-      <section className="relative min-h-[70vh] md:min-h-[88vh] flex items-end overflow-hidden">
-        {spotlight && (
-          <div className="absolute inset-0">
-            <img
-              src={getBackdropUrl(spotlight.backdrop_path) || ""}
-              alt=""
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/10" />
-            <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-transparent" />
-          </div>
-        )}
-
-        <div className="relative z-10 container mx-auto px-6 pb-12 md:pb-20">
-          <div className="max-w-3xl animate-fade-in">
-            <div className="editorial-label mb-5">— À l'affiche</div>
-            {spotlight ? (
-              <Link to={`/film/${spotlight.id}`} className="block group">
-                <h1 className="font-display text-5xl md:text-7xl lg:text-8xl text-foreground leading-[0.95] tracking-tight mb-6 group-hover:opacity-85 transition-opacity">
-                  {spotlight.title}
-                </h1>
-                <p className="text-base md:text-lg text-foreground/70 max-w-2xl leading-relaxed font-light line-clamp-2">
-                  {spotlight.overview}
-                </p>
-                <div className="mt-6 flex items-center gap-3 editorial-label">
-                  <span className="tabular-nums">
-                    {spotlight.release_date ? new Date(spotlight.release_date).getFullYear() : ""}
-                  </span>
-                  <span className="text-border">/</span>
-                  <span>Découvrir →</span>
-                </div>
-              </Link>
-            ) : (
-              <h1 className="font-display text-5xl md:text-7xl text-foreground leading-[0.95] tracking-tight">
-                Le cinéma, en profondeur.
-              </h1>
-            )}
-          </div>
-        </div>
-      </section>
+      {/* Hero — diary-driven if available, otherwise editorial value-prop */}
+      {hasDiary && diarySpotlight ? (
+        <DiaryHero film={diarySpotlight} />
+      ) : (
+        <ValuePropHero
+          isLoggedIn={!!user}
+          hasProfile={!!profile}
+          onSignIn={handleSignIn}
+        />
+      )}
 
       {/* 1. Diary films */}
       {personalizedFilms && personalizedFilms.length > 0 && (
@@ -154,20 +132,21 @@ const Index = () => {
         <DiaryContentHighlights films={personalizedFilms} />
       )}
 
-      {/* 3. Now Playing */}
+      {/* Discovery rows — secondary entry points to start a deep dive */}
+      <FilmRowSection
+        kicker={hasDiary ? "— Pour creuser ailleurs" : "— Par où commencer"}
+        title="Tendances de la semaine"
+        subtitle="Choisissez un film pour ouvrir son deep dive : analyses, podcasts, livres."
+        films={trendingFilms}
+        loading={loadingTrending}
+      />
+
       <FilmRowSection
         kicker="— En salle"
         title="À l'affiche"
+        subtitle="Avant ou après la séance, prolongez l'expérience."
         films={nowPlayingFilms}
         loading={loadingNowPlaying}
-      />
-
-      {/* 4. Trending */}
-      <FilmRowSection
-        kicker="— Cette semaine"
-        title="Tendances"
-        films={trendingFilms}
-        loading={loadingTrending}
       />
 
       {/* Footer */}
@@ -185,11 +164,13 @@ const Index = () => {
 function FilmRowSection({
   kicker,
   title,
+  subtitle,
   films,
   loading,
 }: {
   kicker: string;
   title: string;
+  subtitle?: string;
   films: any[];
   loading: boolean;
 }) {
@@ -201,6 +182,11 @@ function FilmRowSection({
           <h2 className="font-display text-3xl md:text-4xl text-foreground tracking-tight">
             {title}
           </h2>
+          {subtitle && (
+            <p className="text-sm md:text-base text-muted-foreground mt-2 max-w-xl font-light">
+              {subtitle}
+            </p>
+          )}
         </div>
 
         {loading ? (
@@ -216,6 +202,104 @@ function FilmRowSection({
         )}
       </div>
     </section>
+  );
+}
+
+function DiaryHero({ film }: { film: any }) {
+  return (
+    <section className="relative min-h-[70vh] md:min-h-[88vh] flex items-end overflow-hidden">
+      <div className="absolute inset-0">
+        <img src={film.backdropUrl} alt="" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-transparent" />
+      </div>
+      <div className="relative z-10 container mx-auto px-6 pb-12 md:pb-20">
+        <div className="max-w-3xl animate-fade-in">
+          <div className="editorial-label mb-5">— Votre dernier film</div>
+          <Link to={`/film/${film.id}`} className="block group">
+            <h1 className="font-display text-5xl md:text-7xl lg:text-8xl text-foreground leading-[0.95] tracking-tight mb-6 group-hover:opacity-85 transition-opacity">
+              {film.title}
+            </h1>
+            <p className="text-base md:text-lg text-foreground/70 max-w-2xl leading-relaxed font-light line-clamp-2">
+              {film.synopsis}
+            </p>
+            <div className="mt-6 flex items-center gap-3 editorial-label">
+              <span className="tabular-nums">{film.year || ""}</span>
+              <span className="text-border">/</span>
+              <span>Aller plus loin →</span>
+            </div>
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ValuePropHero({
+  isLoggedIn,
+  hasProfile,
+  onSignIn,
+}: {
+  isLoggedIn: boolean;
+  hasProfile: boolean;
+  onSignIn: () => void;
+}) {
+  return (
+    <section className="relative min-h-[80vh] md:min-h-[90vh] flex items-center overflow-hidden border-b border-border">
+      <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
+        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-primary blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-foreground blur-3xl" />
+      </div>
+
+      <div className="relative z-10 container mx-auto px-6 py-20 md:py-28">
+        <div className="max-w-4xl animate-fade-in">
+          <div className="editorial-label mb-6">— Pour les cinéphiles</div>
+          <h1 className="font-display text-5xl md:text-7xl lg:text-8xl text-foreground leading-[0.95] tracking-tight mb-8">
+            Le film est fini.<br />
+            <span className="italic text-foreground/70">L'exploration commence.</span>
+          </h1>
+          <p className="text-lg md:text-xl text-foreground/70 max-w-2xl leading-relaxed font-light mb-10">
+            Deepdive rassemble tout ce qui se dit, s'écrit et se filme autour des films que vous venez de voir : analyses, podcasts, livres, éditions physiques.
+          </p>
+
+          <div className="flex flex-wrap gap-3 mb-12">
+            {!isLoggedIn ? (
+              <Button onClick={onSignIn} size="lg" className="group">
+                Connecter mon Letterboxd
+                <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-0.5" />
+              </Button>
+            ) : !hasProfile ? (
+              <div className="text-sm text-muted-foreground italic">
+                Reliez votre compte Letterboxd depuis le menu en haut pour personnaliser cette page.
+              </div>
+            ) : null}
+            <Button asChild variant="cinema-outline" size="lg">
+              <a href="#discover">Explorer les films</a>
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl pt-10 border-t border-border">
+            <ValueItem icon={<FilmIcon className="h-4 w-4" />} label="Analyses vidéo" hint="Cinémathèques, vidéo-essais" />
+            <ValueItem icon={<Headphones className="h-4 w-4" />} label="Podcasts" hint="Le meilleur de la critique" />
+            <ValueItem icon={<BookOpen className="h-4 w-4" />} label="Livres" hint="Essais et entretiens" />
+            <ValueItem icon={<Compass className="h-4 w-4" />} label="Éditions physiques" hint="Blu-ray, restaurations" />
+          </div>
+        </div>
+      </div>
+      <div id="discover" className="absolute bottom-0" />
+    </section>
+  );
+}
+
+function ValueItem({ icon, label, hint }: { icon: React.ReactNode; label: string; hint: string }) {
+  return (
+    <div>
+      <div className="flex items-center gap-2 text-foreground mb-1.5">
+        {icon}
+        <span className="text-sm font-medium">{label}</span>
+      </div>
+      <p className="text-xs text-muted-foreground font-light">{hint}</p>
+    </div>
   );
 }
 
