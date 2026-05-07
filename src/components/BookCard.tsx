@@ -1,14 +1,19 @@
 import { Book, User, ShoppingCart } from "lucide-react";
 import { BookResult, categoryLabels } from "@/hooks/useFilmBooks";
+import { FavoriteButton } from "@/components/FavoriteButton";
 
 interface BookCardProps {
   book: BookResult;
+  film?: { tmdbId?: number; title?: string; posterUrl?: string | null; year?: number };
 }
 
-export function BookCard({ book }: BookCardProps) {
+export function BookCard({ book, film }: BookCardProps) {
   const isFrench = book.language === 'fr';
   return (
-    <div className="group flex flex-col gap-3 pt-4 border-t border-border/60 transition-opacity hover:opacity-90">
+    <div className="group relative flex flex-col gap-3 pt-4 border-t border-border/60 transition-opacity hover:opacity-90">
+      <div className="absolute top-2 right-0">
+        <FavoriteButton input={{ itemType: "book", itemId: book.id, itemData: book, film }} />
+      </div>
       <div className="flex gap-4">
         {/* Cover */}
         <a
