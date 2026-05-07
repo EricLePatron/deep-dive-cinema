@@ -36,6 +36,8 @@ import { useVideoStats, applyFeedbackRanking } from "@/hooks/useVideoStats";
 import { getPosterUrl } from "@/services/tmdb";
 import { mockArticles } from "@/data/mockData";
 import { useFilmBooks } from "@/hooks/useFilmBooks";
+import { useFilmArticles } from "@/hooks/useFilmArticles";
+import { ArticleCard } from "@/components/ArticleCard";
 import { cn } from "@/lib/utils";
 import { PhysicalMediaSection } from "@/components/PhysicalMediaSection";
 
@@ -125,6 +127,10 @@ export default function FilmDeepDive() {
     filmTitle, film?.originalTitle, filmDirector, castNames, film?.genres
   );
 
+  const { data: articles, isLoading: loadingArticles } = useFilmArticles(
+    filmTitle, filmYear, film?.originalTitle, filmDirector
+  );
+
   const { profile } = useLetterboxdProfile();
   const { data: letterboxdFilms } = useLetterboxdFeed(profile?.username);
   const letterboxdEntry = letterboxdFilms?.find(
@@ -135,6 +141,7 @@ export default function FilmDeepDive() {
   const totalProduction = videos?.production.length || 0;
   const totalEditorial = videos?.editorial.length || 0;
   const totalPodcasts = podcasts?.length || 0;
+  const totalArticles = articles?.length || 0;
 
   const goToTab = useCallback((tab: string) => {
     setActiveTab(tab);
@@ -392,7 +399,7 @@ export default function FilmDeepDive() {
               { id: "videos", label: "Vidéos", count: videos?.all.length || 0 },
               { id: "podcasts", label: "Podcasts", count: totalPodcasts },
               { id: "editions", label: "Éditions" },
-              { id: "articles", label: "Articles", count: mockArticles.length },
+              { id: "articles", label: "Articles", count: totalArticles },
             ].map((tab) => (
               <TabsTrigger
                 key={tab.id}
@@ -495,6 +502,26 @@ export default function FilmDeepDive() {
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {podcasts!.slice(0, PREVIEW).map((p) => (
                       <PodcastCard key={p.id} episode={p} variant="compact" />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Articles — critique & analyses */}
+            {(loadingArticles || totalArticles > 0) && (
+              <div>
+                <SectionHeader
+                  title="Articles & critiques"
+                  count={totalArticles}
+                  onViewAll={totalArticles > PREVIEW ? () => goToTab("articles") : undefined}
+                />
+                {loadingArticles ? (
+                  <SectionLoader />
+                ) : (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {articles!.slice(0, PREVIEW).map((a) => (
+                      <ArticleCard key={a.id} article={a} />
                     ))}
                   </div>
                 )}
@@ -615,11 +642,36 @@ export default function FilmDeepDive() {
 
           {/* ARTICLES */}
           <TabsContent value="articles" className="mt-8">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {mockArticles.map((article) => (
-                <ContentCard key={article.id} item={article} />
-              ))}
-            </div>
+            {loadingArticles ? (
+              <SectionLoader />
+            ) : articles && articles.length > 0 ? (
+              (() => {
+                const specialized = articles.filter((a) => a.sourceKind === "specialized");
+                const press = articles.filter((a) => a.sourceKind === "press");
+                return (
+                  <div className="space-y-12">
+                    {specialized.length > 0 && (
+                      <div>
+                        <SectionHeader title="Revues & médias spécialisés" count={specialized.length} />
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {specialized.map((a) => <ArticleCard key={a.id} article={a} />)}
+                        </div>
+                      </div>
+                    )}
+                    {press.length > 0 && (
+                      <div>
+                        <SectionHeader title="Presse généraliste" count={press.length} />
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {press.map((a) => <ArticleCard key={a.id} article={a} />)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()
+            ) : (
+              <EmptyState message="Aucun article trouvé pour ce film." />
+            )}
           </TabsContent>
         </Tabs>
       </section>
