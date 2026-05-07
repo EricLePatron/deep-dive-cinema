@@ -420,6 +420,31 @@ export default function FilmDeepDive() {
 
           {/* APERÇU — 3 highlights par section */}
           <TabsContent value="overview" className="space-y-14 mt-8">
+            {/* Articles — critique & analyses (en premier, mis en avant) */}
+            {(loadingArticles || totalArticles > 0) && (
+              <div>
+                <SectionHeader
+                  title="Articles & critiques"
+                  count={totalArticles}
+                  onViewAll={totalArticles > PREVIEW ? () => goToTab("articles") : undefined}
+                />
+                {loadingArticles ? (
+                  <SectionLoader />
+                ) : (
+                  <div className="space-y-4">
+                    <ArticleCard article={articles![0]} variant="featured" />
+                    {articles!.length > 1 && (
+                      <div className="grid md:grid-cols-2 gap-4">
+                        {articles!.slice(1, PREVIEW).map((a) => (
+                          <ArticleCard key={a.id} article={a} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Livres */}
             <div>
               <SectionHeader
@@ -502,26 +527,6 @@ export default function FilmDeepDive() {
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {podcasts!.slice(0, PREVIEW).map((p) => (
                       <PodcastCard key={p.id} episode={p} variant="compact" />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Articles — critique & analyses */}
-            {(loadingArticles || totalArticles > 0) && (
-              <div>
-                <SectionHeader
-                  title="Articles & critiques"
-                  count={totalArticles}
-                  onViewAll={totalArticles > PREVIEW ? () => goToTab("articles") : undefined}
-                />
-                {loadingArticles ? (
-                  <SectionLoader />
-                ) : (
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {articles!.slice(0, PREVIEW).map((a) => (
-                      <ArticleCard key={a.id} article={a} />
                     ))}
                   </div>
                 )}
