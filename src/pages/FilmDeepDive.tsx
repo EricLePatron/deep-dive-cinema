@@ -98,6 +98,7 @@ export default function FilmDeepDive() {
   const filmTitle = film?.title || "";
   const filmYear = film?.year;
   const filmDirector = film?.director || "";
+  const filmCtx = film ? { tmdbId: film.id, title: film.title, posterUrl: film.posterUrl, year: film.year } : undefined;
 
   const { data: rawVideos, isLoading: loadingVideos } = useFilmVideos(filmTitle, filmYear, filmDirector, film?.originalTitle);
   const { downIds, upIds } = useVideoFeedback();
@@ -432,11 +433,11 @@ export default function FilmDeepDive() {
                   <SectionLoader />
                 ) : (
                   <div className="space-y-4">
-                    <ArticleCard article={articles![0]} variant="featured" />
+                    <ArticleCard article={articles![0]} variant="featured" film={filmCtx} />
                     {articles!.length > 1 && (
                       <div className="grid md:grid-cols-2 gap-4">
                         {articles!.slice(1, PREVIEW).map((a) => (
-                          <ArticleCard key={a.id} article={a} />
+                          <ArticleCard key={a.id} article={a} film={filmCtx} />
                         ))}
                       </div>
                     )}
