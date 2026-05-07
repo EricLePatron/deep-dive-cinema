@@ -110,17 +110,17 @@ export function ArticleCard({
           />
         </div>
       )}
-      <div className="flex flex-col flex-1 p-6">
-        <div className="flex items-center justify-between gap-3 mb-4">
-        <div className="editorial-label flex items-center gap-2 text-foreground">
+      <div className="flex flex-col flex-1 p-5 md:p-6">
+        <div className="flex items-center justify-between gap-3 mb-4 pr-10 sm:pr-0">
+        <div className="editorial-label flex items-center gap-2 text-foreground min-w-0">
           <Icon className="h-3 w-3" />
-          <span>{article.source}</span>
+          <span className="truncate">{article.source}</span>
         </div>
-        <span className="editorial-label text-muted-foreground/70">
+        <span className="editorial-label text-muted-foreground/70 shrink-0">
           {formatLabel} · {article.sourceLang.toUpperCase()}
         </span>
       </div>
-      <h3 className="font-display text-xl text-foreground leading-snug tracking-tight mb-3 line-clamp-3">
+      <h3 className="font-display text-lg md:text-xl text-foreground leading-snug tracking-tight mb-3 line-clamp-3 break-words">
         {article.title}
       </h3>
       {article.description && (
