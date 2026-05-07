@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,6 +10,22 @@ interface YouTubeSearchParams {
   query: string;
   maxResults?: number;
   type?: 'video' | 'channel' | 'playlist';
+}
+
+// 7 days fresh cache
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+// Serve stale cache up to 30 days when YouTube quota is exhausted
+const STALE_FALLBACK_MS = 30 * 24 * 60 * 60 * 1000;
+
+function makeCacheKey(query: string, maxResults: number, type: string): string {
+  return `${type}:${maxResults}:${query.trim().toLowerCase()}`;
+}
+
+function getSupabase() {
+  const url = Deno.env.get('SUPABASE_URL');
+  const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!url || !key) return null;
+  return createClient(url, key);
 }
 
 serve(async (req) => {
@@ -31,6 +48,24 @@ serve(async (req) => {
       throw new Error('Query parameter is required');
     }
 
+    const cacheKey = makeCacheKey(query, maxResults, type);
+    const sb = getSupabase();
+
+    // 1) Try fresh cache (≤ 7 days)
+    if (sb) {
+      const { data: cached } = await sb
+        .from('youtube_cache')
+        .select('payload, expires_at')
+        .eq('cache_key', cacheKey)
+        .maybeSingle();
+      if (cached && new Date(cached.expires_at).getTime() > Date.now()) {
+        console.log(`Cache HIT (fresh): ${query}`);
+        return new Response(JSON.stringify({ ...(cached.payload as object), cached: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     console.log(`Searching YouTube for: ${query}`);
 
     // Search for videos
@@ -51,6 +86,20 @@ serve(async (req) => {
       // instead of bubbling a 500 that breaks the whole page.
       if (searchResponse.status === 403 && errorText.includes('quota')) {
         console.warn('YouTube quota exceeded — returning empty result set');
+        // Try stale cache fallback (≤ 30 days)
+        if (sb) {
+          const { data: stale } = await sb
+            .from('youtube_cache')
+            .select('payload, created_at')
+            .eq('cache_key', cacheKey)
+            .maybeSingle();
+          if (stale && Date.now() - new Date(stale.created_at).getTime() < STALE_FALLBACK_MS) {
+            console.log(`Cache HIT (stale fallback): ${query}`);
+            return new Response(JSON.stringify({ ...(stale.payload as object), cached: true, stale: true }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+        }
         return new Response(JSON.stringify({ videos: [], quotaExceeded: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -68,7 +117,17 @@ serve(async (req) => {
 
     if (!videoIds) {
       console.log('No videos found');
-      return new Response(JSON.stringify({ videos: [] }), {
+      const empty = { videos: [] };
+      if (sb) {
+        await sb.from('youtube_cache').upsert({
+          cache_key: cacheKey,
+          query,
+          payload: empty,
+          expires_at: new Date(Date.now() + CACHE_TTL_MS).toISOString(),
+          created_at: new Date().toISOString(),
+        });
+      }
+      return new Response(JSON.stringify(empty), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -134,7 +193,17 @@ serve(async (req) => {
 
     console.log(`Found ${videos.length} videos`);
 
-    return new Response(JSON.stringify({ videos }), {
+    const payload = { videos };
+    if (sb) {
+      await sb.from('youtube_cache').upsert({
+        cache_key: cacheKey,
+        query,
+        payload,
+        expires_at: new Date(Date.now() + CACHE_TTL_MS).toISOString(),
+        created_at: new Date().toISOString(),
+      });
+    }
+    return new Response(JSON.stringify(payload), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
