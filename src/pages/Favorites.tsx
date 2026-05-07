@@ -155,18 +155,7 @@ export default function Favorites() {
                       <FilmHeader fav={group.film} />
                       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {group.items.map((fav) => (
-                          <div key={fav.id} className="relative group">
-                            <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-background/90 backdrop-blur-sm rounded-sm">
-                              <FavoriteButton
-                                input={{
-                                  itemType: fav.item_type,
-                                  itemId: fav.item_id,
-                                  itemData: fav.item_data,
-                                }}
-                              />
-                            </div>
-                            {renderItem(fav)}
-                          </div>
+                          <div key={fav.id}>{renderItem(fav)}</div>
                         ))}
                       </div>
                     </div>
