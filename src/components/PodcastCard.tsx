@@ -2,6 +2,8 @@ import { Headphones, Play, Radio } from "lucide-react";
 import { PodcastEpisode, formatPodcastDate } from "@/services/podcast";
 import { cn } from "@/lib/utils";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { ConsumedButton } from "@/components/ConsumedButton";
+import { useConsumed } from "@/hooks/useConsumed";
 
 interface PodcastCardProps {
   episode: PodcastEpisode;
@@ -11,10 +13,13 @@ interface PodcastCardProps {
 
 export function PodcastCard({ episode, variant = 'default', film }: PodcastCardProps) {
   const isCompact = variant === 'compact';
+  const { isConsumed } = useConsumed();
+  const consumed = isConsumed("podcast", episode.id);
 
   return (
-    <div className="relative group">
-      <div className="absolute top-2 right-0 z-10">
+    <div className={cn("relative group transition-opacity", consumed && "opacity-60 hover:opacity-90")}>
+      <div className="absolute top-2 right-0 z-10 flex items-center gap-1">
+        <ConsumedButton input={{ itemType: "podcast", itemId: episode.id, itemData: episode, film }} />
         <FavoriteButton input={{ itemType: "podcast", itemId: episode.id, itemData: episode, film }} />
       </div>
       <a
