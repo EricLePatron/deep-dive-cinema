@@ -32,7 +32,6 @@ import { useFilmVideos } from "@/hooks/useYouTube";
 import { useFilmPodcasts } from "@/hooks/usePodcast";
 import { useLetterboxdProfile, useLetterboxdFeed } from "@/hooks/useLetterboxd";
 import { useVideoFeedback } from "@/hooks/useVideoFeedback";
-import { useVideoStats, applyFeedbackRanking } from "@/hooks/useVideoStats";
 import { getPosterUrl } from "@/services/tmdb";
 import { mockArticles } from "@/data/mockData";
 import { useFilmBooks } from "@/hooks/useFilmBooks";
