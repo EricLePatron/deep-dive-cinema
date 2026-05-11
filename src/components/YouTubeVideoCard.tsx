@@ -4,6 +4,8 @@ import { cn } from "@/lib/utils";
 import { useVideoFeedback, VideoRating } from "@/hooks/useVideoFeedback";
 import { toast } from "sonner";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { ConsumedButton } from "@/components/ConsumedButton";
+import { useConsumed } from "@/hooks/useConsumed";
 
 interface YouTubeVideoCardProps {
   video: YouTubeVideo;
@@ -34,6 +36,8 @@ export function YouTubeVideoCard({ video, variant = "default", filmTmdbId, film 
   const { user, ratings, setFeedback, isPending } = useVideoFeedback();
   const current = ratings.get(video.id) ?? null;
   const filmCtx = film ?? (filmTmdbId ? { tmdbId: filmTmdbId } : undefined);
+  const { isConsumed } = useConsumed();
+  const consumed = isConsumed("video", video.id);
 
   const handleVote = async (e: React.MouseEvent, next: VideoRating) => {
     e.preventDefault();
@@ -52,7 +56,7 @@ export function YouTubeVideoCard({ video, variant = "default", filmTmdbId, film 
   };
 
   return (
-    <div className="group block pt-4 border-t border-border/60">
+    <div className={cn("group block pt-4 border-t border-border/60 transition-opacity", consumed && "opacity-60 hover:opacity-90")}>
     <a
       href={video.url}
       target="_blank"
@@ -119,6 +123,9 @@ export function YouTubeVideoCard({ video, variant = "default", filmTmdbId, film 
     {/* Feedback bar */}
     <div className="flex items-center gap-1 mt-3 pt-2">
       <FavoriteButton
+        input={{ itemType: "video", itemId: video.id, itemData: video, film: filmCtx }}
+      />
+      <ConsumedButton
         input={{ itemType: "video", itemId: video.id, itemData: video, film: filmCtx }}
       />
       <button

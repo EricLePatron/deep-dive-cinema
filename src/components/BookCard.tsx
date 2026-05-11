@@ -1,6 +1,9 @@
 import { Book, User, ShoppingCart } from "lucide-react";
 import { BookResult, categoryLabels } from "@/hooks/useFilmBooks";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { ConsumedButton } from "@/components/ConsumedButton";
+import { useConsumed } from "@/hooks/useConsumed";
+import { cn } from "@/lib/utils";
 
 interface BookCardProps {
   book: BookResult;
@@ -9,9 +12,15 @@ interface BookCardProps {
 
 export function BookCard({ book, film }: BookCardProps) {
   const isFrench = book.language === 'fr';
+  const { isConsumed } = useConsumed();
+  const consumed = isConsumed("book", book.id);
   return (
-    <div className="group relative flex flex-col gap-3 pt-4 border-t border-border/60 transition-opacity hover:opacity-90">
-      <div className="absolute top-2 right-0">
+    <div className={cn(
+      "group relative flex flex-col gap-3 pt-4 border-t border-border/60 transition-opacity hover:opacity-90",
+      consumed && "opacity-60 hover:opacity-90"
+    )}>
+      <div className="absolute top-2 right-0 flex items-center gap-1">
+        <ConsumedButton input={{ itemType: "book", itemId: book.id, itemData: book, film }} />
         <FavoriteButton input={{ itemType: "book", itemId: book.id, itemData: book, film }} />
       </div>
       <div className="flex gap-4">

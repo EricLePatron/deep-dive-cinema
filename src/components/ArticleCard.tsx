@@ -1,6 +1,9 @@
 import { ArrowUpRight, FileText, Archive, Download } from "lucide-react";
 import { FilmArticle } from "@/hooks/useFilmArticles";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { ConsumedButton } from "@/components/ConsumedButton";
+import { useConsumed } from "@/hooks/useConsumed";
+import { cn } from "@/lib/utils";
 
 interface FilmContext {
   tmdbId?: number;
@@ -18,10 +21,15 @@ export function ArticleCard({
   variant?: "default" | "featured";
   film?: FilmContext;
 }) {
-  const favBtn = (
-    <FavoriteButton
-      input={{ itemType: "article", itemId: article.id || article.url, itemData: article, film }}
-    />
+  const itemId = article.id || article.url;
+  const itemInput = { itemId, itemData: article, film } as const;
+  const { isConsumed } = useConsumed();
+  const consumed = isConsumed("article", itemId);
+  const actions = (
+    <div className="flex items-center gap-1">
+      <ConsumedButton input={{ itemType: "article", ...itemInput }} />
+      <FavoriteButton input={{ itemType: "article", ...itemInput }} />
+    </div>
   );
   const isArchive = article.sourceFormat === "archive";
   const isPdf = article.sourceFormat === "dossier-pdf";
@@ -36,8 +44,8 @@ export function ArticleCard({
 
   if (variant === "featured") {
     return (
-      <div className="relative group">
-        <div className="absolute top-3 right-3 z-20">{favBtn}</div>
+      <div className={cn("relative group transition-opacity", consumed && "opacity-60 hover:opacity-90")}>
+        <div className="absolute top-3 right-3 z-20">{actions}</div>
         <a
         href={article.url}
         target="_blank"
@@ -92,8 +100,8 @@ export function ArticleCard({
   }
 
   return (
-    <div className="relative group">
-      <div className="absolute top-2 right-2 z-20">{favBtn}</div>
+    <div className={cn("relative group transition-opacity", consumed && "opacity-60 hover:opacity-90")}>
+      <div className="absolute top-2 right-2 z-20">{actions}</div>
       <a
       href={article.url}
       target="_blank"
