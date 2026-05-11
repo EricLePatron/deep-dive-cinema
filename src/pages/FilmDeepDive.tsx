@@ -31,7 +31,6 @@ import { useMovieDetails, useSimilarMovies } from "@/hooks/useTMDB";
 import { useFilmVideos } from "@/hooks/useYouTube";
 import { useFilmPodcasts } from "@/hooks/usePodcast";
 import { useLetterboxdProfile, useLetterboxdFeed } from "@/hooks/useLetterboxd";
-import { useVideoFeedback } from "@/hooks/useVideoFeedback";
 import { getPosterUrl } from "@/services/tmdb";
 import { mockArticles } from "@/data/mockData";
 import { useFilmBooks } from "@/hooks/useFilmBooks";
