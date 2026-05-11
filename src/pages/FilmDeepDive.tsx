@@ -31,8 +31,6 @@ import { useMovieDetails, useSimilarMovies } from "@/hooks/useTMDB";
 import { useFilmVideos } from "@/hooks/useYouTube";
 import { useFilmPodcasts } from "@/hooks/usePodcast";
 import { useLetterboxdProfile, useLetterboxdFeed } from "@/hooks/useLetterboxd";
-import { useVideoFeedback } from "@/hooks/useVideoFeedback";
-import { useVideoStats, applyFeedbackRanking } from "@/hooks/useVideoStats";
 import { getPosterUrl } from "@/services/tmdb";
 import { mockArticles } from "@/data/mockData";
 import { useFilmBooks } from "@/hooks/useFilmBooks";
@@ -101,26 +99,9 @@ export default function FilmDeepDive() {
   const filmCtx = film ? { tmdbId: film.id, title: film.title, posterUrl: film.posterUrl, year: film.year } : undefined;
 
   const { data: rawVideos, isLoading: loadingVideos } = useFilmVideos(filmTitle, filmYear, filmDirector, film?.originalTitle);
-  const { downIds, upIds } = useVideoFeedback();
-  const allIds = rawVideos?.all.map((v) => v.id) ?? [];
-  const { data: stats } = useVideoStats(allIds);
-
-  // Apply feedback to ranking: hide user downvotes + heavily-downvoted globally,
-  // boost user upvotes + crowd-favored videos.
-  const videos = rawVideos
-    ? (() => {
-        const opts = {
-          stats: stats ?? new Map(),
-          userDownIds: downIds,
-          userUpIds: upIds,
-        };
-        return {
-          all: applyFeedbackRanking(rawVideos.all, opts),
-          production: applyFeedbackRanking(rawVideos.production, opts),
-          editorial: applyFeedbackRanking(rawVideos.editorial, opts),
-        };
-      })()
-    : undefined;
+  // Feedback (thumbs up/down) is logged for analytics only; it no longer alters
+  // the live ranking or visibility of videos.
+  const videos = rawVideos;
   const { data: podcasts, isLoading: loadingPodcasts } = useFilmPodcasts(filmTitle, filmDirector);
 
   const castNames = film?.cast?.map((c) => c.name) || [];
