@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      consumed_items: {
+        Row: {
+          created_at: string
+          film_poster_url: string | null
+          film_title: string | null
+          film_tmdb_id: number | null
+          film_year: number | null
+          id: string
+          item_data: Json
+          item_id: string
+          item_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          film_poster_url?: string | null
+          film_title?: string | null
+          film_tmdb_id?: number | null
+          film_year?: number | null
+          id?: string
+          item_data: Json
+          item_id: string
+          item_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          film_poster_url?: string | null
+          film_title?: string | null
+          film_tmdb_id?: number | null
+          film_year?: number | null
+          id?: string
+          item_data?: Json
+          item_id?: string
+          item_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string
