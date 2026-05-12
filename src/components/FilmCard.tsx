@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Film as FilmIcon } from "lucide-react";
+import { Film as FilmIcon, Video, Mic, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface FilmCardProps {
@@ -12,9 +12,10 @@ interface FilmCardProps {
     rating?: number;
   };
   size?: "sm" | "md" | "lg";
+  stats?: { video_count: number; podcast_count: number; book_count: number } | null;
 }
 
-export function FilmCard({ film, size = "md" }: FilmCardProps) {
+export function FilmCard({ film, size = "md", stats }: FilmCardProps) {
   const sizeClasses = {
     sm: "w-24 md:w-28",
     md: "w-28 md:w-36 snap-start",
@@ -47,6 +48,13 @@ export function FilmCard({ film, size = "md" }: FilmCardProps) {
         <p className="text-[11px] text-muted-foreground tabular-nums mt-0.5">
           {film.year > 0 ? film.year : "—"}
         </p>
+        {stats && (
+          <div className="mt-1.5 flex items-center gap-2 text-[10px] text-muted-foreground tabular-nums">
+            <span className="flex items-center gap-0.5"><Video className="h-2.5 w-2.5" />{stats.video_count}</span>
+            <span className="flex items-center gap-0.5"><Mic className="h-2.5 w-2.5" />{stats.podcast_count}</span>
+            <span className="flex items-center gap-0.5"><BookOpen className="h-2.5 w-2.5" />{stats.book_count}</span>
+          </div>
+        )}
       </div>
     </Link>
   );
