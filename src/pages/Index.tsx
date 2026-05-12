@@ -313,7 +313,7 @@ function ValuePropHero({
 
 const EDITORIAL_FILMS = [
   { id: 426426, title: "Roma", year: 2018, counts: { videos: 19, podcasts: 15, books: 9 } },
-  { id: 466272, title: "Portrait de la jeune fille en feu", year: 2019, counts: { videos: 17, podcasts: 12, books: 8 } },
+  { id: 466272, title: "Once Upon a Time… in Hollywood", year: 2019, counts: { videos: 17, podcasts: 12, books: 8 } },
   { id: 496243, title: "Parasite", year: 2019, counts: { videos: 24, podcasts: 20, books: 12 } },
 ];
 
