@@ -300,12 +300,29 @@ function ValuePropHero({
 }
 
 const EDITORIAL_FILMS = [
-  { id: 508442, title: "Soul", year: 2020, poster: "/hm58Jw4Lw8OIeECIq5qyPYhAeRJ.jpg", counts: { videos: 19, podcasts: 15, books: 9 } },
-  { id: 466272, title: "Once Upon a Time in Hollywood", year: 2019, poster: "/8j58iEBw9pOXFD2L0nt0ZXeHviB.jpg", counts: { videos: 22, podcasts: 18, books: 11 } },
-  { id: 496243, title: "Parasite", year: 2019, poster: "/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg", counts: { videos: 24, podcasts: 20, books: 12 } },
+  { id: 426426, title: "Roma", year: 2018, counts: { videos: 19, podcasts: 15, books: 9 } },
+  { id: 466272, title: "Portrait de la jeune fille en feu", year: 2019, counts: { videos: 17, podcasts: 12, books: 8 } },
+  { id: 496243, title: "Parasite", year: 2019, counts: { videos: 24, podcasts: 20, books: 12 } },
 ];
 
 function EditorialExamples() {
+  const { data: films } = useQuery({
+    queryKey: ["editorial-films"],
+    queryFn: async () => {
+      return Promise.all(
+        EDITORIAL_FILMS.map(async (f) => {
+          try {
+            const m = await getMovieDetails(f.id);
+            return { ...f, posterUrl: getPosterUrl(m.poster_path, "w500") };
+          } catch {
+            return { ...f, posterUrl: null };
+          }
+        })
+      );
+    },
+    staleTime: 1000 * 60 * 60,
+  });
+  const display = films ?? EDITORIAL_FILMS.map((f) => ({ ...f, posterUrl: null }));
   return (
     <section className="py-14 md:py-20 px-6 border-b border-border">
       <div className="container mx-auto">
@@ -316,19 +333,21 @@ function EditorialExamples() {
           </h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 md:gap-6">
-          {EDITORIAL_FILMS.map((f) => (
+          {display.map((f) => (
             <Link
               key={f.id}
               to={`/film/${f.id}`}
               className="group block"
             >
               <div className="relative aspect-[2/3] overflow-hidden rounded-sm bg-muted mb-4">
-                <img
-                  src={`https://image.tmdb.org/t/p/w500${f.poster}`}
-                  alt={f.title}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                  loading="lazy"
-                />
+                {f.posterUrl && (
+                  <img
+                    src={f.posterUrl}
+                    alt={f.title}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                    loading="lazy"
+                  />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
               <h3 className="font-display text-xl md:text-2xl text-foreground tracking-tight group-hover:opacity-80 transition-opacity">
