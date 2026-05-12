@@ -87,6 +87,24 @@ const premiumChannels = [
   'nerdwriter', 'channel criswell', 'like stories of old',
   'the royal ocean film society', 'just write',
   'filmspotting', 'the ringer', 'the rewatchables',
+  // Q&A hosts — post-screening discussions, guild screenings, festival talks
+  'sag-aftra foundation', 'sag aftra foundation',   // Conversations series
+  'film independent',                                // FIND events & Spirit Awards
+  'california film institute',                       // Mill Valley Film Festival Q&As
+  'afi',                                             // AFI Fest screenings
+  'gold derby',                                      // awards season Q&As
+  'below the line',                                  // craft Q&As
+  'contenders film',                                 // FYC events
+  'awards circuit',
+  'screendaily',
+  'cinemacon',
+  'tribeca film festival', 'tribeca',
+  'new york film festival', 'nyff',
+  'telluride film festival',
+  'berlin international film festival', 'berlinale',
+  'international film festival rotterdam', 'iffr',
+  'san francisco film society', 'sffs',
+  'unifrance', 'unifrance films',
   // Quality media outlets with BTS content
   'vice', 'vanity fair', 'gq', 'wired', 'vulture',
   'collider', 'screen rant', 'deadline', 'the wrap',
@@ -118,6 +136,13 @@ const premiumChannels = [
 const premiumContentKeywords = [
   // Masterclasses & Q&A sessions
   'masterclass', 'master class', 'in conversation', 'q&a', 'q & a',
+  'cast q&a', 'director q&a', 'audience q&a', 'screening q&a',
+  'post-screening', 'post screening', 'post-projection',
+  'press conference', 'conférence de presse',
+  'panel discussion', 'public discussion',
+  'guild screening', 'afi screening', 'sag foundation',
+  'fyc', 'for your consideration', 'contenders',
+  'film independent', 'california film institute',
   'oscar-winning', 'oscar winning', 'academy award',
   // Crew interviews (cinematographers, directors, etc.)
   'roger deakins', 'cinematographer', 'director of photography', 'dp',
@@ -231,7 +256,7 @@ function getVideoQualityScore(video: YouTubeVideo): number {
   }
 
   // STRONG editorial format: "présenté par", "introduit par", "séance" — exactly the
-  // cinémathèque introductions we want to surface (+40 points)
+  // cinémathèque introductions we want to surface (+80 points)
   const cinemathequeFormats = [
     'présenté par', 'présentée par', 'introduit par', 'introduite par',
     'présentation de', 'séance présentée', 'avant-séance', 'leçon de cinéma',
@@ -239,6 +264,22 @@ function getVideoQualityScore(video: YouTubeVideo): number {
   ];
   if (cinemathequeFormats.some(kw => combined.includes(kw))) {
     score += 80;
+  }
+
+  // Q&A / post-screening discussions — high editorial value (+60 points)
+  // Cast/director Q&As at festivals, guild screenings, FYC events are prime content
+  // for cinephiles wanting to go deeper after watching a film.
+  const qaFormats = [
+    'cast q&a', 'director q&a', 'audience q&a', 'screening q&a',
+    'post-screening', 'post screening', 'post-projection',
+    'press conference', 'conférence de presse',
+    'panel discussion', 'public discussion',
+    'guild screening', 'afi screening', 'sag foundation',
+    'fyc', 'for your consideration', 'contenders',
+    'film independent', 'california film institute',
+  ];
+  if (qaFormats.some(kw => combined.includes(kw))) {
+    score += 60;
   }
 
   // Premium content keywords bonus (+5 per keyword, max 25)
@@ -296,30 +337,35 @@ export async function searchFilmVideos(
     : `"${filmTitleQ}"`;
 
   // To stay within the YouTube API quota (10k units / day, ~100 units per search),
-  // we run THREE consolidated queries:
+  // we run FOUR consolidated queries:
   //   1. queryIntro — narrow French cinéphile intro (no director/year so low-metadata
   //      cinémathèque presentations like "ROME VILLE OUVERTE présenté par Matthieu
   //      Macheret" on Cinéma Le Champo are surfaced even though they have empty
   //      descriptions and don't mention the director or year).
   //   2. queryFr   — broad French (cinémathèque + analyses + tournage), with director/year.
-  //   3. queryEn   — international (institutional Q&As + roundtables + analyses).
-  // Intro results come FIRST so cinémathèque-style introductions outrank everything.
+  //   3. queryEn   — international (institutional analyses + roundtables + video essays).
+  //   4. queryQA   — dedicated Q&A pass: post-screening discussions, press conferences,
+  //      guild/FYC screenings, festival Q&As. Kept separate so these don't compete
+  //      with analysis/essay results and always get their own 25-result slot.
+  // Priority order: Intro > QA > FR > EN (QA moved up: cinephiles want cast discussions).
   const queryIntro = `${titleVariants} ("présenté par" OR "présentée par" OR "introduit par" OR "introduite par" OR "présentation de" OR "séance présentée" OR "avant-séance" OR "ciné-club" OR "leçon de cinéma")`;
   const queryFr = `${titleVariants}${directorStr}${yearStr} (présentation OR cinémathèque OR "ciné-club" OR masterclass OR analyse OR décryptage OR entretien OR rencontre OR tournage OR "making of")`;
-  const queryEn = `${titleVariants}${directorStr}${yearStr} ("q&a" OR "in conversation" OR retrospective OR "actors on actors" OR roundtable OR "close up with" OR analysis OR "video essay" OR masterclass OR interview OR "making of" OR "behind the scenes")`;
+  const queryEn = `${titleVariants}${directorStr}${yearStr} (retrospective OR "actors on actors" OR roundtable OR "close up with" OR analysis OR "video essay" OR masterclass OR "making of" OR "behind the scenes" OR "in conversation")`;
+  const queryQA  = `${titleVariants}${directorStr}${yearStr} ("cast q&a" OR "press conference" OR "conférence de presse" OR "post-screening" OR "post screening" OR "screening q&a" OR "audience q&a" OR "director q&a" OR "guild screening" OR "sag foundation" OR "film independent" OR "fyc" OR contenders OR "panel discussion")`;
 
-  console.log('YouTube search queries:', { queryIntro, queryFr, queryEn });
+  console.log('YouTube search queries:', { queryIntro, queryFr, queryEn, queryQA });
 
-  const [introVideos, frVideos, enVideos] = await Promise.all([
+  const [introVideos, frVideos, enVideos, qaVideos] = await Promise.all([
     searchYouTubeVideos(queryIntro, 15).catch(() => [] as YouTubeVideo[]),
     searchYouTubeVideos(queryFr, 25).catch(() => [] as YouTubeVideo[]),
     searchYouTubeVideos(queryEn, 25).catch(() => [] as YouTubeVideo[]),
+    searchYouTubeVideos(queryQA,  20).catch(() => [] as YouTubeVideo[]),
   ]);
 
-  // Dedupe by id. Intro results first, then FR, then EN — earlier wins on conflict.
+  // Dedupe by id. Priority: Intro > QA > FR > EN — earlier position wins on conflict.
   const seen = new Set<string>();
   const videos: YouTubeVideo[] = [];
-  for (const v of [...introVideos, ...frVideos, ...enVideos]) {
+  for (const v of [...introVideos, ...qaVideos, ...frVideos, ...enVideos]) {
     if (seen.has(v.id)) continue;
     seen.add(v.id);
     videos.push(v);
@@ -425,9 +471,16 @@ export function categorizeVideos(videos: YouTubeVideo[]): {
     'présentation', 'presentation', 'présenté par', 'présente', 'introduction',
     'masterclass', 'master class', 'conférence', 'conference', 'lecture',
     'q&a', 'q & a', 'qa session', 'questions answers',
+    'cast q&a', 'director q&a', 'audience q&a', 'screening q&a',
+    'post-screening', 'post screening', 'post-projection',
+    'press conference', 'conférence de presse',
+    'guild screening', 'afi screening', 'sag foundation',
+    'fyc', 'for your consideration', 'contenders',
+    'film independent', 'california film institute',
+    'panel discussion', 'public discussion',
     'in conversation', 'conversation with', 'talks about', 'discusses',
-  'présenté par', 'présentation de', 'introduit par', 'séance présentée',
-  'avant-séance', 'ciné-club', 'cine-club', 'leçon de cinéma',
+    'présenté par', 'présentation de', 'introduit par', 'séance présentée',
+    'avant-séance', 'ciné-club', 'cine-club', 'leçon de cinéma',
     // Cross-interviews & roundtables (editorial format, not production BTS)
     'actors on actors', 'directors on directors', 'roundtable',
     'close up with', 'screen talks', 'in conversation with',
