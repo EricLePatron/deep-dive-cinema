@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Loader2, ArrowRight, Compass, BookOpen, Headphones, Film as FilmIcon } from "lucide-react";
+import { Loader2, ArrowRight, Compass, BookOpen, Headphones, Film as FilmIcon, Clapperboard } from "lucide-react";
 import { FilmCard } from "@/components/FilmCard";
 import { DiaryContentHighlights } from "@/components/DiaryContentHighlights";
 import { Header } from "@/components/Header";
@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { lovable } from "@/integrations/lovable/index";
+import { SearchBar } from "@/components/SearchBar";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -54,6 +55,10 @@ const Index = () => {
     await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin,
     });
+  };
+
+  const handleSelectFilm = (film: { id: number }) => {
+    navigate(`/film/${film.id}`);
   };
 
   const { data: personalizedFilms, isLoading: loadingPersonalized } = useQuery({
@@ -107,6 +112,7 @@ const Index = () => {
           isLoggedIn={!!user}
           hasProfile={!!profile}
           onSignIn={handleSignIn}
+          onSelectFilm={handleSelectFilm}
         />
       )}
 
@@ -239,43 +245,36 @@ function ValuePropHero({
   isLoggedIn,
   hasProfile,
   onSignIn,
+  onSelectFilm,
 }: {
   isLoggedIn: boolean;
   hasProfile: boolean;
   onSignIn: () => void;
+  onSelectFilm: (film: { id: number }) => void;
 }) {
   return (
-    <section className="relative min-h-[80vh] md:min-h-[90vh] flex items-center overflow-hidden border-b border-border">
+    <>
+    <section className="relative flex items-center overflow-hidden border-b border-border">
       <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
         <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-primary blur-3xl" />
         <div className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-foreground blur-3xl" />
       </div>
 
-      <div className="relative z-10 container mx-auto px-6 py-20 md:py-28">
+      <div className="relative z-10 container mx-auto px-6 pt-28 pb-16 md:pt-36 md:pb-20">
         <div className="max-w-4xl animate-fade-in">
           <div className="editorial-label mb-6">— Pour les cinéphiles</div>
           <h1 className="font-display text-5xl md:text-7xl lg:text-8xl text-foreground leading-[0.95] tracking-tight mb-8">
             Le film est fini.<br />
             <span className="italic text-foreground/70">L'exploration commence.</span>
           </h1>
-          <p className="text-lg md:text-xl text-foreground/70 max-w-2xl leading-relaxed font-light mb-10">
+          <p className="text-lg md:text-xl text-foreground/70 max-w-2xl leading-relaxed font-light mb-8">
             Deepdive rassemble tout ce qui se dit, s'écrit et se filme autour des films que vous venez de voir : analyses, podcasts, livres, éditions physiques.
           </p>
 
-          <div className="flex flex-wrap gap-3 mb-12">
-            {!isLoggedIn ? (
-              <Button onClick={onSignIn} size="lg" className="group">
-                Connecter mon Letterboxd
-                <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-0.5" />
-              </Button>
-            ) : !hasProfile ? (
-              <div className="text-sm text-muted-foreground italic">
-                Reliez votre compte Letterboxd depuis le menu en haut pour personnaliser cette page.
-              </div>
-            ) : null}
-            <Button asChild variant="cinema-outline" size="lg">
-              <a href="#discover">Explorer les films</a>
-            </Button>
+          {/* Search CTA */}
+          <div className="max-w-2xl mb-10">
+            <div className="editorial-label mb-3 text-foreground/60">— Vous venez de voir un film ?</div>
+            <SearchBar onSelectFilm={onSelectFilm} variant="hero" />
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl pt-10 border-t border-border">
@@ -287,6 +286,115 @@ function ValuePropHero({
         </div>
       </div>
       <div id="discover" className="absolute bottom-0" />
+    </section>
+
+    {/* Editorial deep dive examples */}
+    <EditorialExamples />
+
+    {/* Letterboxd onboarding block */}
+    {!hasProfile && (
+      <LetterboxdOnboarding isLoggedIn={isLoggedIn} onSignIn={onSignIn} />
+    )}
+    </>
+  );
+}
+
+const EDITORIAL_FILMS = [
+  { id: 426426, title: "Roma", year: 2018, counts: { videos: 19, podcasts: 15, books: 9 } },
+  { id: 466272, title: "Portrait de la jeune fille en feu", year: 2019, counts: { videos: 17, podcasts: 12, books: 8 } },
+  { id: 496243, title: "Parasite", year: 2019, counts: { videos: 24, podcasts: 20, books: 12 } },
+];
+
+function EditorialExamples() {
+  const { data: films } = useQuery({
+    queryKey: ["editorial-films"],
+    queryFn: async () => {
+      return Promise.all(
+        EDITORIAL_FILMS.map(async (f) => {
+          try {
+            const m = await getMovieDetails(f.id);
+            return { ...f, posterUrl: getPosterUrl(m.poster_path, "w500") };
+          } catch {
+            return { ...f, posterUrl: null };
+          }
+        })
+      );
+    },
+    staleTime: 1000 * 60 * 60,
+  });
+  const display = films ?? EDITORIAL_FILMS.map((f) => ({ ...f, posterUrl: null }));
+  return (
+    <section className="py-14 md:py-20 px-6 border-b border-border">
+      <div className="container mx-auto">
+        <div className="mb-8 md:mb-10">
+          <div className="editorial-label mb-2">— Exemple de deep dive</div>
+          <h2 className="font-display text-3xl md:text-4xl text-foreground tracking-tight">
+            Découvrez ce qui se dit autour d'un film
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 md:gap-6">
+          {display.map((f) => (
+            <Link
+              key={f.id}
+              to={`/film/${f.id}`}
+              className="group block"
+            >
+              <div className="relative aspect-[2/3] overflow-hidden rounded-sm bg-muted mb-4">
+                {f.posterUrl && (
+                  <img
+                    src={f.posterUrl}
+                    alt={f.title}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                    loading="lazy"
+                  />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+              <h3 className="font-display text-xl md:text-2xl text-foreground tracking-tight group-hover:opacity-80 transition-opacity">
+                {f.title}
+                <span className="text-foreground/50 font-light tabular-nums ml-2">{f.year}</span>
+              </h3>
+              <p className="editorial-label mt-2 text-foreground/60">
+                {f.counts.videos} vidéos · {f.counts.podcasts} podcasts · {f.counts.books} livres
+              </p>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function LetterboxdOnboarding({ isLoggedIn, onSignIn }: { isLoggedIn: boolean; onSignIn: () => void }) {
+  return (
+    <section className="py-12 md:py-16 px-6">
+      <div className="container mx-auto">
+        <div className="max-w-2xl mx-auto border border-border bg-foreground/[0.03] rounded-sm p-6 md:p-8">
+          <div className="flex items-start gap-4">
+            <div className="hidden sm:flex h-10 w-10 items-center justify-center rounded-full bg-foreground/5 text-foreground/70 shrink-0">
+              <Clapperboard className="h-5 w-5" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-display text-xl md:text-2xl text-foreground tracking-tight mb-2">
+                Vous avez un compte Letterboxd ?
+              </h3>
+              <p className="text-sm md:text-base text-foreground/70 font-light leading-relaxed mb-5">
+                Connectez-le pour voir votre diary et vos films récents directement ici, avec leurs analyses, podcasts et livres associés.
+              </p>
+              {!isLoggedIn ? (
+                <Button onClick={onSignIn} className="group">
+                  Connecter Letterboxd
+                  <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-0.5" />
+                </Button>
+              ) : (
+                <p className="editorial-label text-foreground/60">
+                  Reliez votre compte depuis l'icône Letterboxd dans la barre du haut.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
