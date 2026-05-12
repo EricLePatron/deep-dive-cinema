@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Loader2, ArrowRight, Compass, BookOpen, Headphones, Film as FilmIcon } from "lucide-react";
+import { Loader2, ArrowRight, Compass, BookOpen, Headphones, Film as FilmIcon, Clapperboard } from "lucide-react";
 import { FilmCard } from "@/components/FilmCard";
 import { DiaryContentHighlights } from "@/components/DiaryContentHighlights";
 import { Header } from "@/components/Header";
@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { lovable } from "@/integrations/lovable/index";
+import { SearchBar } from "@/components/SearchBar";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -54,6 +55,10 @@ const Index = () => {
     await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin,
     });
+  };
+
+  const handleSelectFilm = (film: { id: number }) => {
+    navigate(`/film/${film.id}`);
   };
 
   const { data: personalizedFilms, isLoading: loadingPersonalized } = useQuery({
@@ -107,6 +112,7 @@ const Index = () => {
           isLoggedIn={!!user}
           hasProfile={!!profile}
           onSignIn={handleSignIn}
+          onSelectFilm={handleSelectFilm}
         />
       )}
 
