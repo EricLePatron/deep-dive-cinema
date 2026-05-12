@@ -11,6 +11,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { lovable } from "@/integrations/lovable/index";
 import { SearchBar } from "@/components/SearchBar";
+import { useFilmContentStats, isFilmRich } from "@/hooks/useFilmContentStats";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -35,7 +36,16 @@ const Index = () => {
   });
 
   const nowPlayingFilms = nowPlaying?.results.slice(0, 10).map(toFilmCard) || [];
-  const trendingFilms = trending?.results.slice(0, 10).map(toFilmCard) || [];
+  // Pull a wider trending pool because we filter aggressively for editorial fit.
+  const trendingPool = trending?.results.slice(0, 30).map(toFilmCard) || [];
+
+  // Fetch cached richness stats for the trending pool and only keep films
+  // that already have substantial content in the deep dive cache.
+  const { data: trendingStats } = useFilmContentStats(trendingPool.map((f) => f.id));
+  const trendingFilms = trendingPool
+    .map((f) => ({ ...f, _stats: trendingStats?.get(f.id) ?? null }))
+    .filter((f) => isFilmRich(f._stats))
+    .slice(0, 10);
 
   // Personalized: most recently watched diary films, true chronological order
   const recentRatedFilms = (() => {
@@ -139,13 +149,15 @@ const Index = () => {
       )}
 
       {/* Discovery rows — secondary entry points to start a deep dive */}
-      <FilmRowSection
-        kicker={hasDiary ? "— Pour creuser ailleurs" : "— Par où commencer"}
-        title="Tendances de la semaine"
-        subtitle="Choisissez un film pour ouvrir son deep dive : analyses, podcasts, livres."
-        films={trendingFilms}
-        loading={loadingTrending}
-      />
+      {trendingFilms.length > 0 && (
+        <FilmRowSection
+          kicker={hasDiary ? "— Pour creuser ailleurs" : "— Pour creuser"}
+          title="Tendances avec du contenu"
+          subtitle="Films populaires qui ont déjà une vraie matière éditoriale dans Deepdive."
+          films={trendingFilms}
+          loading={loadingTrending}
+        />
+      )}
 
       <FilmRowSection
         kicker="— En salle"
