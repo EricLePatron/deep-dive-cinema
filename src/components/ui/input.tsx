@@ -10,7 +10,7 @@ const inputVariants = cva(
       variant: {
         default: "border-input focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         cinema: "border-border/50 bg-muted/30 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 hover:border-border",
-        "cinema-search": "border-0 bg-muted/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:bg-muted/70 text-lg",
+        "cinema-search": "border-0 bg-muted/50 text-foreground focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:bg-muted/70 text-lg",
       },
       inputSize: {
         default: "h-10 px-3 py-2",
