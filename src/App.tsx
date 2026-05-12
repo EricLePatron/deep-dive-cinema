@@ -7,6 +7,10 @@ import Index from "./pages/Index";
 import FilmDeepDive from "./pages/FilmDeepDive";
 import Favorites from "./pages/Favorites";
 import NotFound from "./pages/NotFound";
+import MentionsLegales from "./pages/legal/MentionsLegales";
+import Confidentialite from "./pages/legal/Confidentialite";
+import CGU from "./pages/legal/CGU";
+import Cookies from "./pages/legal/Cookies";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +24,10 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/film/:id" element={<FilmDeepDive />} />
           <Route path="/favoris" element={<Favorites />} />
+          <Route path="/mentions-legales" element={<MentionsLegales />} />
+          <Route path="/confidentialite" element={<Confidentialite />} />
+          <Route path="/cgu" element={<CGU />} />
+          <Route path="/cookies" element={<Cookies />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
