@@ -214,7 +214,7 @@ function FilmRowSection({
         ) : (
           <div className="flex gap-4 md:gap-6 overflow-x-auto pb-4 -mx-6 px-6 snap-x snap-mandatory scrollbar-hide">
             {films.map((film) => (
-              <FilmCard key={film.id} film={film} size="md" />
+              <FilmCard key={film.id} film={film} size="md" stats={film._stats ?? undefined} />
             ))}
           </div>
         )}
