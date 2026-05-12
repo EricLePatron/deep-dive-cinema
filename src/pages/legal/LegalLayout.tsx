@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Header } from "@/components/Header";
+import { SiteFooter } from "@/components/SiteFooter";
 import { ReactNode } from "react";
 
 export function LegalLayout({ title, kicker, updated, children }: { title: string; kicker: string; updated: string; children: ReactNode }) {
@@ -17,6 +18,7 @@ export function LegalLayout({ title, kicker, updated, children }: { title: strin
           <Link to="/" className="editorial-label text-foreground/60 hover:text-foreground transition-colors">← Retour à l'accueil</Link>
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }
