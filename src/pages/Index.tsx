@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { lovable } from "@/integrations/lovable/index";
 import { SearchBar } from "@/components/SearchBar";
 import { useFilmContentStats, isFilmRich } from "@/hooks/useFilmContentStats";
+import { SiteFooter } from "@/components/SiteFooter";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -168,12 +169,7 @@ const Index = () => {
       />
 
       {/* Footer */}
-      <footer className="border-t border-border mt-16 py-10 px-6">
-        <div className="container mx-auto flex items-center justify-between">
-          <span className="font-display text-xl">Deep<span className="italic">dive</span></span>
-          <span className="editorial-label">© 2025</span>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 };
