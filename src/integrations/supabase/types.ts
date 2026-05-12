@@ -92,6 +92,30 @@ export type Database = {
         }
         Relationships: []
       }
+      film_content_stats: {
+        Row: {
+          book_count: number
+          podcast_count: number
+          tmdb_id: number
+          updated_at: string
+          video_count: number
+        }
+        Insert: {
+          book_count?: number
+          podcast_count?: number
+          tmdb_id: number
+          updated_at?: string
+          video_count?: number
+        }
+        Update: {
+          book_count?: number
+          podcast_count?: number
+          tmdb_id?: number
+          updated_at?: string
+          video_count?: number
+        }
+        Relationships: []
+      }
       letterboxd_profiles: {
         Row: {
           created_at: string

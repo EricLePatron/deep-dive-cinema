@@ -38,6 +38,7 @@ import { useFilmArticles } from "@/hooks/useFilmArticles";
 import { ArticleCard } from "@/components/ArticleCard";
 import { cn } from "@/lib/utils";
 import { PhysicalMediaSection } from "@/components/PhysicalMediaSection";
+import { useUpsertFilmContentStats } from "@/hooks/useFilmContentStats";
 
 const PREVIEW = 3;
 
@@ -124,6 +125,15 @@ export default function FilmDeepDive() {
   const totalEditorial = videos?.editorial.length || 0;
   const totalPodcasts = podcasts?.length || 0;
   const totalArticles = articles?.length || 0;
+
+  // Cache the available content counts so the homepage can surface films with real depth.
+  useUpsertFilmContentStats({
+    tmdbId: film?.id,
+    videoCount: videos?.all.length || 0,
+    podcastCount: totalPodcasts,
+    bookCount: totalBooks,
+    ready: !!film && !loadingVideos && !loadingPodcasts && !loadingBooks,
+  });
 
   const goToTab = useCallback((tab: string) => {
     setActiveTab(tab);
