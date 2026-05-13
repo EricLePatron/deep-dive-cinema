@@ -1,12 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   LineChart, Line, CartesianGrid, Legend,
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
+
+// Les fonctions analytics ne sont pas encore dans les types auto-générés.
+// On utilise un helper typé pour contourner proprement.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const rpc = (fn: string, args?: Record<string, unknown>) =>
+  (supabase as any).rpc(fn, args);
 import {
-  Users, Heart, BookOpen, ThumbsUp, ThumbsDown, Film,
+  Users, Heart, ThumbsUp, ThumbsDown, Film,
   TrendingUp, Eye, Lock,
 } from "lucide-react";
 
@@ -117,7 +123,7 @@ export default function AnalyticsDashboard() {
   const { data: overview } = useQuery({
     queryKey: ["analytics_overview"],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("analytics_overview");
+      const { data, error } = await rpc("analytics_overview");
       if (error) throw error;
       return data as {
         total_users: number;
@@ -138,7 +144,7 @@ export default function AnalyticsDashboard() {
   const { data: usersByWeek } = useQuery({
     queryKey: ["analytics_users_by_week"],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("analytics_users_by_week");
+      const { data, error } = await rpc("analytics_users_by_week");
       if (error) throw error;
       return (data as { week: string; new_users: number }[]).map((d) => ({
         ...d,
@@ -152,7 +158,7 @@ export default function AnalyticsDashboard() {
   const { data: activityByWeek } = useQuery({
     queryKey: ["analytics_activity_by_week"],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("analytics_activity_by_week");
+      const { data, error } = await rpc("analytics_activity_by_week");
       if (error) throw error;
       return (data as { week: string; favorites_added: number; items_consumed: number }[]).map((d) => ({
         ...d,
@@ -166,7 +172,7 @@ export default function AnalyticsDashboard() {
   const { data: topFilms } = useQuery({
     queryKey: ["analytics_top_films"],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("analytics_top_films");
+      const { data, error } = await rpc("analytics_top_films");
       if (error) throw error;
       return data as {
         film_tmdb_id: number;
@@ -185,7 +191,7 @@ export default function AnalyticsDashboard() {
   const { data: contentBreakdown } = useQuery({
     queryKey: ["analytics_content_breakdown"],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("analytics_content_breakdown");
+      const { data, error } = await rpc("analytics_content_breakdown");
       if (error) throw error;
       return (data as { item_type: string; favorites_count: number; consumed_count: number }[]).map(
         (d) => ({ ...d, label: TYPE_LABELS[d.item_type] ?? d.item_type })
@@ -198,7 +204,7 @@ export default function AnalyticsDashboard() {
   const { data: richestFilms } = useQuery({
     queryKey: ["analytics_richest_films"],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("analytics_richest_films");
+      const { data, error } = await rpc("analytics_richest_films");
       if (error) throw error;
       return data as {
         tmdb_id: number;
