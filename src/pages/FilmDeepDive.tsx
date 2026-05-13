@@ -39,6 +39,7 @@ import { ArticleCard } from "@/components/ArticleCard";
 import { cn } from "@/lib/utils";
 import { PhysicalMediaSection } from "@/components/PhysicalMediaSection";
 import { useUpsertFilmContentStats } from "@/hooks/useFilmContentStats";
+import { FilmSEO } from "@/components/FilmSEO";
 
 const PREVIEW = 3;
 
@@ -184,6 +185,20 @@ export default function FilmDeepDive() {
 
   return (
     <div className="dark min-h-screen bg-background">
+      {/* SEO — meta tags dynamiques, JSON-LD, canonical */}
+      <FilmSEO
+        title={film.title}
+        year={film.year ?? 0}
+        director={film.director ?? ''}
+        synopsis={film.synopsis ?? ''}
+        posterUrl={film.posterUrl ?? null}
+        backdropUrl={film.backdropUrl ?? null}
+        filmId={film.id}
+        videoCount={videos?.all.length ?? 0}
+        podcastCount={totalPodcasts}
+        bookCount={totalBooks}
+      />
+
       <Header />
 
       {/* Hero compact — backdrop + identité du film */}
