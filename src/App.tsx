@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import Index from "./pages/Index";
+import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import FilmDeepDive from "./pages/FilmDeepDive";
 import Favorites from "./pages/Favorites";
 import NotFound from "./pages/NotFound";
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/confidentialite" element={<Confidentialite />} />
           <Route path="/cgu" element={<CGU />} />
           <Route path="/cookies" element={<Cookies />} />
+          <Route path="/analytics-deepdive-prive-2026" element={<AnalyticsDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
