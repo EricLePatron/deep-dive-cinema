@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Pages statiques -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Pages film — Top 30 cinéphiles FR (classés par potentiel SEO) -->
+
+  <!-- Parasite — Bong Joon-ho (2019) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/496243</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Roma — Alfonso Cuarón (2018) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/508439</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Portrait de la jeune fille en feu — Céline Sciamma (2019) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/599692</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Once Upon a Time in Hollywood — Quentin Tarantino (2019) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/466272</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Midsommar — Ari Aster (2019) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/530385</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Hereditary — Ari Aster (2018) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/493922</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Annihilation — Alex Garland (2018) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/300668</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Mulholland Drive — David Lynch (2001) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/1018</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Everything Everywhere All at Once — Daniels (2022) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/545611</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Aftersun — Charlotte Wells (2022) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/901362</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- The Lighthouse — Robert Eggers (2019) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/503919</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Moonlight — Barry Jenkins (2016) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/376867</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Whiplash — Damien Chazelle (2014) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/244786</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- La La Land — Damien Chazelle (2016) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/313369</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Blade Runner 2049 — Denis Villeneuve (2017) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/335984</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Dune — Denis Villeneuve (2021) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/438631</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Oppenheimer — Christopher Nolan (2023) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/872585</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Tár — Todd Field (2022) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/840430</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- The Zone of Interest — Jonathan Glazer (2023) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/940721</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- In the Mood for Love — Wong Kar-wai (2000) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/11102</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- 2001 : A Space Odyssey — Stanley Kubrick (1968) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/62</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- The Witch — Robert Eggers (2015) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/310131</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Jeanne Dielman — Chantal Akerman (1975) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/27707</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Nostalghia — Andreï Tarkovski (1983) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/11523</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Stalker — Andreï Tarkovski (1979) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/6978</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Citizen Kane — Orson Welles (1941) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/15</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Tokyo Story — Yasujirō Ozu (1953) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/17216</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Caché — Michael Haneke (2005) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/8961</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Saint Maud — Rose Glass (2019) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/617896</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- First Cow — Kelly Reichardt (2019) -->
+  <url>
+    <loc>https://www.deepdive-cinema.com/film/517358</loc>
+    <lastmod>2026-05-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+</urlset>
