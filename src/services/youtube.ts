@@ -40,9 +40,9 @@ export async function searchYouTubeVideos(
   return data.videos || [];
 }
 
-// Keywords to EXCLUDE - trailers, marketing, promotional content
+// Keywords to EXCLUDE - trailers, marketing, promotional content, full films, clips
 const excludeKeywords = [
-  'trailer', 'teaser', 'bande annonce', 'bande-annonce', 
+  'trailer', 'teaser', 'bande annonce', 'bande-annonce',
   'promo', 'promotional', 'tv spot', 'spot tv',
   'official clip', 'movie clip', 'extrait officiel',
   'first look', 'sneak peek', 'avant-première',
@@ -51,7 +51,16 @@ const excludeKeywords = [
   'rank', 'ranking', 'top 10', 'top 5', 'tier list',
   'honest trailer', 'pitch meeting', 'everything wrong',
   'compilation', 'best moments', 'funny moments',
-  'recap', 'in 5 minutes', 'in 10 minutes', 'in 3 minutes'
+  'recap', 'in 5 minutes', 'in 10 minutes', 'in 3 minutes',
+  // Full films / illegal uploads
+  'full movie', 'film complet', 'complete movie', 'pelicula completa',
+  'regarder le film', 'voir le film', 'watch full film', 'watch the full movie',
+  'film streaming', 'streaming complet', 'streaming vf', 'streaming vostfr',
+  'version intégrale', 'version integrale', 'integral version',
+  'movie online', 'film en ligne', 'film entier',
+  // Raw film clips / scenes
+  'extrait du film', 'film clip', 'movie scene', 'scène du film',
+  'full scene', 'scene complete', 'scene du film',
 ];
 
 // Professional cinephile channels to prioritize
@@ -406,9 +415,10 @@ export async function searchFilmVideos(
     const descLower = v.description.toLowerCase();
     const combined = titleLower + ' ' + descLower;
     
-    // Only exclude obvious trailers/marketing
+    // Exclude marketing + full-film uploads + raw clips
     const strictMarketingKeywords = ['trailer officiel', 'official trailer', 'bande-annonce officielle', 'teaser officiel', 'tv spot'];
     if (strictMarketingKeywords.some(kw => combined.includes(kw))) return false;
+    if (excludeKeywords.some(kw => combined.includes(kw))) return false;
     
     // Exclude videos shorter than 5 minutes
     const minutes = getVideoDurationMinutes(v);
