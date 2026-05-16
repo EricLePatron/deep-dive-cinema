@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Loader2, ArrowRight, Compass, BookOpen, Headphones, Film as FilmIcon, Clapperboard } from "lucide-react";
 import { FilmCard } from "@/components/FilmCard";
 import { DiaryContentHighlights } from "@/components/DiaryContentHighlights";
+import { DiaryExtraHighlights } from "@/components/DiaryExtraHighlights";
 import { Header } from "@/components/Header";
 import { useNowPlayingMovies, useTrendingMovies } from "@/hooks/useTMDB";
 import { useLetterboxdProfile, useLetterboxdFeed } from "@/hooks/useLetterboxd";
@@ -147,6 +148,11 @@ const Index = () => {
       {/* 2. Content highlights from diary */}
       {personalizedFilms && personalizedFilms.length > 0 && (
         <DiaryContentHighlights films={personalizedFilms} />
+      )}
+
+      {/* 3. Podcasts + articles picks for diary films */}
+      {personalizedFilms && personalizedFilms.length > 0 && (
+        <DiaryExtraHighlights films={personalizedFilms} />
       )}
 
       {/* Discovery rows — secondary entry points to start a deep dive */}
