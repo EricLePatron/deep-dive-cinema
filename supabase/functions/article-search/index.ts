@@ -93,6 +93,23 @@ const NEGATIVE_KEYWORDS = [
 // probablement un brève / news. On préfère un texte descriptif >= ~150 caractères.
 const MIN_DESCRIPTION_LENGTH = 80;
 
+// Patterns d'URL non-éditoriaux (forums, listings, tags, recherche…) → exclus
+const BLOCKED_URL_PATTERNS = [
+  /\/forum\//i,
+  /viewtopic\.php/i,
+  /viewforum\.php/i,
+  /\/tag\//i,
+  /\/tags\//i,
+  /\/category\//i,
+  /\/categorie\//i,
+  /\/search/i,
+  /\/recherche/i,
+  /\/author\//i,
+  /\/auteur\//i,
+  /\/page\/\d+/i,
+  /\/index\.php\?/i,
+];
+
 function hostnameOf(url: string): string {
   try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return ''; }
 }
@@ -211,15 +228,26 @@ Deno.serve(async (req) => {
         const source = findSource(host);
         if (!source) return null;
 
+        // Filtre URL non-éditorial (forums, listings, etc.)
+        if (BLOCKED_URL_PATTERNS.some((re) => re.test(url))) return null;
+
         const title = (r.title || '').trim();
         const description = (r.description || '').trim();
         const combined = `${title} ${description}`.toLowerCase();
+        const titleLower = title.toLowerCase();
+        const urlLower = url.toLowerCase();
 
-        // Doit mentionner le film
-        const mentionsFilm =
-          combined.includes(filmTitleLower) ||
-          (!!originalTitleLower && combined.includes(originalTitleLower));
-        if (!mentionsFilm) return null;
+        // Doit mentionner le film DANS LE TITRE OU L'URL (pas seulement la
+        // description, qui peut juste lister d'autres films du même réalisateur).
+        const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        const filmSlug = slugify(filmTitle);
+        const originalSlug = originalTitle ? slugify(originalTitle) : '';
+        const titleOrUrlMentions = (needle: string, slug: string) =>
+          (!!needle && (titleLower.includes(needle) || (!!slug && urlLower.includes(slug))));
+        const mentionsFilmStrict =
+          titleOrUrlMentions(filmTitleLower, filmSlug) ||
+          titleOrUrlMentions(originalTitleLower, originalSlug);
+        if (!mentionsFilmStrict) return null;
 
         // Filtrage promotionnel / marketing
         if (NEGATIVE_KEYWORDS.some((k) => combined.includes(k))) return null;
