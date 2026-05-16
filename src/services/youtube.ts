@@ -415,9 +415,10 @@ export async function searchFilmVideos(
     const descLower = v.description.toLowerCase();
     const combined = titleLower + ' ' + descLower;
     
-    // Only exclude obvious trailers/marketing
+    // Exclude marketing + full-film uploads + raw clips
     const strictMarketingKeywords = ['trailer officiel', 'official trailer', 'bande-annonce officielle', 'teaser officiel', 'tv spot'];
     if (strictMarketingKeywords.some(kw => combined.includes(kw))) return false;
+    if (excludeKeywords.some(kw => combined.includes(kw))) return false;
     
     // Exclude videos shorter than 5 minutes
     const minutes = getVideoDurationMinutes(v);
