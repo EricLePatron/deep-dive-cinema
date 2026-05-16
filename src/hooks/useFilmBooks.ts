@@ -10,7 +10,7 @@ export interface BookResult {
   publishedDate: string;
   imageUrl: string | null;
   infoLink: string;
-  category: 'film' | 'director' | 'cast' | 'genre';
+  category: 'film' | 'director' | 'genre';
   relevanceScore: number;
   language: string;
   isbn: string | null;
@@ -22,9 +22,8 @@ interface BookSearchResponse {
 }
 
 const categoryLabels: Record<BookResult['category'], string> = {
-  film: 'Sur le film',
+  film: 'Sur ce film',
   director: 'Sur le réalisateur',
-  cast: 'Sur les acteurs',
   genre: 'Sur le genre',
 };
 
@@ -34,14 +33,13 @@ export function useFilmBooks(
   filmTitle: string,
   originalTitle?: string,
   director?: string,
-  cast?: string[],
   genres?: string[]
 ) {
   return useQuery({
     queryKey: ['film-books', filmTitle, director],
     queryFn: async (): Promise<BookResult[]> => {
       const { data, error } = await supabase.functions.invoke('book-search', {
-        body: { filmTitle, originalTitle, director, cast, genres },
+        body: { filmTitle, originalTitle, director, genres },
       });
 
       if (error) throw error;

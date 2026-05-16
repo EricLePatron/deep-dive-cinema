@@ -81,8 +81,13 @@ function SectionLoader() {
   );
 }
 
-function EmptyState({ message }: { message: string }) {
-  return <p className="text-sm text-muted-foreground/70 py-6">{message}</p>;
+function EmptyState({ message, subMessage }: { message: string; subMessage?: string }) {
+  return (
+    <div className="py-6">
+      <p className="text-sm text-muted-foreground/70">{message}</p>
+      {subMessage && <p className="text-xs text-muted-foreground/50 mt-1">{subMessage}</p>}
+    </div>
+  );
 }
 
 export default function FilmDeepDive() {
@@ -106,9 +111,8 @@ export default function FilmDeepDive() {
   const videos = rawVideos;
   const { data: podcasts, isLoading: loadingPodcasts } = useFilmPodcasts(filmTitle, filmDirector);
 
-  const castNames = film?.cast?.map((c) => c.name) || [];
   const { data: books, isLoading: loadingBooks } = useFilmBooks(
-    filmTitle, film?.originalTitle, filmDirector, castNames, film?.genres
+    filmTitle, film?.originalTitle, filmDirector, film?.genres
   );
 
   const { data: articles, isLoading: loadingArticles } = useFilmArticles(
@@ -452,33 +456,33 @@ export default function FilmDeepDive() {
               </div>
             )}
 
-            {/* Livres */}
-            <div>
-              <SectionHeader
-                title="Livres & essais"
-                count={totalBooks}
-                onViewAll={totalBooks > PREVIEW ? () => goToTab("books") : undefined}
-              />
-              {loadingBooks ? (
-                <SectionLoader />
-              ) : books && books.length > 0 ? (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {[...books]
-                    .sort((a, b) => {
-                      const aFr = a.language === 'fr' ? 1 : 0;
-                      const bFr = b.language === 'fr' ? 1 : 0;
-                      if (aFr !== bFr) return bFr - aFr;
-                      return b.relevanceScore - a.relevanceScore;
-                    })
-                    .slice(0, PREVIEW)
-                    .map((book) => (
-                    <BookCard key={book.id} book={book} film={filmCtx} />
-                  ))}
-                </div>
-              ) : (
-                <EmptyState message="Aucun livre trouvé." />
-              )}
-            </div>
+            {/* Livres — section masquée si aucun livre pertinent (règle d'or : rien > hors sujet) */}
+            {(loadingBooks || totalBooks > 0) && (
+              <div>
+                <SectionHeader
+                  title="Livres & essais"
+                  count={totalBooks}
+                  onViewAll={totalBooks > PREVIEW ? () => goToTab("books") : undefined}
+                />
+                {loadingBooks ? (
+                  <SectionLoader />
+                ) : (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[...books!]
+                      .sort((a, b) => {
+                        const aFr = a.language === 'fr' ? 1 : 0;
+                        const bFr = b.language === 'fr' ? 1 : 0;
+                        if (aFr !== bFr) return bFr - aFr;
+                        return b.relevanceScore - a.relevanceScore;
+                      })
+                      .slice(0, PREVIEW)
+                      .map((book) => (
+                        <BookCard key={book.id} book={book} film={filmCtx} director={filmDirector} />
+                      ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Autour du tournage : making-of, coulisses, interviews équipe */}
             {(loadingVideos || totalProduction > 0) && (
@@ -569,15 +573,15 @@ export default function FilmDeepDive() {
                       <div>
                         <SectionHeader title="Éditions françaises" count={frBooks.length} />
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {frBooks.map((book) => <BookCard key={book.id} book={book} film={filmCtx} />)}
+                          {frBooks.map((book) => <BookCard key={book.id} book={book} film={filmCtx} director={filmDirector} />)}
                         </div>
                       </div>
                     )}
                     {otherBooks.length > 0 && (
                       <div>
-                        <SectionHeader title="Autres éditions" count={otherBooks.length} />
+                        <SectionHeader title="Éditions originales" count={otherBooks.length} />
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {otherBooks.map((book) => <BookCard key={book.id} book={book} film={filmCtx} />)}
+                          {otherBooks.map((book) => <BookCard key={book.id} book={book} film={filmCtx} director={filmDirector} />)}
                         </div>
                       </div>
                     )}
@@ -585,7 +589,7 @@ export default function FilmDeepDive() {
                 );
               })()
             ) : (
-              <EmptyState message="Aucun livre trouvé pour ce film." />
+              <EmptyState message="Aucun livre sélectionné pour ce film." subMessage="Notre sélection exige une pertinence directe avec le film ou son réalisateur." />
             )}
           </TabsContent>
 

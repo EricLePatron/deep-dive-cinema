@@ -8,12 +8,18 @@ import { cn } from "@/lib/utils";
 interface BookCardProps {
   book: BookResult;
   film?: { tmdbId?: number; title?: string; posterUrl?: string | null; year?: number };
+  director?: string;
 }
 
-export function BookCard({ book, film }: BookCardProps) {
+export function BookCard({ book, film, director }: BookCardProps) {
   const isFrench = book.language === 'fr';
   const { isConsumed } = useConsumed();
   const consumed = isConsumed("book", book.id);
+
+  // Personnalise le label "Sur le réalisateur" avec le nom réel
+  const categoryLabel = book.category === 'director' && director
+    ? `Sur ${director}`
+    : categoryLabels[book.category];
   return (
     <div className={cn(
       "group relative flex flex-col gap-3 pt-4 border-t border-border/60 transition-opacity hover:opacity-90",
@@ -48,7 +54,7 @@ export function BookCard({ book, film }: BookCardProps) {
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="editorial-label mb-1.5 flex items-center gap-2">
-            <span>{categoryLabels[book.category]}</span>
+            <span>{categoryLabel}</span>
             {isFrench && (
               <>
                 <span className="text-border">·</span>
