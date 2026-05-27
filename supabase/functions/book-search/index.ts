@@ -380,10 +380,12 @@ serve(async (req) => {
     // ── Niveau 2 — Réalisateur monographie (score base 65) ───────────────────
     if (director) {
       const dirResults = await Promise.all([
-        searchOpenLibrary(`${director} cinema filmmaker`, 8),
-        searchOpenLibrary(`${director} réalisateur cinéma`, 6, 'fr'),
-        searchOpenLibrary(`${director} director films`, 6, 'en'),
-        searchOpenLibrary(`${director} films monographie`, 5, 'fr'),
+        // Bare director name — Open Library full-text — captures most monographs
+        searchOpenLibrary(`${director}`, 12),
+        searchOpenLibrary(`${director}`, 8, 'fr'),
+        searchOpenLibrary(`${director}`, 8, 'en'),
+        searchOpenLibrary(`${director} cinéma`, 6, 'fr'),
+        searchOpenLibrary(`${director} cinema`, 6, 'en'),
       ]);
       for (const results of dirResults) addBooks(results, 'director', 65);
     }
