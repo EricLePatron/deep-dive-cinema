@@ -113,6 +113,7 @@ async function aiRankBooks(
   // Pre-filter obvious blacklist before sending to AI
   const candidates = books.filter(b => !isBlacklisted(b));
   if (candidates.length === 0) return [];
+  console.log(`AI rank: ${candidates.length} candidates after blacklist`);
 
   const booksForAI = candidates.map((b, i) => ({
     index: i,
@@ -193,17 +194,24 @@ ${JSON.stringify(booksForAI, null, 1)}`;
     });
 
     if (!response.ok) {
-      console.error("AI ranking failed:", response.status, await response.text());
+      const txt = await response.text();
+      console.error("AI ranking failed:", response.status, txt);
       return [];
     }
 
     const data = await response.json();
+    console.log("AI raw choices:", JSON.stringify(data.choices?.[0]?.message ?? {}).slice(0, 500));
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) return [];
+    if (!toolCall) {
+      console.error("AI ranking: no tool_call returned");
+      return [];
+    }
 
     const rankings = JSON.parse(toolCall.function.arguments).rankings as Array<{
       index: number; score: number; category: string;
     }>;
+    console.log("AI rankings:", JSON.stringify(rankings));
+    console.log("Candidate titles:", candidates.map((c, i) => `${i}:${c.title}`).join(" | "));
 
     for (const r of rankings) {
       if (r.index >= 0 && r.index < candidates.length) {
@@ -222,7 +230,9 @@ ${JSON.stringify(booksForAI, null, 1)}`;
     // "Il vaut mieux rien que quelque chose hors sujet."
     // Seuil à 45 : aligne avec la grille de scoring (45 = mouvement ciné précis)
     const RELEVANCE_THRESHOLD = 45;
-    return candidates.filter(b => b.relevanceScore >= RELEVANCE_THRESHOLD);
+    const filtered = candidates.filter(b => b.relevanceScore >= RELEVANCE_THRESHOLD);
+    console.log(`Filtered ${filtered.length}/${candidates.length} books above threshold ${RELEVANCE_THRESHOLD}`);
+    return filtered;
 
   } catch (e) {
     console.error("AI ranking error:", e);
