@@ -208,8 +208,9 @@ ${JSON.stringify(booksForAI, null, 1)}`;
     for (const r of rankings) {
       if (r.index >= 0 && r.index < candidates.length) {
         const aiScore = r.score;
-        // Language bonus: +15 only if book is already relevant (score >= 50) AND in French
-        const langBonus = candidates[r.index].language === 'fr' && aiScore >= 50 ? 15 : 0;
+        // Bonus langue FR : +10 si le livre est déjà pertinent (score >= 40)
+        // Favorise les éditions françaises à égalité de pertinence, sans faire remonter des livres hors sujet
+        const langBonus = candidates[r.index].language === 'fr' && aiScore >= 40 ? 10 : 0;
         candidates[r.index].relevanceScore = aiScore + langBonus;
         if (['film', 'director', 'genre'].includes(r.category)) {
           candidates[r.index].category = r.category as BookResult['category'];
@@ -219,7 +220,8 @@ ${JSON.stringify(booksForAI, null, 1)}`;
 
     // STRICT FILTER — no fallback. If nothing is relevant, return empty.
     // "Il vaut mieux rien que quelque chose hors sujet."
-    const RELEVANCE_THRESHOLD = 50;
+    // Seuil à 45 : aligne avec la grille de scoring (45 = mouvement ciné précis)
+    const RELEVANCE_THRESHOLD = 45;
     return candidates.filter(b => b.relevanceScore >= RELEVANCE_THRESHOLD);
 
   } catch (e) {
@@ -253,16 +255,26 @@ serve(async (req) => {
     };
 
     // ── Niveau 1 — Film (score base 85) ──────────────────────────────────────
-    // Requêtes précises avec guillemets et termes cinéma obligatoires
-    const filmQueries: Promise<any[]>[] = [
-      searchGoogleBooks(`"${filmTitle}" making-of`, 6, 'fr'),
-      searchGoogleBooks(`"${filmTitle}" analyse film`, 6, 'fr'),
-      searchGoogleBooks(`"${filmTitle}" scénario`, 5, 'fr'),
-    ];
-    if (originalTitle && originalTitle !== filmTitle) {
-      filmQueries.push(searchGoogleBooks(`"${originalTitle}" making-of`, 6, 'en'));
+    // Toujours combiner titre + réalisateur pour disambiguïser (ex: "Parasite" sans
+    // Bong Joon-ho retourne des livres de biologie)
+    const filmQueries: Promise<any[]>[] = [];
+
+    if (director) {
+      // Combinaison titre + réalisateur = requête la plus précise
+      filmQueries.push(searchGoogleBooks(`"${filmTitle}" "${director}"`, 8));
+      filmQueries.push(searchGoogleBooks(`"${filmTitle}" ${director} film`, 6, 'fr'));
+      filmQueries.push(searchGoogleBooks(`"${filmTitle}" ${director} cinema`, 6, 'en'));
+    } else {
+      filmQueries.push(searchGoogleBooks(`"${filmTitle}" film analyse`, 6, 'fr'));
+      filmQueries.push(searchGoogleBooks(`"${filmTitle}" film analysis`, 6, 'en'));
+    }
+    // Recherche par titre original uniquement si en caractères latins
+    const isLatin = (s: string) => /^[\x00-\xFF\s]+$/.test(s);
+    if (originalTitle && originalTitle !== filmTitle && isLatin(originalTitle)) {
+      if (director) {
+        filmQueries.push(searchGoogleBooks(`"${originalTitle}" ${director}`, 6, 'en'));
+      }
       filmQueries.push(searchGoogleBooks(`"${originalTitle}" screenplay`, 5, 'en'));
-      filmQueries.push(searchGoogleBooks(`"${originalTitle}" film analysis`, 6, 'en'));
     }
     const filmResults = await Promise.all(filmQueries);
     for (const results of filmResults) addBooks(results, 'film', 85);
@@ -271,9 +283,10 @@ serve(async (req) => {
     if (director) {
       const dirResults = await Promise.all([
         searchGoogleBooks(`"${director}" réalisateur cinéma`, 6, 'fr'),
-        searchGoogleBooks(`"${director}" monographie`, 5, 'fr'),
+        searchGoogleBooks(`"${director}" monographie cinéma`, 5, 'fr'),
         searchGoogleBooks(`"${director}" filmmaker cinema`, 6, 'en'),
-        searchGoogleBooks(`"${director}" director cinema`, 5, 'en'),
+        searchGoogleBooks(`"${director}" director films`, 6, 'en'),
+        searchGoogleBooks(`inauthor:"${director}" cinema`, 5, 'en'),
       ]);
       for (const results of dirResults) addBooks(results, 'director', 65);
     }
