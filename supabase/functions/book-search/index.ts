@@ -177,7 +177,7 @@ function locallyScoreBooks(
       }
 
       if (book.language === 'fr' && score >= 45) score += 8;
-      return { ...book, relevanceScore: Math.max(book.relevanceScore, score), category };
+      return { ...book, relevanceScore: score, category };
     })
     .filter(b => b.relevanceScore >= 45);
 }
@@ -197,6 +197,7 @@ async function aiRankBooks(
 
   const candidates = books.filter(b => !isBlacklisted(b));
   if (candidates.length === 0) return localRanked;
+  for (const candidate of candidates) candidate.relevanceScore = 0;
   console.log(`AI rank: ${candidates.length} candidates after blacklist`);
 
   const booksForAI = candidates.map((b, i) => ({
