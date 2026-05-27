@@ -114,6 +114,74 @@ function isBlacklisted(book: BookResult): boolean {
   return BLACKLIST_PATTERNS.some(p => p.test(haystack));
 }
 
+function normalizeText(value: string | undefined | null): string {
+  return (value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function hasWholePhrase(haystack: string, phrase: string | undefined): boolean {
+  const normalizedPhrase = normalizeText(phrase);
+  if (!normalizedPhrase || normalizedPhrase.length < 3) return false;
+  return ` ${haystack} `.includes(` ${normalizedPhrase} `);
+}
+
+function locallyScoreBooks(
+  books: BookResult[],
+  filmTitle: string,
+  originalTitle: string | undefined,
+  director: string | undefined,
+  genres: string[] | undefined
+): BookResult[] {
+  const film = normalizeText(filmTitle);
+  const original = normalizeText(originalTitle);
+  const directorName = normalizeText(director);
+  const directorParts = directorName.split(' ').filter(Boolean);
+  const directorLastName = directorParts.at(-1) || '';
+  const cinemaTerms = ['cinema', 'film', 'films', 'movie', 'movies', 'director', 'filmmaker', 'realisateur', 'retrospective', 'interviews', 'entretiens'];
+
+  return books
+    .filter(b => !isBlacklisted(b))
+    .map((book) => {
+      const title = normalizeText(book.title);
+      const authors = normalizeText(book.authors.join(' '));
+      const publisher = normalizeText(book.publisher);
+      const haystack = `${title} ${authors} ${publisher}`;
+      const mentionsFilm = hasWholePhrase(title, film) || (original && original !== film && hasWholePhrase(title, original));
+      const authorIsDirector = directorName && hasWholePhrase(authors, directorName);
+      const titleMentionsDirector = directorName && hasWholePhrase(title, directorName);
+      const titleMentionsDirectorLastName = directorLastName.length >= 5 && hasWholePhrase(title, directorLastName);
+      const hasCinemaContext = cinemaTerms.some(term => hasWholePhrase(haystack, term));
+
+      let score = 0;
+      let category: BookResult['category'] = book.category;
+
+      if (mentionsFilm && authorIsDirector) {
+        score = 96;
+        category = 'film';
+      } else if (mentionsFilm) {
+        score = 90;
+        category = 'film';
+      } else if (authorIsDirector) {
+        score = 74;
+        category = 'director';
+      } else if (titleMentionsDirector || (titleMentionsDirectorLastName && hasCinemaContext)) {
+        score = 68;
+        category = 'director';
+      } else if (book.category === 'genre' && hasCinemaContext && genres?.some(g => hasWholePhrase(haystack, g))) {
+        score = 50;
+        category = 'genre';
+      }
+
+      if (book.language === 'fr' && score >= 45) score += 8;
+      return { ...book, relevanceScore: Math.max(book.relevanceScore, score), category };
+    })
+    .filter(b => b.relevanceScore >= 45);
+}
+
 async function aiRankBooks(
   books: BookResult[],
   filmTitle: string,
@@ -122,10 +190,13 @@ async function aiRankBooks(
   genres: string[] | undefined
 ): Promise<BookResult[]> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  if (!LOVABLE_API_KEY || books.length === 0) return [];
+  if (books.length === 0) return [];
+
+  const localRanked = locallyScoreBooks(books, filmTitle, originalTitle, director, genres);
+  if (!LOVABLE_API_KEY) return localRanked;
 
   const candidates = books.filter(b => !isBlacklisted(b));
-  if (candidates.length === 0) return [];
+  if (candidates.length === 0) return localRanked;
   console.log(`AI rank: ${candidates.length} candidates after blacklist`);
 
   const booksForAI = candidates.map((b, i) => ({
@@ -208,7 +279,7 @@ ${JSON.stringify(booksForAI, null, 1)}`;
     if (!response.ok) {
       const txt = await response.text();
       console.error("AI ranking failed:", response.status, txt);
-      return [];
+      return localRanked;
     }
 
     const data = await response.json();
@@ -216,7 +287,7 @@ ${JSON.stringify(booksForAI, null, 1)}`;
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall) {
       console.error("AI ranking: no tool_call returned");
-      return [];
+      return localRanked;
     }
 
     const rankings = JSON.parse(toolCall.function.arguments).rankings as Array<{
@@ -239,13 +310,19 @@ ${JSON.stringify(booksForAI, null, 1)}`;
 
     // STRICT FILTER — no fallback. If nothing is relevant, return empty.
     const RELEVANCE_THRESHOLD = 45;
-    const filtered = candidates.filter(b => b.relevanceScore >= RELEVANCE_THRESHOLD);
+    const merged = new Map<string, BookResult>();
+    for (const book of localRanked) merged.set(book.id, book);
+    for (const book of candidates.filter(b => b.relevanceScore >= RELEVANCE_THRESHOLD)) {
+      const existing = merged.get(book.id);
+      merged.set(book.id, existing && existing.relevanceScore > book.relevanceScore ? existing : book);
+    }
+    const filtered = Array.from(merged.values());
     console.log(`Filtered ${filtered.length}/${candidates.length} books above threshold ${RELEVANCE_THRESHOLD}`);
     return filtered;
 
   } catch (e) {
     console.error("AI ranking error:", e);
-    return [];
+    return localRanked;
   }
 }
 
