@@ -21,14 +21,17 @@ interface BookResult {
   retailers: { name: string; url: string }[];
 }
 
-async function searchGoogleBooks(query: string, maxResults = 8, lang?: string): Promise<any[]> {
-  let url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=${maxResults}&orderBy=relevance&printType=books`;
-  if (lang) url += `&langRestrict=${lang}`;
+// ── Open Library API (free, no key, no quota) ─────────────────────────────────
+async function searchOpenLibrary(query: string, maxResults = 8, lang?: string): Promise<any[]> {
+  const fields = 'key,title,author_name,first_publish_year,language,isbn,cover_i,publisher,subject';
+  let url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&fields=${fields}&limit=${maxResults}`;
+  if (lang === 'fr') url += `&language=fre`;
+  if (lang === 'en') url += `&language=eng`;
   try {
     const res = await fetch(url);
     if (!res.ok) return [];
     const data = await res.json();
-    return data.items || [];
+    return data.docs || [];
   } catch {
     return [];
   }
@@ -37,7 +40,6 @@ async function searchGoogleBooks(query: string, maxResults = 8, lang?: string): 
 function buildRetailerLinks(title: string, authors: string[], isbn: string | null, lang: string): { name: string; url: string }[] {
   const searchQuery = encodeURIComponent(`${title} ${authors.slice(0, 1).join('')}`.trim());
 
-  // ISBN-based links are the most precise — use gp/search with field-isbn for direct product matching
   const fnacIsbn   = isbn ? `https://www.fnac.com/SearchResult/ResultList.aspx?Search=${encodeURIComponent(isbn)}&sft=1` : null;
   const fnacText   = `https://www.fnac.com/SearchResult/ResultList.aspx?Search=${searchQuery}&sft=1`;
   const amzFrIsbn  = isbn ? `https://www.amazon.fr/gp/search?index=books&field-isbn=${encodeURIComponent(isbn)}` : null;
@@ -52,7 +54,6 @@ function buildRetailerLinks(title: string, authors: string[], isbn: string | nul
     ];
   }
 
-  // EN / other — Amazon.fr first (import), then Fnac, then Amazon.com
   return [
     { name: 'Amazon.fr', url: amzFrIsbn || amzFrText  },
     { name: 'Fnac',      url: fnacIsbn  || fnacText   },
@@ -60,29 +61,42 @@ function buildRetailerLinks(title: string, authors: string[], isbn: string | nul
   ];
 }
 
-function mapBookItem(item: any, category: BookResult['category'], baseScore: number): BookResult {
-  const info  = item.volumeInfo || {};
-  const lang  = info.language || 'unknown';
-  const identifiers = info.industryIdentifiers || [];
-  const isbn  = identifiers.find((i: any) => i.type === 'ISBN_13')?.identifier
-             || identifiers.find((i: any) => i.type === 'ISBN_10')?.identifier
-             || null;
-  const title   = info.title || 'Unknown';
-  const authors = info.authors || [];
-  const imageLinks = info.imageLinks || {};
+function mapOpenLibraryDoc(doc: any, category: BookResult['category'], baseScore: number): BookResult {
+  const langs: string[] = doc.language || [];
+  const lang = langs.includes('fre') ? 'fr'
+             : langs.includes('eng') ? 'en'
+             : langs[0] || 'unknown';
+
+  const isbns: string[] = doc.isbn || [];
+  const isbn = isbns.find((i: string) => i.length === 13)
+            || isbns.find((i: string) => i.length === 10)
+            || null;
+
+  const title   = doc.title || 'Unknown';
+  const authors = doc.author_name || [];
+  const coverId = doc.cover_i;
+  const imageUrl = coverId ? `https://covers.openlibrary.org/b/id/${coverId}-M.jpg` : null;
+  const infoLink = doc.key ? `https://openlibrary.org${doc.key}` : '';
+  const publishers: string[] = doc.publisher || [];
+  const publisher = publishers[0] || '';
+  const year = doc.first_publish_year ? String(doc.first_publish_year) : '';
+
+  // Generate a stable id from key or title+author
+  const id = doc.key
+    ? doc.key.replace('/works/', 'ol_')
+    : `ol_${title}_${authors[0] || ''}`.replace(/\s+/g, '_').substring(0, 50);
 
   return {
-    id: item.id,
+    id,
     title,
     authors,
-    description: info.description || info.subtitle || '',
-    publisher:   info.publisher   || '',
-    publishedDate: info.publishedDate || '',
-    imageUrl: imageLinks.thumbnail?.replace('http://', 'https://')
-           || imageLinks.smallThumbnail?.replace('http://', 'https://') || null,
-    infoLink: info.infoLink || info.previewLink || '',
+    description: '',   // Open Library search doesn't return descriptions
+    publisher,
+    publishedDate: year,
+    imageUrl,
+    infoLink,
     category,
-    relevanceScore: baseScore,   // will be overwritten by AI
+    relevanceScore: baseScore,
     language: lang,
     isbn,
     retailers: buildRetailerLinks(title, authors, isbn, lang),
@@ -110,7 +124,6 @@ async function aiRankBooks(
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY || books.length === 0) return [];
 
-  // Pre-filter obvious blacklist before sending to AI
   const candidates = books.filter(b => !isBlacklisted(b));
   if (candidates.length === 0) return [];
   console.log(`AI rank: ${candidates.length} candidates after blacklist`);
@@ -119,7 +132,6 @@ async function aiRankBooks(
     index: i,
     title: b.title,
     authors: b.authors.join(', '),
-    description: b.description.substring(0, 350),
     publisher: b.publisher,
     language: b.language,
     category: b.category,
@@ -217,7 +229,6 @@ ${JSON.stringify(booksForAI, null, 1)}`;
       if (r.index >= 0 && r.index < candidates.length) {
         const aiScore = r.score;
         // Bonus langue FR : +10 si le livre est déjà pertinent (score >= 40)
-        // Favorise les éditions françaises à égalité de pertinence, sans faire remonter des livres hors sujet
         const langBonus = candidates[r.index].language === 'fr' && aiScore >= 40 ? 10 : 0;
         candidates[r.index].relevanceScore = aiScore + langBonus;
         if (['film', 'director', 'genre'].includes(r.category)) {
@@ -227,8 +238,6 @@ ${JSON.stringify(booksForAI, null, 1)}`;
     }
 
     // STRICT FILTER — no fallback. If nothing is relevant, return empty.
-    // "Il vaut mieux rien que quelque chose hors sujet."
-    // Seuil à 45 : aligne avec la grille de scoring (45 = mouvement ciné précis)
     const RELEVANCE_THRESHOLD = 45;
     const filtered = candidates.filter(b => b.relevanceScore >= RELEVANCE_THRESHOLD);
     console.log(`Filtered ${filtered.length}/${candidates.length} books above threshold ${RELEVANCE_THRESHOLD}`);
@@ -257,53 +266,52 @@ serve(async (req) => {
 
     const addBooks = (items: any[], category: BookResult['category'], baseScore: number) => {
       for (const item of items) {
-        if (!seen.has(item.id)) {
-          seen.add(item.id);
-          allBooks.push(mapBookItem(item, category, baseScore));
+        const mapped = mapOpenLibraryDoc(item, category, baseScore);
+        if (!seen.has(mapped.id)) {
+          seen.add(mapped.id);
+          allBooks.push(mapped);
         }
       }
     };
 
     // ── Niveau 1 — Film (score base 85) ──────────────────────────────────────
-    // Toujours combiner titre + réalisateur pour disambiguïser (ex: "Parasite" sans
-    // Bong Joon-ho retourne des livres de biologie)
     const filmQueries: Promise<any[]>[] = [];
 
     if (director) {
-      // Combinaison titre + réalisateur = requête la plus précise
-      filmQueries.push(searchGoogleBooks(`"${filmTitle}" "${director}"`, 8));
-      filmQueries.push(searchGoogleBooks(`"${filmTitle}" ${director} film`, 6, 'fr'));
-      filmQueries.push(searchGoogleBooks(`"${filmTitle}" ${director} cinema`, 6, 'en'));
+      filmQueries.push(searchOpenLibrary(`${filmTitle} ${director}`, 8));
+      filmQueries.push(searchOpenLibrary(`${filmTitle} ${director} film`, 6));
+      filmQueries.push(searchOpenLibrary(`${filmTitle} ${director}`, 6, 'fr'));
+      filmQueries.push(searchOpenLibrary(`${filmTitle} ${director}`, 6, 'en'));
     } else {
-      filmQueries.push(searchGoogleBooks(`"${filmTitle}" film analyse`, 6, 'fr'));
-      filmQueries.push(searchGoogleBooks(`"${filmTitle}" film analysis`, 6, 'en'));
+      filmQueries.push(searchOpenLibrary(`${filmTitle} film analyse`, 6, 'fr'));
+      filmQueries.push(searchOpenLibrary(`${filmTitle} film analysis`, 6, 'en'));
     }
-    // Recherche par titre original uniquement si en caractères latins
+
+    // Original title (Latin only)
     const isLatin = (s: string) => /^[\x00-\xFF\s]+$/.test(s);
     if (originalTitle && originalTitle !== filmTitle && isLatin(originalTitle)) {
       if (director) {
-        filmQueries.push(searchGoogleBooks(`"${originalTitle}" ${director}`, 6, 'en'));
+        filmQueries.push(searchOpenLibrary(`${originalTitle} ${director}`, 6, 'en'));
       }
-      filmQueries.push(searchGoogleBooks(`"${originalTitle}" screenplay`, 5, 'en'));
+      filmQueries.push(searchOpenLibrary(`${originalTitle} screenplay`, 5, 'en'));
     }
+
     const filmResults = await Promise.all(filmQueries);
     for (const results of filmResults) addBooks(results, 'film', 85);
 
     // ── Niveau 2 — Réalisateur monographie (score base 65) ───────────────────
     if (director) {
       const dirResults = await Promise.all([
-        searchGoogleBooks(`"${director}" réalisateur cinéma`, 6, 'fr'),
-        searchGoogleBooks(`"${director}" monographie cinéma`, 5, 'fr'),
-        searchGoogleBooks(`"${director}" filmmaker cinema`, 6, 'en'),
-        searchGoogleBooks(`"${director}" director films`, 6, 'en'),
-        searchGoogleBooks(`inauthor:"${director}" cinema`, 5, 'en'),
+        searchOpenLibrary(`${director} cinema filmmaker`, 8),
+        searchOpenLibrary(`${director} réalisateur cinéma`, 6, 'fr'),
+        searchOpenLibrary(`${director} director films`, 6, 'en'),
+        searchOpenLibrary(`${director} films monographie`, 5, 'fr'),
       ]);
       for (const results of dirResults) addBooks(results, 'director', 65);
     }
 
     // ── Niveau 3 — Mouvement/genre (score base 40 — uniquement si niveaux 1+2 maigres) ──
     if (allBooks.length < 8 && genres && genres.length > 0) {
-      // Traduire les genres TMDB génériques en sous-genres cinéphiles précis
       const cinephileGenreMap: Record<string, string[]> = {
         'Science Fiction': ['"science-fiction" cinéma analyse', '"SF" films essai'],
         'Horror':          ['"horreur" cinéma analyse', '"film d\'horreur" essai'],
@@ -322,7 +330,7 @@ serve(async (req) => {
       for (const g of genres.slice(0, 2)) {
         const mapped = cinephileGenreMap[g];
         if (mapped) {
-          for (const q of mapped.slice(0, 1)) genreQueries.push(searchGoogleBooks(q, 5, 'fr'));
+          for (const q of mapped.slice(0, 1)) genreQueries.push(searchOpenLibrary(q, 5, 'fr'));
         }
       }
       if (genreQueries.length > 0) {
@@ -330,6 +338,8 @@ serve(async (req) => {
         for (const results of genreResults) addBooks(results, 'genre', 40);
       }
     }
+
+    console.log(`Total candidates before AI: ${allBooks.length}`);
 
     // ── Ranking IA + filtrage strict ─────────────────────────────────────────
     const ranked = await aiRankBooks(allBooks, filmTitle, originalTitle, director, genres);
