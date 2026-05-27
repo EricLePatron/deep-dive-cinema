@@ -204,6 +204,8 @@ ${JSON.stringify(booksForAI, null, 1)}`;
     const rankings = JSON.parse(toolCall.function.arguments).rankings as Array<{
       index: number; score: number; category: string;
     }>;
+    console.log("AI rankings:", JSON.stringify(rankings));
+    console.log("Candidate titles:", candidates.map((c, i) => `${i}:${c.title}`).join(" | "));
 
     for (const r of rankings) {
       if (r.index >= 0 && r.index < candidates.length) {
@@ -222,7 +224,9 @@ ${JSON.stringify(booksForAI, null, 1)}`;
     // "Il vaut mieux rien que quelque chose hors sujet."
     // Seuil à 45 : aligne avec la grille de scoring (45 = mouvement ciné précis)
     const RELEVANCE_THRESHOLD = 45;
-    return candidates.filter(b => b.relevanceScore >= RELEVANCE_THRESHOLD);
+    const filtered = candidates.filter(b => b.relevanceScore >= RELEVANCE_THRESHOLD);
+    console.log(`Filtered ${filtered.length}/${candidates.length} books above threshold ${RELEVANCE_THRESHOLD}`);
+    return filtered;
 
   } catch (e) {
     console.error("AI ranking error:", e);
