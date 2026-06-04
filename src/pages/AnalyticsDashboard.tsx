@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const DASHBOARD_PASSWORD = "deepdive2026";
+const DASHBOARD_PASSWORD = import.meta.env.VITE_DASHBOARD_PASSWORD ?? "deepdive2026";
 const STORAGE_KEY = "dd_analytics_auth";
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const EDGE_URL = `${SUPABASE_URL.replace("https://", "https://")}/functions/v1/analytics-data`;

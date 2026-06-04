@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const DASHBOARD_PASSWORD = 'deepdive2026';
+const DASHBOARD_PASSWORD = Deno.env.get('DASHBOARD_PASSWORD') ?? 'deepdive2026';
 
 function getMondayISO(date: Date): string {
   const d = new Date(date);
