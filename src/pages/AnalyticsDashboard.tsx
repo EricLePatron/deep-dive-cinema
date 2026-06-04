@@ -13,8 +13,8 @@ import {
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DASHBOARD_PASSWORD = import.meta.env.VITE_DASHBOARD_PASSWORD ?? "deepdive2026";
 const STORAGE_KEY = "dd_analytics_auth";
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-const EDGE_URL = `${SUPABASE_URL.replace("https://", "https://")}/functions/v1/analytics-data`;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL ?? "https://kyprrtpmvugfcfffaelv.supabase.co";
+const EDGE_URL = `${SUPABASE_URL}/functions/v1/analytics-data`;
 
 const CHART_COLORS = { favorites: "#7dd3fc", consumed: "#6ee7b7", users: "#c4b5fd" };
 const TYPE_LABELS: Record<string, string> = {
