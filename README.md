@@ -1,60 +1,60 @@
 # Deepdive Cinema
 
-> **Le film est fini. L'exploration commence.**
+> **The film is over. The exploration begins.**
 
-Un hub d'exploration cinéphile : pour chaque film, tout ce qui se dit, s'écrit et s'enregistre autour de lui — analyses vidéo, podcasts, livres, éditions physiques. En une page.
+A cinephile exploration hub: for every film, everything written, recorded, and said around it — video essays, podcasts, books, physical editions. All in one page.
 
 **→ [deepdive-cinema.com](https://www.deepdive-cinema.com)**
 
 ---
 
-## Pourquoi ce produit existe
+## Why this product exists
 
-Il existe un vide entre *voir un film* et *comprendre pourquoi il t'a marqué*.
+There's a gap between *watching a film* and *understanding why it moved you*.
 
-Letterboxd journalise. MUBI diffuse. Allociné informe. **Personne n'agrège le corpus critique sérieux** — les présentations de cinémathèque, les leçons de cinéma, les podcasts culturels, les essais, les éditions collector — autour d'un film précis, en une page, sans bruit.
+Letterboxd journals. MUBI streams. Allociné informs. **Nobody aggregates serious critical content** — cinematheque presentations, film school lectures, cultural podcasts, essays, collector editions — around a specific film, in one page, without noise.
 
-Deepdive comble ce vide. Public cible : cinéphiles avancés, étudiants en cinéma, programmateurs, lecteurs des Cahiers. Non-cible assumée : grand public en quête de "quoi regarder ce soir".
+Deepdive fills that gap. Target audience: advanced cinephiles, film students, programmers, Cahiers du Cinéma readers. Deliberate non-target: mainstream audience looking for "what to watch tonight."
 
 ---
 
-## Positionnement
+## Positioning
 
 |  | **Deepdive** | Letterboxd | MUBI | Allociné |
 |---|---|---|---|---|
-| **Cœur** | Exploration après le film | Journal + social | Streaming curé | Base de données |
-| **Contenu** | Analyses · podcasts · livres · Q&As | Notes · reviews | Films | Infos · bandes-annonces |
-| **Ton** | Cinémathèque | Social | Art & essai | Grand public |
-| **Langue** | FR en premier | EN | EN | FR |
+| **Core** | Post-film exploration | Journal + social | Curated streaming | Database |
+| **Content** | Essays · podcasts · books · Q&As | Ratings · reviews | Films | Info · trailers |
+| **Tone** | Cinematheque | Social | Art house | Mainstream |
+| **Language** | French-first | EN | EN | FR |
 
-**Avantage défendable :** curation algorithmique + tonalité cinémathèque + ancrage Letterboxd + corpus multi-formats (vidéo + audio + texte + physique). Aucun concurrent ne fait cette combinaison.
-
----
-
-## Ce que le produit fait concrètement
-
-### Page film — le cœur
-
-Pour un film donné, Deepdive agrège en temps réel et filtre par pertinence :
-
-- **Vidéos** — présentations cinémathèque, leçons de cinéma, analyses universitaires (pas de trailers, jamais)
-- **Podcasts** — émissions culturelles FR qui ont traité ce film
-- **Livres** — essais, monographies, scripts publiés, filtrés par IA pour éliminer tout ce qui n'est pas directement lié au film ou au réalisateur
-- **Éditions physiques** — Blu-ray collector, Criterion, Wild Side, avec liens d'achat
-
-Chaque contenu est scoré, ranked, et peut être voté par les utilisateurs. Un contenu downvoté par suffisamment d'utilisateurs disparaît automatiquement.
-
-### Homepage personnalisée
-
-Connectée au compte Letterboxd de l'utilisateur. La homepage devient son diary cinéphile : les films qu'il a vus récemment, avec du contenu disponible pour chacun.
-
-### Tendances de ta cinéphilie *(feature en cours)*
-
-Détecte automatiquement les obsessions récentes (même réalisateur, même mouvement cinématographique, même pays, même décennie) et propose d'aller plus loin dans cette direction — visible depuis la homepage.
+**Defensible edge:** algorithmic curation + cinematheque tone + Letterboxd integration + multi-format corpus (video + audio + text + physical). No competitor combines all four.
 
 ---
 
-## Architecture technique
+## What the product does
+
+### Film page — the core
+
+For any given film, Deepdive aggregates in real time and filters by relevance:
+
+- **Videos** — cinematheque presentations, film school lectures, academic analyses (no trailers, ever)
+- **Podcasts** — French cultural shows that covered this film
+- **Books** — essays, monographs, published scripts, AI-filtered to exclude anything not directly tied to the film or director
+- **Physical editions** — collector Blu-rays, Criterion, Wild Side, with purchase links
+
+Every item is scored, ranked, and user-votable. Content that accumulates enough downvotes is automatically hidden — no manual moderation needed.
+
+### Personalized homepage
+
+Connected to the user's Letterboxd account. The homepage becomes their cinephile diary: recently watched films, with available content for each.
+
+### Cinephile trends *(in progress)*
+
+Automatically detects recent obsessions (same director, same cinematic movement, same country, same decade) and suggests going deeper — surfaced on the homepage.
+
+---
+
+## Technical architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -69,85 +69,85 @@ Détecte automatiquement les obsessions récentes (même réalisateur, même mou
 │  PostgreSQL  ·  Auth (Google OAuth)  ·  RLS              │
 │                                                          │
 │  Edge Functions (Deno)                                   │
-│  ├── youtube-search      API YouTube → scoring algo       │
+│  ├── youtube-search      YouTube API → scoring algo      │
 │  ├── podcast-search      iTunes Podcasts                 │
 │  ├── book-search         Open Library + Gemini AI        │
 │  ├── french-editions     Firecrawl (scraping)            │
-│  ├── letterboxd-feed     Parser diary utilisateur        │
-│  ├── analytics-data      Dashboard métriques internes    │
-│  └── sitemap             SEO · XML dynamique             │
+│  ├── letterboxd-feed     User diary parser               │
+│  ├── analytics-data      Internal metrics dashboard      │
+│  └── sitemap             SEO · dynamic XML               │
 └──────────────────────────────────────────────────────────┘
 
-APIs externes : TMDB · YouTube Data API · Open Library
+External APIs: TMDB · YouTube Data API · Open Library
                iTunes · Firecrawl · Lovable AI Gateway
 ```
 
-**Règle d'architecture :** toute API externe passe par une Edge Function. Jamais d'appel direct depuis le client (sécurité des clés, quota management, cache centralisé).
+**Architecture rule:** all external API calls go through an Edge Function. Never direct from the client (key security, quota management, centralized cache).
 
 ---
 
-## Features techniques notables
+## Notable technical features
 
-### Algorithme de curation vidéo
+### Video curation algorithm
 
-Chaque requête YouTube lance 4 recherches parallèles avec des stratégies différentes (cinémathèque FR, Q&As post-projection, analyses internationales, making-of). Les résultats sont fusionnés, dédupliqués, scorés sur ~15 signaux (durée, chaîne, titre, vues, date) et le signal de feedback utilisateur (upvotes/downvotes) ajuste le ranking en temps réel.
+Each query fires 4 parallel YouTube searches with different strategies (French cinematheque, post-screening Q&As, international essays, making-ofs). Results are merged, deduplicated, scored across ~15 signals (duration, channel, title, views, date), and user feedback (upvotes/downvotes) adjusts ranking in real time.
 
-Un seuil de masquage automatique retire les vidéos dépassant un score négatif cumulé — sans intervention manuelle.
+An automatic hide threshold removes videos that accumulate enough negative score — no manual intervention required.
 
-### Recommandation de livres par IA
+### AI-powered book recommendations
 
-Migration complète vers [Open Library](https://openlibrary.org) (gratuit, sans quota) après épuisement du quota Google Books. Gemini 2.5 Flash score chaque résultat sur une grille stricte (0–100) : seuls les livres directement consacrés au film, au réalisateur, ou au mouvement cinématographique exact passent le seuil 45. Résultat zéro préférable à un résultat hors sujet.
+Full migration to [Open Library](https://openlibrary.org) (free, no quota) after Google Books API quota exhaustion. Gemini 2.5 Flash scores each result on a strict grid (0–100): only books directly dedicated to the film, director, or exact cinematic movement pass the threshold of 45. Zero results is preferable to an irrelevant result.
 
-### Dashboard analytics interne
+### Internal analytics dashboard
 
-Edge Function protégée par mot de passe, contournant le RLS Supabase via service role key. Calcule la North Star (SAA), les KPIs hebdomadaires, les top films, la répartition des contenus — en agrégeant toutes les tables comportementales.
+Password-protected Edge Function, bypassing Supabase RLS via service role key. Computes the North Star metric (SAA), weekly KPIs, top films, content breakdown — aggregating all behavioral tables.
 
 ---
 
-## Stratégie produit documentée
+## Product strategy — documented
 
-Ce repo contient la documentation produit complète, produite en binôme avec un système d'agents IA spécialisés :
+This repo contains the full product documentation, co-produced with a system of specialized AI agents:
 
-| Document | Contenu |
+| Document | Content |
 |---|---|
-| [`PRD.md`](./PRD.md) | Vision, stack, architecture, composants, règles de design |
-| [`VISION_STRATEGIE.md`](./VISION_STRATEGIE.md) | Positionnement, roadmap phases 1→4, PMF criteria |
-| [`DATA_STRATEGIE.md`](./DATA_STRATEGIE.md) | North Star (SAA), 5 KPIs primaires, 8 secondaires, funnels |
-| [`ACQUISITION_STRATEGIE.md`](./ACQUISITION_STRATEGIE.md) | De 0 à 50K MAU — canaux, séquencement, budgets |
-| [`PRD_SEO.md`](./PRD_SEO.md) | Audit SEO complet, meta tags, JSON-LD, sitemap, plan 12 semaines |
+| [`PRD.md`](./PRD.md) | Vision, stack, architecture, components, design rules |
+| [`VISION_STRATEGIE.md`](./VISION_STRATEGIE.md) | Positioning, phases 1→4 roadmap, PMF criteria |
+| [`DATA_STRATEGIE.md`](./DATA_STRATEGIE.md) | North Star (SAA), 5 primary KPIs, 8 secondary, funnels |
+| [`ACQUISITION_STRATEGIE.md`](./ACQUISITION_STRATEGIE.md) | 0 to 50K MAU — channels, sequencing, budgets |
+| [`PRD_SEO.md`](./PRD_SEO.md) | Full SEO audit, meta tags, JSON-LD, sitemap, 12-week plan |
 
 ---
 
-## Système d'agents IA
+## AI agent system
 
-Le produit est développé avec un système d'agents Claude Code spécialisés, chacun avec son domaine de responsabilité et son contexte produit complet :
+The product is built with a system of specialized Claude Code agents, each with a specific area of responsibility and full product context:
 
 ```
 .claude/agents/
-├── deepdive-head-of-product   Vision, arbitrage, priorisation       (Claude Opus)
-├── deepdive-ux                Design system, wireframes, briefs
-├── deepdive-ux-researcher     Personas, études synthétiques, frictions
+├── deepdive-head-of-product   Vision, arbitration, prioritization   (Claude Opus)
+├── deepdive-ux                Design system, wireframes, Lovable briefs
+├── deepdive-ux-researcher     Personas, synthetic studies, friction analysis
 ├── deepdive-analytics         SQL, KPIs, dashboards, funnels
-├── deepdive-growth            Acquisition, SEO, rétention, A/B testing
-├── deepdive-recommender       Algos YouTube/livres, scoring, qualité
-└── deepdive-seo               Meta tags, JSON-LD, sitemap, longue traîne
+├── deepdive-growth            Acquisition, SEO, retention, A/B testing
+├── deepdive-recommender       YouTube/book algorithms, scoring, quality
+└── deepdive-seo               Meta tags, JSON-LD, sitemap, long-tail
 ```
 
-Chaque agent porte le contexte produit complet (personas, design system, schéma Supabase, décisions d'architecture). Ils peuvent être invoqués en parallèle pour des analyses multi-perspectives — voir les docs stratégiques pour des exemples de sorties.
+Each agent carries full product context (personas, design system, Supabase schema, architecture decisions) and can be invoked in parallel for multi-perspective analysis.
 
 ---
 
-## North Star & métriques
+## North Star metric
 
-**SAA — Semaines Actives Approfondissantes**
+**SAA — Active Deep-Dive Weeks** *(Semaines Actives Approfondissantes)*
 
-> Nombre d'utilisateurs ayant exploré ≥ 2 films différents dans la semaine, avec ≥ 2 contenus consommés ou mis en favori par film.
+> Number of users who explored ≥ 2 different films in a week, with ≥ 2 pieces of content consumed or saved per film.
 
-Cette métrique capture l'essence du produit : pas une visite, une vraie exploration.
+This metric captures the product's essence: not a visit, a real exploration.
 
 | M1 | M3 | M6 | M12 |
 |---|---|---|---|
-| 50 SAA | 200 | 800 | 3 000 |
+| 50 SAA | 200 | 800 | 3,000 |
 
 ---
 
@@ -157,36 +157,37 @@ Cette métrique capture l'essence du produit : pas une visite, une vraie explora
 Frontend    React 18 · Vite 5 · TypeScript · Tailwind CSS · shadcn/ui
 Backend     Supabase (PostgreSQL · Auth · Edge Functions · RLS)
 Runtime     Deno (Edge Functions)
-IA          Gemini 2.5 Flash via Lovable AI Gateway
+AI          Gemini 2.5 Flash via Lovable AI Gateway
 APIs        TMDB · YouTube Data API · Open Library · iTunes · Firecrawl
-Deploy      Lovable Cloud (CI/CD automatique sur push main)
-Typo        Fraunces (display serif) · Nunito (body)
+Deploy      Lovable Cloud (auto CI/CD on push to main)
+Typography  Fraunces (display serif) · Nunito (body)
 ```
 
 ---
 
-## Lancer le projet en local
+## Running locally
 
 ```bash
 git clone https://github.com/EricLePatron/deep-dive-cinema
 cd deep-dive-cinema
+cp .env.example .env.local   # fill in your Supabase credentials
 npm install
 npm run dev
 ```
 
-Les Edge Functions Supabase se déploient automatiquement via Lovable sur push sur `main`.
+Supabase Edge Functions are deployed automatically via Lovable on push to `main`.
 
 ---
 
 ## Design system
 
-Esthétique éditoriale cinémathèque — inspirée de MUBI Notebook et Letterboxd :
+Editorial cinematheque aesthetic — inspired by MUBI Notebook and Letterboxd:
 
-- Fond quasi-noir `#0A0A0A` · texte off-white
-- Zéro couleur d'accent (pas de doré, pas de rouge)
-- `rounded-sm` uniquement — pas de border-radius généreux
-- Hover en opacité uniquement, jamais de changement de couleur
-- Tokens HSL sémantiques dans `index.css` — jamais de couleur en dur dans les composants
+- Near-black background `#0A0A0A` · off-white text
+- Zero accent color (no gold, no red)
+- `rounded-sm` only — no generous border-radius
+- Opacity-only hover states, no color shifts
+- Semantic HSL tokens in `index.css` — no hardcoded colors in components
 
 ---
 
