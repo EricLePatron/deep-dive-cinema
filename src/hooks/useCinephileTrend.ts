@@ -104,8 +104,12 @@ function buildEditorial(
     }
     case "genre":
       return `Une saison ${value.toLowerCase()}`;
-    case "decade":
-      return `Les années ${String(value).slice(-2)}`;
+    case "decade": {
+      const d = Number(value);
+      // Use full 4-digit year for 2000+ decades to avoid ambiguity ("Les années 20" = 1920s)
+      const label = d >= 2000 ? String(d) : String(d).slice(-2);
+      return `Les années ${label}`;
+    }
   }
 }
 
@@ -230,16 +234,18 @@ export function useCinephileTrend(letterboxdFilms: LetterboxdFilm[] | undefined)
       const decadeTop = top(decades);
 
       // Priority order: director > country > genre > decade.
-      // Select the dimension with the strictly highest score; ties broken by priority.
+      // Pick the FIRST (highest-priority) dimension whose score meets the threshold.
+      // This ensures a strong director or country signal wins over a generic "decade"
+      // signal even when the decade has a higher raw count (e.g. "2020s" = user watches
+      // recent films — editorially uninteresting vs. "Italian cinema" or a director).
+      const THRESHOLD = 2.5;
       const ordered: Array<[CinephileTrend["dimension"], DimensionTally | null]> = [
         ["director", dirTop],
         ["country", countryTop],
         ["genre", genreTop],
         ["decade", decadeTop],
       ];
-      const maxScore = Math.max(...ordered.map(([, t]) => t?.score ?? 0));
-      if (maxScore < 2.5) return null;
-      const chosen = ordered.find(([, t]) => t && t.score === maxScore);
+      const chosen = ordered.find(([, t]) => t && t.score >= THRESHOLD);
       if (!chosen || !chosen[1]) return null;
       const [dimension, tally] = chosen;
 
@@ -312,8 +318,11 @@ export function useCinephileTrend(letterboxdFilms: LetterboxdFilm[] | undefined)
 
       if (unique.length === 0) return null;
 
-      // 4) Filter by Deepdive richness
-      const ids = unique.slice(0, 40).map((m) => m.id);
+      // 4) Filter by Deepdive richness — prefer films with Deepdive content,
+      //    but fall back to top-rated TMDB pool if the table is sparse.
+      //    film_content_stats is populated as users visit film pages; early in the
+      //    product lifecycle it may have very few entries, so we never hard-block on it.
+      const ids = unique.slice(0, 80).map((m) => m.id);
       const { data: stats } = await supabase
         .from("film_content_stats")
         .select("tmdb_id, video_count, podcast_count, book_count")
@@ -333,9 +342,13 @@ export function useCinephileTrend(letterboxdFilms: LetterboxdFilm[] | undefined)
         return s.v >= 3 || (s.p >= 1 && s.b >= 1);
       });
 
-      if (rich.length < 2) return null;
+      // Fallback: if fewer than 2 Deepdive-rich films found, use the top-rated
+      // TMDB pool films regardless of content stats. Better to show great films
+      // with sparse content than to hide the section entirely.
+      const source = rich.length >= 2 ? rich : unique;
+      if (source.length === 0) return null;
 
-      const suggestions: TrendFilm[] = rich.slice(0, 6).map((m) => ({
+      const suggestions: TrendFilm[] = source.slice(0, 6).map((m) => ({
         id: m.id,
         title: m.title,
         year: m.year,
