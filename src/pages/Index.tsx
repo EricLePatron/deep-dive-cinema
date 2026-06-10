@@ -14,6 +14,8 @@ import { lovable } from "@/integrations/lovable/index";
 import { SearchBar } from "@/components/SearchBar";
 import { useFilmContentStats, isFilmRich } from "@/hooks/useFilmContentStats";
 import { SiteFooter } from "@/components/SiteFooter";
+import { useCinephileTrend } from "@/hooks/useCinephileTrend";
+import { CinephileTrendSection } from "@/components/CinephileTrendSection";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -21,6 +23,7 @@ const Index = () => {
   const { data: trending, isLoading: loadingTrending } = useTrendingMovies('week');
   const { profile, user } = useLetterboxdProfile();
   const { data: letterboxdFilms } = useLetterboxdFeed(profile?.username);
+  const { data: cinephileTrend } = useCinephileTrend(letterboxdFilms);
 
   const toFilmCard = (movie: any) => ({
     id: movie.id,
@@ -129,6 +132,10 @@ const Index = () => {
       )}
 
       {/* 1. Diary films */}
+      {hasDiary && cinephileTrend && (
+        <CinephileTrendSection trend={cinephileTrend} />
+      )}
+
       {personalizedFilms && personalizedFilms.length > 0 && (
         <FilmRowSection
           kicker="— Votre diary"

@@ -167,6 +167,48 @@ export async function getTrendingMovies(timeWindow: 'day' | 'week' = 'week'): Pr
   return response.json();
 }
 
+export interface TMDBDiscoverParams {
+  with_genres?: string;
+  with_origin_country?: string;
+  "primary_release_date.gte"?: string;
+  "primary_release_date.lte"?: string;
+  sort_by?: string;
+  "vote_count.gte"?: number;
+  page?: number;
+}
+
+export async function discoverMovies(params: TMDBDiscoverParams): Promise<TMDBSearchResponse> {
+  const qs = new URLSearchParams({
+    api_key: TMDB_API_KEY,
+    language: "fr-FR",
+    include_adult: "false",
+    sort_by: params.sort_by ?? "vote_average.desc",
+    "vote_count.gte": String(params["vote_count.gte"] ?? 300),
+    page: String(params.page ?? 1),
+  });
+  if (params.with_genres) qs.set("with_genres", params.with_genres);
+  if (params.with_origin_country) qs.set("with_origin_country", params.with_origin_country);
+  if (params["primary_release_date.gte"]) qs.set("primary_release_date.gte", params["primary_release_date.gte"]);
+  if (params["primary_release_date.lte"]) qs.set("primary_release_date.lte", params["primary_release_date.lte"]);
+
+  const response = await fetch(`${TMDB_BASE_URL}/discover/movie?${qs.toString()}`);
+  if (!response.ok) throw new Error(`TMDB API error: ${response.status}`);
+  return response.json();
+}
+
+export interface TMDBPersonCreditsResponse {
+  cast: Array<TMDBSearchResult & { vote_count: number; job?: string }>;
+  crew: Array<TMDBSearchResult & { vote_count: number; job?: string; department?: string }>;
+}
+
+export async function getPersonMovieCredits(personId: number): Promise<TMDBPersonCreditsResponse> {
+  const response = await fetch(
+    `${TMDB_BASE_URL}/person/${personId}/movie_credits?api_key=${TMDB_API_KEY}&language=fr-FR`
+  );
+  if (!response.ok) throw new Error(`TMDB API error: ${response.status}`);
+  return response.json();
+}
+
 // Helper to transform TMDB data to our Film interface
 export interface Film {
   id: number;
