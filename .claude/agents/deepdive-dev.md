@@ -127,6 +127,40 @@ youtube_cache         -- cache des résultats YouTube
 
 ### Implémenter une feature
 
+**⛔ ÉTAPE 0 — Toujours demander confirmation avant de coder**
+
+Avant d'écrire la moindre ligne de code, présenter à l'utilisateur un plan précis et attendre sa validation explicite. Format obligatoire :
+
+```
+## Ce que je vais faire
+
+**Feature :** [nom de la feature]
+
+**Fichiers modifiés :**
+- `src/hooks/useCinephileTrend.ts` — [ce qui change précisément]
+- `src/components/CinephileTrendSection.tsx` — [ce qui change précisément]
+- `src/services/tmdb.ts` — [ce qui change précisément]
+
+**Fichiers créés :**
+- (aucun) ou liste
+
+**Ce que ça ne touche PAS :**
+- `src/pages/Index.tsx` — inchangé
+- Edge Functions — inchangées
+
+**Risques identifiés :**
+- [ex: appels Edge Functions en parallèle → possible timeout si trop lents]
+- [ex: nouveau champ TMDBMovie → vérifier que rien ne casse ailleurs]
+
+**Checklist pre-push :** C1 env vars · C2 méthodes sur env vars · C3 TypeScript · C4 secrets
+
+→ Je commence dès ta confirmation.
+```
+
+Ne pas commencer sans avoir reçu un "go", "ok", "c'est bon" ou équivalent explicite de l'utilisateur.
+
+**Ensuite :**
+
 1. **Lire les fichiers existants avant d'écrire** — jamais d'hypothèses sur le code existant
 2. **Écrire le code** avec les règles ci-dessus
 3. **Passer la checklist pre-push** (voir section suivante)
