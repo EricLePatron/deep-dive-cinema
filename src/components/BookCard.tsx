@@ -16,6 +16,15 @@ export function BookCard({ book, film, director }: BookCardProps) {
   const { isConsumed } = useConsumed();
   const consumed = isConsumed("book", book.id);
 
+  // Lien principal du livre : on privilégie Fnac (FR) puis Amazon.fr puis Amazon,
+  // jamais Google Books / Open Library.
+  const preferredRetailer =
+    book.retailers?.find((r) => r.name === 'Fnac') ||
+    book.retailers?.find((r) => r.name === 'Amazon.fr') ||
+    book.retailers?.find((r) => r.name.toLowerCase().includes('amazon')) ||
+    book.retailers?.[0];
+  const primaryLink = preferredRetailer?.url || book.infoLink;
+
   // Personnalise le label "Sur le réalisateur" avec le nom réel
   const categoryLabel = book.category === 'director' && director
     ? `Sur ${director}`
@@ -32,7 +41,7 @@ export function BookCard({ book, film, director }: BookCardProps) {
       <div className="flex gap-4">
         {/* Cover */}
         <a
-          href={book.infoLink}
+          href={primaryLink}
           target="_blank"
           rel="noopener noreferrer"
           className="flex-shrink-0 w-20 h-28 overflow-hidden bg-muted rounded-sm"
@@ -63,7 +72,7 @@ export function BookCard({ book, film, director }: BookCardProps) {
             )}
           </div>
           <a
-            href={book.infoLink}
+            href={primaryLink}
             target="_blank"
             rel="noopener noreferrer"
             className="block"
