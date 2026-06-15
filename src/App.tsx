@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import FilmDeepDive from "./pages/FilmDeepDive";
 import Favorites from "./pages/Favorites";
+import Diary from "./pages/Diary";
 import NotFound from "./pages/NotFound";
 import MentionsLegales from "./pages/legal/MentionsLegales";
 import Confidentialite from "./pages/legal/Confidentialite";
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/film/:id" element={<FilmDeepDive />} />
           <Route path="/favoris" element={<Favorites />} />
+          <Route path="/diary" element={<Diary />} />
           <Route path="/mentions-legales" element={<MentionsLegales />} />
           <Route path="/confidentialite" element={<Confidentialite />} />
           <Route path="/cgu" element={<CGU />} />
