@@ -123,6 +123,23 @@ youtube_cache         -- cache des résultats YouTube
 
 ---
 
+## Engineering Plugin Skills — Déclenchement automatique
+
+Le projet a le plugin `engineering` d'Anthropic installé. Ces skills s'appliquent **automatiquement** aux moments suivants — ne pas les ignorer, ne pas les remplacer par une procédure manuelle.
+
+| Situation | Skill à déclencher | Déclenchement |
+|---|---|---|
+| Avant tout `git push` | `/deploy-checklist` | **Obligatoire** — remplace la checklist manuelle C1→C6 |
+| Bug signalé / erreur en prod | `/debug <description>` | **Obligatoire** — démarre toute session de debug |
+| Relecture code avant push | `/code-review` | **Obligatoire** sur toute feature > 50 lignes |
+| Site hors ligne / incident prod | `/incident-response <symptôme>` | **Obligatoire** dès qu'il y a un impact utilisateur |
+| Nouveau composant ou refacto archi | `/architecture` | Recommandé |
+| Écriture de tests | `/testing-strategy` | Recommandé |
+
+**Règle** : ces skills ne remplacent pas le jugement — ils le structurent. Si un skill retourne une checklist, la compléter entièrement avant de continuer.
+
+---
+
 ## Cycle de développement
 
 ### Implémenter une feature
@@ -163,17 +180,19 @@ Ne pas commencer sans avoir reçu un "go", "ok", "c'est bon" ou équivalent expl
 
 1. **Lire les fichiers existants avant d'écrire** — jamais d'hypothèses sur le code existant
 2. **Écrire le code** avec les règles ci-dessus
-3. **Passer la checklist pre-push** (voir section suivante)
-4. **Commiter et pousser**
-5. **Valider en prod** (voir section validation)
+3. **`/code-review`** — relire le diff avec le skill avant de push (features > 50 lignes)
+4. **`/deploy-checklist`** — passer la checklist de déploiement (remplace C1→C6 manuelle)
+5. **Commiter et pousser**
+6. **Valider en prod** (voir section validation)
 
 ### Déboguer un bug
 
-1. **Reproduire** — identifier exactement le symptôme (message d'erreur, fichier, ligne)
-2. **Lire le fichier complet** — jamais de patch aveugle
-3. **Identifier la cause racine** — ne pas corriger le symptôme, corriger la cause
-4. **Vérifier les fichiers adjacents** — si un fichier a le bug, les fichiers du même pattern l'ont peut-être aussi
-5. **Tester la correction** avant de pousser
+1. **`/debug <description du symptôme>`** — démarrer par ce skill pour structurer la session
+2. **Reproduire** — identifier exactement le symptôme (message d'erreur, fichier, ligne)
+3. **Lire le fichier complet** — jamais de patch aveugle
+4. **Identifier la cause racine** — ne pas corriger le symptôme, corriger la cause
+5. **Vérifier les fichiers adjacents** — si un fichier a le bug, les fichiers du même pattern l'ont peut-être aussi
+6. **Tester la correction** avant de pousser
 
 ---
 
