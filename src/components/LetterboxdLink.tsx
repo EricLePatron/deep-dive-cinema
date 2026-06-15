@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Link2, Unlink, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,10 +49,14 @@ export function LetterboxdLink() {
   if (profile) {
     return (
       <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 text-sm">
+        <Link
+          to="/diary"
+          aria-label="Voir votre diary des 30 derniers jours"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 text-sm hover:bg-green-500/15 transition-colors"
+        >
           <Check className="h-3.5 w-3.5 text-green-500" />
           <span className="text-green-400 font-medium">{profile.username}</span>
-        </div>
+        </Link>
         <Button
           variant="cinema-ghost"
           size="icon"
