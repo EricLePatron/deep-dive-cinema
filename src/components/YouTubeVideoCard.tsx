@@ -133,6 +133,7 @@ export function YouTubeVideoCard({ video, variant = "default", filmTmdbId, film 
         onClick={(e) => handleVote(e, "up")}
         disabled={isPending}
         aria-label="Recommander cette vidéo"
+        title="Recommander cette vidéo"
         className={cn(
           "flex items-center gap-1 px-2 py-1 rounded-sm text-[11px] transition-colors",
           current === "up"
@@ -147,6 +148,7 @@ export function YouTubeVideoCard({ video, variant = "default", filmTmdbId, film 
         onClick={(e) => handleVote(e, "down")}
         disabled={isPending}
         aria-label="Retirer des recommandations"
+        title="Retirer des recommandations"
         className={cn(
           "flex items-center gap-1 px-2 py-1 rounded-sm text-[11px] transition-colors",
           current === "down"

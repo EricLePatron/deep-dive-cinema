@@ -118,7 +118,7 @@ export function SearchBar({ onSelectFilm, variant = "hero" }: SearchBarProps) {
               <div className="flex-1 min-w-0">
                 <h4 className="font-medium text-foreground truncate">{film.title}</h4>
                 <p className="text-sm text-muted-foreground">
-                  {film.release_date ? new Date(film.release_date).getFullYear() : "Unknown year"}
+                  {film.release_date ? new Date(film.release_date).getFullYear() : "Année inconnue"}
                   {film.vote_average > 0 && ` • ★ ${film.vote_average.toFixed(1)}`}
                 </p>
               </div>
@@ -130,8 +130,8 @@ export function SearchBar({ onSelectFilm, variant = "hero" }: SearchBarProps) {
       {isOpen && debouncedQuery.length > 0 && !isLoading && results.length === 0 && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-popover border border-border rounded-xl shadow-2xl shadow-black/40 p-6 text-center z-50 animate-fade-in">
           <Film className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">No films found for "{debouncedQuery}"</p>
-          <p className="text-sm text-muted-foreground mt-1">Try a different search term</p>
+          <p className="text-muted-foreground">Aucun film trouvé pour « {debouncedQuery} »</p>
+          <p className="text-sm text-muted-foreground mt-1">Essayez un autre terme de recherche</p>
         </div>
       )}
     </div>

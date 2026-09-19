@@ -33,7 +33,7 @@ export function ContentSection({
             </h2>
             {count !== undefined && (
               <p className="text-sm text-muted-foreground">
-                {count} {count === 1 ? "result" : "results"} found
+                {count} {count === 1 ? "résultat" : "résultats"}
               </p>
             )}
           </div>
@@ -41,7 +41,7 @@ export function ContentSection({
         
         {onViewAll && (
           <Button variant="cinema-ghost" size="sm" className="group">
-            View all
+            Voir tout
             <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </Button>
         )}

@@ -22,7 +22,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Header } from "@/components/Header";
-import { ContentCard } from "@/components/ContentCard";
 import { FilmCard } from "@/components/FilmCard";
 import { BookCard } from "@/components/BookCard";
 import { YouTubeVideoCard } from "@/components/YouTubeVideoCard";
@@ -87,6 +86,40 @@ function EmptyState({ message, subMessage }: { message: string; subMessage?: str
       <p className="text-sm text-muted-foreground/70">{message}</p>
       {subMessage && <p className="text-xs text-muted-foreground/50 mt-1">{subMessage}</p>}
     </div>
+  );
+}
+
+// Densité par défaut des onglets dédiés : on affiche une première page, puis
+// « Charger plus » à la demande — au lieu d'un mur illimité de cartes.
+const TAB_PAGE = 9;
+
+function PaginatedGrid<T>({
+  items,
+  className,
+  renderItem,
+}: {
+  items: T[];
+  className?: string;
+  renderItem: (item: T) => JSX.Element;
+}) {
+  const [visible, setVisible] = useState(TAB_PAGE);
+  const remaining = items.length - visible;
+  return (
+    <>
+      <div className={className}>{items.slice(0, visible).map(renderItem)}</div>
+      {remaining > 0 && (
+        <div className="mt-8 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setVisible((v) => v + TAB_PAGE)}
+            className="editorial-label flex items-center gap-2 rounded-full border border-border px-5 py-2.5 transition-colors hover:border-foreground/40 hover:text-foreground"
+          >
+            Charger plus
+            <span className="tabular-nums text-muted-foreground">{remaining}</span>
+          </button>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -544,18 +577,23 @@ export default function FilmDeepDive() {
               </div>
             )}
 
-            {/* Aperçu éditions */}
+            {/* Éditions physiques : accès via l'onglet dédié (plus de double montage
+                du composant complet dans l'Aperçu — cf. fusion du double fetch). */}
             <div>
               <SectionHeader
                 title="Éditions physiques"
                 onViewAll={() => goToTab("editions")}
               />
-              <PhysicalMediaSection
-                movieId={film.id}
-                filmTitle={film.title}
-                originalTitle={film.originalTitle}
-                filmYear={film.year}
-              />
+              <p className="text-sm text-muted-foreground/70">
+                Blu-ray, restaurations et éditions collector.{" "}
+                <button
+                  type="button"
+                  onClick={() => goToTab("editions")}
+                  className="text-foreground underline underline-offset-4 hover:opacity-80"
+                >
+                  Voir les éditions
+                </button>
+              </p>
             </div>
           </TabsContent>
 
@@ -572,17 +610,21 @@ export default function FilmDeepDive() {
                     {frBooks.length > 0 && (
                       <div>
                         <SectionHeader title="Éditions françaises" count={frBooks.length} />
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {frBooks.map((book) => <BookCard key={book.id} book={book} film={filmCtx} director={filmDirector} />)}
-                        </div>
+                        <PaginatedGrid
+                          items={frBooks}
+                          className="grid md:grid-cols-2 lg:grid-cols-3 gap-4"
+                          renderItem={(book) => <BookCard key={book.id} book={book} film={filmCtx} director={filmDirector} />}
+                        />
                       </div>
                     )}
                     {otherBooks.length > 0 && (
                       <div>
                         <SectionHeader title="Éditions originales" count={otherBooks.length} />
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {otherBooks.map((book) => <BookCard key={book.id} book={book} film={filmCtx} director={filmDirector} />)}
-                        </div>
+                        <PaginatedGrid
+                          items={otherBooks}
+                          className="grid md:grid-cols-2 lg:grid-cols-3 gap-4"
+                          renderItem={(book) => <BookCard key={book.id} book={book} film={filmCtx} director={filmDirector} />}
+                        />
                       </div>
                     )}
                   </div>
@@ -608,9 +650,11 @@ export default function FilmDeepDive() {
                     <p className="text-sm text-muted-foreground -mt-4 mb-6 max-w-2xl">
                       Making-of, coulisses et entretiens avec celles et ceux qui ont fait le film.
                     </p>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {videos.production.map((v) => <YouTubeVideoCard key={v.id} video={v} filmTmdbId={film.id} film={filmCtx} />)}
-                    </div>
+                    <PaginatedGrid
+                      items={videos.production}
+                      className="grid md:grid-cols-2 lg:grid-cols-3 gap-4"
+                      renderItem={(v) => <YouTubeVideoCard key={v.id} video={v} filmTmdbId={film.id} film={filmCtx} />}
+                    />
                   </div>
                 )}
                 {totalEditorial > 0 && (
@@ -622,9 +666,11 @@ export default function FilmDeepDive() {
                     <p className="text-sm text-muted-foreground -mt-4 mb-6 max-w-2xl">
                       Présentations, masterclass, vidéos-essais et Q&A — pour réfléchir le film à la manière des cinémathèques.
                     </p>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {videos.editorial.map((v) => <YouTubeVideoCard key={v.id} video={v} filmTmdbId={film.id} film={filmCtx} />)}
-                    </div>
+                    <PaginatedGrid
+                      items={videos.editorial}
+                      className="grid md:grid-cols-2 lg:grid-cols-3 gap-4"
+                      renderItem={(v) => <YouTubeVideoCard key={v.id} video={v} filmTmdbId={film.id} film={filmCtx} />}
+                    />
                   </div>
                 )}
               </>
@@ -638,9 +684,11 @@ export default function FilmDeepDive() {
             {loadingPodcasts ? (
               <SectionLoader />
             ) : podcasts && podcasts.length > 0 ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {podcasts.map((p) => <PodcastCard key={p.id} episode={p} film={filmCtx} />)}
-              </div>
+              <PaginatedGrid
+                items={podcasts}
+                className="grid md:grid-cols-2 lg:grid-cols-3 gap-4"
+                renderItem={(p) => <PodcastCard key={p.id} episode={p} film={filmCtx} />}
+              />
             ) : (
               <EmptyState message="Aucun podcast trouvé." />
             )}
@@ -669,17 +717,21 @@ export default function FilmDeepDive() {
                     {specialized.length > 0 && (
                       <div>
                         <SectionHeader title="Revues & médias spécialisés" count={specialized.length} />
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {specialized.map((a) => <ArticleCard key={a.id} article={a} film={filmCtx} />)}
-                        </div>
+                        <PaginatedGrid
+                          items={specialized}
+                          className="grid md:grid-cols-2 lg:grid-cols-3 gap-4"
+                          renderItem={(a) => <ArticleCard key={a.id} article={a} film={filmCtx} />}
+                        />
                       </div>
                     )}
                     {press.length > 0 && (
                       <div>
                         <SectionHeader title="Presse généraliste" count={press.length} />
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {press.map((a) => <ArticleCard key={a.id} article={a} film={filmCtx} />)}
-                        </div>
+                        <PaginatedGrid
+                          items={press}
+                          className="grid md:grid-cols-2 lg:grid-cols-3 gap-4"
+                          renderItem={(a) => <ArticleCard key={a.id} article={a} film={filmCtx} />}
+                        />
                       </div>
                     )}
                   </div>
