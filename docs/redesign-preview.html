@@ -1,0 +1,624 @@
+<title>Deepdive Redesign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Nunito:wght@400;500;600;700;800&display=swap">
+<style>
+  :root{
+    /* Page chrome — la direction "cinémathèque de jour" recommandée, appliquée à la page elle-même */
+    --paper:#F6F4EF;
+    --paper-2:#EFEBE2;
+    --card:#FFFFFF;
+    --ink:#201C18;
+    --ink-soft:#4B443C;
+    --muted:#7C7367;
+    --line:#E5DFD3;
+    --line-strong:#D6CEBF;
+    --accent:#05A972;        /* vert Letterboxd, discipliné */
+    --accent-ink:#046a49;
+    --problem:#B8452B;       /* sémantique "à corriger" */
+    --problem-bg:#F4E4DE;
+    --gain:#2F6B54;          /* sémantique "gagné" */
+    --gain-bg:#E1EDE6;
+    --shadow:0 1px 2px rgba(40,32,24,.05), 0 12px 28px -18px rgba(40,32,24,.28);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#14110E;
+      --paper-2:#1B1712;
+      --card:#1D1813;
+      --ink:#EFEAE1;
+      --ink-soft:#C9C1B4;
+      --muted:#9A9082;
+      --line:#2C2721;
+      --line-strong:#3A342C;
+      --accent:#18C489;
+      --accent-ink:#7fe0bd;
+      --problem:#E0876E;
+      --problem-bg:#3A231C;
+      --gain:#7FC3A4;
+      --gain-bg:#1C2A23;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 18px 34px -20px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#14110E;
+    --paper-2:#1B1712;
+    --card:#1D1813;
+    --ink:#EFEAE1;
+    --ink-soft:#C9C1B4;
+    --muted:#9A9082;
+    --line:#2C2721;
+    --line-strong:#3A342C;
+    --accent:#18C489;
+    --accent-ink:#7fe0bd;
+    --problem:#E0876E;
+    --problem-bg:#3A231C;
+    --gain:#7FC3A4;
+    --gain-bg:#1C2A23;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 18px 34px -20px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Nunito", system-ui, -apple-system, sans-serif;
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1120px;margin:0 auto;padding-inline:20px;padding-block:0}
+  h1,h2,h3,h4{font-family:"Fraunces", Georgia, serif;font-weight:500;letter-spacing:-.015em;line-height:1.05;text-wrap:balance;margin:0}
+  p{margin:0}
+  a{color:inherit}
+  .display{font-family:"Fraunces",Georgia,serif}
+  .ital{font-style:italic;font-weight:400}
+
+  .eyebrow{
+    font-family:"Nunito",sans-serif;text-transform:uppercase;letter-spacing:.16em;
+    font-size:11px;font-weight:700;color:var(--muted);
+  }
+  .lede{color:var(--ink-soft);font-size:1.05rem;max-width:62ch}
+
+  /* ---------- top ribbon ---------- */
+  .ribbon{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding-block:16px;border-bottom:1px solid var(--line);flex-wrap:wrap;
+  }
+  .brand{font-family:"Fraunces",serif;font-size:1.4rem;font-weight:600;letter-spacing:-.02em}
+  .brand .ital{font-weight:400}
+  .theme-toggle{
+    border:1px solid var(--line-strong);background:var(--card);color:var(--muted);
+    border-radius:999px;padding:6px 14px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;
+  }
+  .theme-toggle:hover{color:var(--ink)}
+
+  /* ---------- hero ---------- */
+  .hero{padding-block:56px 20px}
+  .hero .kicker{margin-bottom:18px}
+  .hero h1{font-size:clamp(2.6rem,6.4vw,4.6rem)}
+  .hero h1 .ital{color:var(--muted)}
+  .hero .lede{margin-top:22px;font-size:1.15rem}
+  .levers{display:flex;gap:14px;flex-wrap:wrap;margin-top:30px}
+  .lever{
+    flex:1 1 240px;background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:18px 20px;box-shadow:var(--shadow);
+  }
+  .lever .n{font-family:"Fraunces",serif;font-size:1.6rem;color:var(--accent-ink);line-height:1}
+  .lever h3{font-size:1.15rem;margin:8px 0 6px}
+  .lever p{font-size:.92rem;color:var(--ink-soft)}
+
+  /* ---------- section frames ---------- */
+  section.block{padding-block:52px;border-top:1px solid var(--line)}
+  .sec-head{margin-bottom:26px;max-width:66ch}
+  .sec-head h2{font-size:clamp(1.7rem,3.6vw,2.5rem);margin:10px 0 12px}
+  .sec-head p{color:var(--ink-soft)}
+
+  /* ---------- before/after grid ---------- */
+  .ba{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}
+  @media(max-width:820px){.ba{grid-template-columns:1fr}}
+  .col-tag{display:flex;align-items:center;gap:9px;margin-bottom:12px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+  .dot{width:9px;height:9px;border-radius:50%}
+  .tag-before .dot{background:var(--problem)}
+  .tag-after .dot{background:var(--accent)}
+  .tag-before{color:var(--problem)}
+  .tag-after{color:var(--accent-ink)}
+
+  /* ---------- device / screen mockup (fidèle au produit) ---------- */
+  .screen{
+    --s-paper:#FAFAFA; --s-card:#FFFFFF; --s-ink:#161616; --s-muted:#6B6B6B;
+    --s-line:#E7E7E7; --s-green:#02b579;
+    border:1px solid var(--line-strong);border-radius:16px;overflow:hidden;
+    background:var(--s-paper);color:var(--s-ink);box-shadow:var(--shadow);
+    font-size:13px;line-height:1.45;
+  }
+  .screen.warm{ --s-paper:#F6F4EF; --s-card:#FFFFFF; --s-line:#E9E3D8; }
+  .screen .chrome{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 14px;border-bottom:1px solid var(--s-line);background:var(--s-card);
+  }
+  .screen .chrome .w{font-family:"Fraunces",serif;font-weight:600;font-size:15px;color:var(--s-ink)}
+  .screen .chrome .w .ital{font-weight:400}
+  .screen .chrome .r{display:flex;align-items:center;gap:10px;color:var(--s-muted);font-size:11px}
+  .screen .chrome .pill{border:1px solid var(--s-line);border-radius:999px;padding:3px 9px;font-weight:700;font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+  .screen .body{padding:0}
+  .scap{
+    font-family:"Nunito";font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+    font-weight:700;color:var(--s-muted);
+  }
+
+  /* film hero inside screen */
+  .film-hero{position:relative;height:150px;background:
+     linear-gradient(180deg, rgba(20,20,24,.15), var(--s-paper) 92%),
+     linear-gradient(115deg,#3a4756,#20252e 60%,#12151b);}
+  .film-hero.framed{height:132px;margin:14px;border-radius:12px;overflow:hidden;
+     box-shadow:0 10px 24px -14px rgba(20,16,12,.5)}
+  .film-hero .back{position:absolute;top:10px;left:12px;color:#e9e6df;font-size:11px;font-weight:600;opacity:.9}
+  .film-id{display:flex;gap:12px;padding:0 14px;margin-top:-42px;position:relative;z-index:2}
+  .film-hero.framed + .film-id{margin-top:8px}
+  .poster{
+    width:60px;aspect-ratio:2/3;border-radius:7px;flex:none;
+    background:linear-gradient(150deg,#6a5f74,#2c2733);box-shadow:0 8px 18px -8px rgba(0,0,0,.5);
+    display:flex;align-items:flex-end;padding:5px;color:#f4f1ea;font-size:8px;font-weight:700;
+  }
+  .film-meta h4{font-family:"Fraunces",serif;font-size:20px;color:var(--s-ink);margin-bottom:3px;font-weight:500}
+  .film-meta .sub{color:var(--s-muted);font-size:10px;letter-spacing:.02em}
+  .film-meta .chips{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
+  .chip{border:1px solid var(--s-line);border-radius:999px;padding:2px 8px;font-size:9px;color:var(--s-muted)}
+  .btnrow{display:flex;gap:6px;margin-top:9px}
+  .mini-btn{border:1px solid var(--s-ink);border-radius:8px;padding:4px 9px;font-size:10px;font-weight:700;color:var(--s-ink)}
+  .mini-btn.ghost{border-color:var(--s-line);color:var(--s-muted)}
+
+  .tabbar{display:flex;gap:0;border-bottom:1px solid var(--s-line);margin:16px 14px 0;overflow:hidden}
+  .tabbar .t{font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--s-muted);padding:8px 9px;border-bottom:2px solid transparent;white-space:nowrap}
+  .tabbar .t.on{color:var(--s-ink);border-color:var(--s-ink)}
+  .tabbar .t b{color:var(--s-muted);font-weight:600;margin-left:3px;font-size:9px}
+
+  /* stacked section (AVANT density) */
+  .stackpad{padding:16px 14px 6px}
+  .mk-sec{margin-bottom:16px}
+  .mk-sec .h{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
+  .mk-sec .h .ttl{font-family:"Fraunces",serif;font-size:14px;color:var(--s-ink)}
+  .mk-sec .h .cnt{font-size:10px;color:var(--s-muted)}
+  .mk-sec .h .va{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--s-muted)}
+  .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+  .tile{border:1px solid var(--s-line);border-radius:8px;overflow:hidden;background:var(--s-card)}
+  .tile .thumb{height:42px;background:linear-gradient(120deg,#c9d2dc,#e6e0d6)}
+  .tile.vid .thumb{background:linear-gradient(120deg,#4a5568,#2b303a)}
+  .tile.book .thumb{height:54px;background:linear-gradient(150deg,#a98d63,#7d6a4c)}
+  .tile.pod .thumb{background:linear-gradient(120deg,#8f7fa6,#5b5170)}
+  .tile .tx{padding:5px 6px}
+  .tile .tx .l1{height:5px;border-radius:3px;background:var(--s-line);margin-bottom:4px;width:90%}
+  .tile .tx .l2{height:5px;border-radius:3px;background:var(--s-line);width:60%}
+  /* the inconsistent "editions" block, reproduced faithfully */
+  .ed-block{border:1px solid #d9d3ea;background:#f3f0fb;border-radius:14px;padding:10px}
+  .ed-block .badge{display:inline-block;background:#e7e2fb;color:#5b4bb0;border:1px solid #d3caf3;border-radius:999px;padding:2px 8px;font-size:9px;font-weight:700;margin-bottom:6px}
+  .ed-block .en{font-size:9px;color:#8a83a3;font-style:italic}
+  .fade-more{position:relative;height:96px;margin:0 14px;overflow:hidden}
+  .fade-more:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent,var(--s-paper))}
+  .more-note{text-align:center;font-size:10px;color:var(--s-muted);padding:6px 0 14px;font-weight:600}
+
+  /* AFTER: pour commencer */
+  .porte{margin:6px 14px 0}
+  .porte .lead-card{
+    display:flex;gap:11px;border:1px solid var(--s-line);border-radius:12px;overflow:hidden;
+    background:var(--s-card);box-shadow:0 8px 20px -16px rgba(20,16,12,.5)
+  }
+  .porte .lead-card .big-thumb{width:112px;flex:none;background:linear-gradient(125deg,#3d4a5c,#191d25);position:relative}
+  .porte .lead-card .big-thumb:after{content:"▶";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;opacity:.9}
+  .porte .lead-card .lc-tx{padding:11px 12px 11px 0}
+  .porte .lead-card .lc-tx .k{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--s-green);font-weight:800}
+  .porte .lead-card .lc-tx h5{font-family:"Fraunces",serif;font-size:15px;margin:5px 0 4px;color:var(--s-ink);font-weight:500;line-height:1.15}
+  .porte .lead-card .lc-tx .m{font-size:10px;color:var(--s-muted)}
+  .counters{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 14px 0}
+  .counter{border:1px solid var(--s-line);border-radius:11px;padding:10px;background:var(--s-card);transition:transform .15s,border-color .15s;cursor:pointer}
+  .counter:hover{transform:translateY(-2px);border-color:var(--s-ink)}
+  .counter .ci{display:flex;align-items:center;justify-content:space-between}
+  .counter .name{font-size:11px;font-weight:800;color:var(--s-ink)}
+  .counter .num{font-family:"Fraunces",serif;font-size:18px;color:var(--s-ink)}
+  .counter .tz{font-size:9px;color:var(--s-muted);margin-top:3px;line-height:1.3}
+  .counter .arrow{font-size:10px;color:var(--s-muted)}
+
+  /* home mockups */
+  .home-hero{position:relative;height:120px;background:linear-gradient(180deg,rgba(15,15,20,.1),var(--s-paper) 92%),linear-gradient(120deg,#43506a,#222834 65%,#12151c);padding:0 14px;display:flex;align-items:flex-end}
+  .home-hero.framed{height:104px;margin:14px 14px 0;border-radius:12px}
+  .home-hero .ht{padding-bottom:12px}
+  .home-hero .ht .k{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:#e7e3da;font-weight:700}
+  .home-hero .ht h4{font-family:"Fraunces",serif;color:#fff;font-size:24px;margin-top:4px;font-weight:500}
+  .home-hero .ht .go{color:#e7e3da;font-size:10px;margin-top:4px;font-weight:600}
+  .rowlist{padding:12px 14px 0}
+  .stack-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--s-line);border-radius:9px;margin-bottom:7px;background:var(--s-card)}
+  .stack-row .ic{width:22px;height:22px;border-radius:6px;background:var(--s-line);flex:none}
+  .stack-row .rl{flex:1}
+  .stack-row .rl .a{font-size:11px;font-weight:700;color:var(--s-ink)}
+  .stack-row .rl .b{font-size:9px;color:var(--s-muted)}
+  .stack-row.diff .ic{background:#e0dbf3}
+  .stack-row .badge9{font-size:8px;color:var(--s-muted);border:1px solid var(--s-line);border-radius:999px;padding:1px 6px}
+  .rail{display:flex;gap:7px;padding:12px 14px 0;overflow:hidden}
+  .rail .rp{width:54px;aspect-ratio:2/3;border-radius:6px;flex:none;background:linear-gradient(150deg,#6a5f74,#2c2733)}
+  .rail .rp:nth-child(2){background:linear-gradient(150deg,#5f746a,#27332c)}
+  .rail .rp:nth-child(3){background:linear-gradient(150deg,#746a5f,#332f27)}
+  .rail .rp:nth-child(4){background:linear-gradient(150deg,#5f6a74,#272d33)}
+  .rail .rp:nth-child(5){background:linear-gradient(150deg,#74625f,#332827)}
+  .secondary-bar{margin:14px 14px 16px;border:1px dashed var(--s-line);border-radius:10px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;color:var(--s-muted);font-size:10px;font-weight:600}
+  .secondary-bar .plus{font-size:14px}
+
+  .screen-foot{padding:12px 14px 16px}
+
+  /* annotation chips under a screen */
+  .notes{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+  .note{display:flex;gap:9px;align-items:flex-start;font-size:.86rem;line-height:1.4}
+  .note .m{flex:none;margin-top:2px;width:16px;height:16px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff}
+  .note.bad .m{background:var(--problem)}
+  .note.good .m{background:var(--gain)}
+  .note b{font-weight:800}
+  .note span{color:var(--ink-soft)}
+
+  /* ---------- palette ---------- */
+  .pal-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media(max-width:820px){.pal-grid{grid-template-columns:1fr}}
+  .pal-card{border:1px solid var(--line);border-radius:16px;background:var(--card);overflow:hidden;box-shadow:var(--shadow)}
+  .pal-card .ph{padding:16px 18px;border-bottom:1px solid var(--line)}
+  .pal-card .ph .lab{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+  .pal-card.before .lab{color:var(--problem)}
+  .pal-card.after .lab{color:var(--accent-ink)}
+  .pal-card .ph h3{font-size:1.35rem;margin-top:6px}
+  .pal-card .ph p{font-size:.86rem;color:var(--ink-soft);margin-top:4px}
+  .swatches{display:flex;flex-wrap:wrap;gap:0}
+  .sw{flex:1 1 33%;min-width:96px;padding:14px 12px;display:flex;flex-direction:column;gap:2px}
+  .sw .nm{font-size:11px;font-weight:800}
+  .sw .hx{font-size:10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;opacity:.75}
+
+  .ambiance{margin-top:26px}
+  .amb-controls{display:inline-flex;border:1px solid var(--line-strong);border-radius:999px;overflow:hidden;margin-bottom:16px}
+  .amb-controls button{border:0;background:transparent;color:var(--muted);font:inherit;font-weight:700;font-size:12px;padding:8px 18px;cursor:pointer}
+  .amb-controls button.on{background:var(--ink);color:var(--paper)}
+  .amb-stage{border:1px solid var(--line-strong);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);background:#fff}
+  .amb-shot{transition:opacity .35s}
+
+  .principles{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:26px}
+  @media(max-width:640px){.principles{grid-template-columns:1fr}}
+  .pr{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:16px 18px}
+  .pr .k{font-family:"Fraunces",serif;color:var(--accent-ink);font-size:1.3rem;line-height:1}
+  .pr h4{font-size:1.02rem;margin:9px 0 5px}
+  .pr p{font-size:.88rem;color:var(--ink-soft)}
+
+  /* phase table */
+  .phases{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+  .phase{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px}
+  @media(max-width:640px){.phase{grid-template-columns:1fr;gap:6px}}
+  .phase .pn{font-family:"Fraunces",serif;font-size:1.5rem;color:var(--accent-ink);line-height:1}
+  .phase .pt b{font-weight:800}
+  .phase .pt span{color:var(--ink-soft);font-size:.9rem}
+  .phase .badge{justify-self:end;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:5px 11px;border-radius:999px;background:var(--gain-bg);color:var(--gain);white-space:nowrap}
+  @media(max-width:640px){.phase .badge{justify-self:start}}
+
+  footer.foot{padding-block:40px 56px;border-top:1px solid var(--line);color:var(--muted);font-size:.85rem}
+  .foot .doc{margin-top:8px;color:var(--ink-soft)}
+  .kbd{font-family:ui-monospace,Menlo,monospace;font-size:.8em;background:var(--paper-2);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
+
+  @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+
+  <div class="ribbon">
+    <div class="brand">Deep<span class="ital">dive</span> · refonte</div>
+    <button class="theme-toggle" id="themeBtn" type="button">Basculer le thème</button>
+  </div>
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="eyebrow kicker">— Recommandations design · septembre 2026</div>
+    <h1>Moins de contenu à la fois.<br><span class="ital">Plus de lumière.</span></h1>
+    <p class="lede">Deux retours reviennent : « tout est trop <b>fouillis</b>, on s'y perd » et « tout est trop <b>sombre</b> ». Ce sont deux problèmes distincts avec deux leviers distincts — la <b>structure de la découverte</b> et le <b>look &amp; feel</b>. Voici, côte à côte, l'existant fidèlement reconstitué et la direction proposée.</p>
+
+    <div class="levers">
+      <div class="lever">
+        <div class="n">01</div>
+        <h3>Désencombrer</h3>
+        <p>Une décision à la fois, la richesse à la demande. La page film et l'accueil passent d'un empilement de sections à un parcours guidé.</p>
+      </div>
+      <div class="lever">
+        <div class="n">02</div>
+        <h3>Éclaircir &amp; réchauffer</h3>
+        <p>Cadrer l'image sombre au lieu de la mettre en plein écran, réchauffer des neutres gris et froids, discipliner l'accent vert.</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- PAGE FILM -->
+  <section class="block">
+    <div class="sec-head">
+      <div class="eyebrow">— Surface la plus dense</div>
+      <h2>Page film : d'un condensé exhaustif à une porte d'entrée</h2>
+      <p>Aujourd'hui l'onglet « Aperçu » n'est pas un aperçu : il empile 6 sections (jusqu'à ~18 cartes) <em>avant</em> tout choix. Demain, un écran = une recommandation + des compteurs cliquables.</p>
+    </div>
+
+    <div class="ba">
+      <!-- BEFORE -->
+      <div>
+        <div class="col-tag tag-before"><span class="dot"></span>Avant · onglet « Aperçu »</div>
+        <div class="screen">
+          <div class="chrome"><div class="w">Deep<span class="ital">dive</span></div><div class="r"><span>⌕</span><span class="pill">Se connecter</span></div></div>
+          <div class="film-hero"><span class="back">← Retour</span></div>
+          <div class="film-id">
+            <div class="poster">Parasite</div>
+            <div class="film-meta">
+              <h4>Parasite</h4>
+              <div class="sub">2019 · 132 min · ★ 8.5 · Vu ★4/5</div>
+              <div class="chips"><span class="chip">Thriller</span><span class="chip">Drame</span><span class="chip">Comédie</span></div>
+              <div class="btnrow"><span class="mini-btn">⌖ Sauvegarder</span><span class="mini-btn ghost">Partager</span></div>
+            </div>
+          </div>
+          <div class="tabbar">
+            <span class="t on">Aperçu</span><span class="t">Livres<b>12</b></span><span class="t">Vidéos<b>24</b></span><span class="t">Podcasts<b>20</b></span><span class="t">Éditions</span><span class="t">Articles<b>14</b></span>
+          </div>
+          <div class="stackpad">
+            <div class="mk-sec">
+              <div class="h"><span class="ttl">Articles &amp; critiques <span class="cnt">· 14</span></span><span class="va">Voir tout →</span></div>
+              <div class="tiles"><div class="tile"><div class="thumb"></div><div class="tx"><div class="l1"></div><div class="l2"></div></div></div><div class="tile"><div class="thumb"></div><div class="tx"><div class="l1"></div><div class="l2"></div></div></div><div class="tile"><div class="thumb"></div><div class="tx"><div class="l1"></div><div class="l2"></div></div></div></div>
+            </div>
+            <div class="mk-sec">
+              <div class="h"><span class="ttl">Livres &amp; essais <span class="cnt">· 12</span></span><span class="va">Voir tout →</span></div>
+              <div class="tiles"><div class="tile book"><div class="thumb"></div><div class="tx"><div class="l1"></div><div class="l2"></div></div></div><div class="tile book"><div class="thumb"></div><div class="tx"><div class="l1"></div><div class="l2"></div></div></div><div class="tile book"><div class="thumb"></div><div class="tx"><div class="l1"></div><div class="l2"></div></div></div></div>
+            </div>
+            <div class="mk-sec">
+              <div class="h"><span class="ttl">Autour du tournage</span><span class="va">Voir tout →</span></div>
+              <div class="tiles"><div class="tile vid"><div class="thumb"></div><div class="tx"><div class="l1"></div><div class="l2"></div></div></div><div class="tile vid"><div class="thumb"></div><div class="tx"><div class="l1"></div><div class="l2"></div></div></div><div class="tile vid"><div class="thumb"></div><div class="tx"><div class="l1"></div><div class="l2"></div></div></div></div>
+            </div>
+          </div>
+          <div class="fade-more">
+            <div class="stackpad">
+              <div class="mk-sec"><div class="h"><span class="ttl">Regards &amp; analyses</span></div><div class="tiles"><div class="tile vid"><div class="thumb"></div></div><div class="tile vid"><div class="thumb"></div></div><div class="tile vid"><div class="thumb"></div></div></div></div>
+              <div class="ed-block"><span class="badge">◉ Éditions physiques</span> <span class="en">"3 results found"</span></div>
+            </div>
+          </div>
+          <div class="more-note">↓ + Podcasts, + Éditions physiques… 6 sections en tout avant le moindre clic</div>
+        </div>
+        <div class="notes">
+          <div class="note bad"><span class="m">!</span><span><b>6 sections empilées</b>, ~18 cartes rendues avant tout choix — la densité d'un listing complet dès l'arrivée.</span></div>
+          <div class="note bad"><span class="m">!</span><span>Les onglets dédiés (Vidéos&nbsp;24, Podcasts&nbsp;20) sont <b>sans limite</b> : un mur de miniatures identiques.</span></div>
+          <div class="note bad"><span class="m">!</span><span>Le bloc « Éditions » a un <b>autre langage visuel</b> (coins arrondis, badge coloré) + un texte anglais résiduel <i>« results found »</i>.</span></div>
+        </div>
+      </div>
+
+      <!-- AFTER -->
+      <div>
+        <div class="col-tag tag-after"><span class="dot"></span>Après · « Pour commencer »</div>
+        <div class="screen warm">
+          <div class="chrome"><div class="w">Deep<span class="ital">dive</span></div><div class="r"><span>Explorer</span><span>⌕</span><span class="pill">Se connecter</span></div></div>
+          <div class="film-hero framed"><span class="back">← Retour</span></div>
+          <div class="film-id">
+            <div class="poster">Parasite</div>
+            <div class="film-meta">
+              <h4>Parasite</h4>
+              <div class="sub">2019 · 132 min · ★ 8.5 · Vu ★4/5</div>
+              <div class="btnrow"><span class="mini-btn">⌖ Sauvegarder</span><span class="mini-btn ghost">Partager</span></div>
+            </div>
+          </div>
+          <div class="porte">
+            <div class="scap" style="margin:16px 0 8px">— Pour commencer</div>
+            <div class="lead-card">
+              <div class="big-thumb"></div>
+              <div class="lc-tx">
+                <div class="k">Vidéo-essai · 18 min</div>
+                <h5>Parasite : l'architecture de la lutte des classes</h5>
+                <div class="m">Le Cinéma Club — la meilleure porte d'entrée, tous formats confondus.</div>
+              </div>
+            </div>
+          </div>
+          <div class="scap" style="margin:16px 14px 0">— Tout autour du film</div>
+          <div class="counters">
+            <div class="counter"><div class="ci"><span class="name">Vidéos</span><span class="num">24</span></div><div class="tz">Analyses &amp; tournage</div></div>
+            <div class="counter"><div class="ci"><span class="name">Podcasts</span><span class="num">20</span></div><div class="tz">La critique audio</div></div>
+            <div class="counter"><div class="ci"><span class="name">Livres</span><span class="num">12</span></div><div class="tz">Essais &amp; entretiens</div></div>
+            <div class="counter"><div class="ci"><span class="name">Éditions</span><span class="num">6</span></div><div class="tz">Blu-ray &amp; restaurations</div></div>
+            <div class="counter"><div class="ci"><span class="name">Articles</span><span class="num">14</span></div><div class="tz">Presse &amp; spécialisé</div></div>
+            <div class="counter" style="background:transparent;border-style:dashed"><div class="ci"><span class="name" style="color:var(--s-muted)">Films similaires</span><span class="arrow">→</span></div><div class="tz">Continuer l'exploration</div></div>
+          </div>
+          <div class="screen-foot"></div>
+        </div>
+        <div class="notes">
+          <div class="note good"><span class="m">✓</span><span><b>Un écran, une décision</b> : une recommandation éditorialisée, puis la richesse en 5 compteurs cliquables — rien de pré-déplié.</span></div>
+          <div class="note good"><span class="m">✓</span><span>Chaque compteur mène à une vue détaillée <b>plafonnée + « Charger plus »</b> et triable (récentes / les plus vues / les plus courtes).</span></div>
+          <div class="note good"><span class="m">✓</span><span>Un <b>seul langage de carte</b> ; le lien « Explorer » enfin présent dans l'en-tête.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ACCUEIL -->
+  <section class="block">
+    <div class="sec-head">
+      <div class="eyebrow">— Point d'entrée</div>
+      <h2>Accueil : de 9 rails empilés à un fil guidé</h2>
+      <p>L'accueil connecté empile jusqu'à 9 sections au même poids visuel, dont 3 blocs qui font la même chose avec 3 designs de carte différents. On garde le hero « diary », on fusionne et on hiérarchise le reste.</p>
+    </div>
+
+    <div class="ba">
+      <!-- BEFORE home -->
+      <div>
+        <div class="col-tag tag-before"><span class="dot"></span>Avant · 9 sections</div>
+        <div class="screen">
+          <div class="chrome"><div class="w">Deep<span class="ital">dive</span></div><div class="r"><span>⌕</span><span class="pill">Se connecter</span></div></div>
+          <div class="home-hero"><div class="ht"><div class="k">— Votre dernier film</div><h4>Parasite</h4><div class="go">Aller plus loin →</div></div></div>
+          <div class="rowlist">
+            <div class="stack-row"><div class="ic"></div><div class="rl"><div class="a">Tendances de cinéphilie</div><div class="b">4 posters</div></div><span class="badge9">rail</span></div>
+            <div class="stack-row"><div class="ic"></div><div class="rl"><div class="a">Votre diary</div><div class="b">8 films — rail horizontal</div></div><span class="badge9">rail</span></div>
+            <div class="stack-row diff"><div class="ic"></div><div class="rl"><div class="a">À explorer (vidéos)</div><div class="b">3 cartes · design A</div></div><span class="badge9">grille</span></div>
+            <div class="stack-row diff"><div class="ic"></div><div class="rl"><div class="a">Podcasts sur vos films</div><div class="b">3 cartes · design B</div></div><span class="badge9">grille</span></div>
+            <div class="stack-row diff"><div class="ic"></div><div class="rl"><div class="a">Articles sur vos films</div><div class="b">3 cartes · design B</div></div><span class="badge9">grille</span></div>
+            <div class="stack-row"><div class="ic"></div><div class="rl"><div class="a">Pour creuser ailleurs</div><div class="b">10 films — rail</div></div><span class="badge9">rail</span></div>
+            <div class="stack-row"><div class="ic"></div><div class="rl"><div class="a">À l'affiche</div><div class="b">10 films — rail générique</div></div><span class="badge9">rail</span></div>
+          </div>
+          <div class="more-note">↓ 3 blocs répètent la même intention avec 3 cartes différentes</div>
+        </div>
+        <div class="notes">
+          <div class="note bad"><span class="m">!</span><span><b>9 sections</b> au même poids typographique : rien ne dit « commence ici ».</span></div>
+          <div class="note bad"><span class="m">!</span><span>3 blocs « du contenu sur vos films » <b>scindés</b> en 3 designs — c'est la source directe du « fouillis ».</span></div>
+        </div>
+      </div>
+
+      <!-- AFTER home -->
+      <div>
+        <div class="col-tag tag-after"><span class="dot"></span>Après · hero + 1 fil</div>
+        <div class="screen warm">
+          <div class="chrome"><div class="w">Deep<span class="ital">dive</span></div><div class="r"><span>Explorer</span><span>⌕</span><span class="pill">Se connecter</span></div></div>
+          <div class="home-hero framed"><div class="ht"><div class="k">— Votre dernier film</div><h4>Parasite</h4><div class="go">Aller plus loin →</div></div></div>
+          <div class="porte">
+            <div class="scap" style="margin:16px 0 8px">— À explorer maintenant</div>
+            <div class="lead-card">
+              <div class="big-thumb"></div>
+              <div class="lc-tx">
+                <div class="k">La trouvaille du jour · vidéo</div>
+                <h5>Ce que Bong Joon-ho cache dans les escaliers</h5>
+                <div class="m">Tiré de vos 3 derniers films vus — un seul, le meilleur.</div>
+              </div>
+            </div>
+          </div>
+          <div class="scap" style="margin:18px 14px 0">— Votre diary</div>
+          <div class="rail"><div class="rp"></div><div class="rp"></div><div class="rp"></div><div class="rp"></div><div class="rp"></div></div>
+          <div class="secondary-bar"><span>Découvrir autrement — Tendances · À l'affiche</span><span class="plus">＋</span></div>
+        </div>
+        <div class="notes">
+          <div class="note good"><span class="m">✓</span><span><b>~4 sections</b> au lieu de 9 : hero → 1 trouvaille → diary → un bloc secondaire replié.</span></div>
+          <div class="note good"><span class="m">✓</span><span>Les 3 blocs fusionnent en <b>une</b> section multi-format ; Tendances / À l'affiche deviennent volontaires, pas subis.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COULEURS -->
+  <section class="block">
+    <div class="sec-head">
+      <div class="eyebrow">— « Tout est sombre »</div>
+      <h2>Couleurs &amp; look and feel</h2>
+      <p>Détail utile trouvé dans le code : l'app tourne en réalité sur un thème <b>clair</b> (fond quasi blanc) — la classe <span class="kbd">.dark</span> n'est jamais activée. Le ressenti « sombre » vient d'ailleurs : des <b>heros plein écran</b> (jusqu'à 88&nbsp;vh) remplis de backdrops de films assombris, de <b>neutres gris et froids</b> un peu ternes, et de la densité d'imagerie sombre. On ne bascule donc pas en « mode clair » — on <b>cadre l'image, on réchauffe et on aère</b>.</p>
+    </div>
+
+    <div class="pal-grid">
+      <div class="pal-card before">
+        <div class="ph"><div class="lab">Avant — neutres froids (extraits du code)</div><h3>Gris cliniques + hero noir</h3><p>Un off-white bleuté et plat, des bordures grises, un vert vif utilisé un peu partout.</p></div>
+        <div class="swatches">
+          <div class="sw" style="background:#FAFAFA;color:#161616"><span class="nm">Fond</span><span class="hx">#FAFAFA</span></div>
+          <div class="sw" style="background:#E5E5E5;color:#161616"><span class="nm">Bordure</span><span class="hx">#E5E5E5</span></div>
+          <div class="sw" style="background:#6B6B6B;color:#fff"><span class="nm">Texte doux</span><span class="hx">#6B6B6B</span></div>
+          <div class="sw" style="background:#141414;color:#fff"><span class="nm">Encre</span><span class="hx">#141414</span></div>
+          <div class="sw" style="background:#00D183;color:#083">
+            <span class="nm">Accent</span><span class="hx">#00D183</span></div>
+          <div class="sw" style="background:#0D0D0D;color:#fff"><span class="nm">Hero</span><span class="hx">#0D0D0D</span></div>
+        </div>
+      </div>
+      <div class="pal-card after">
+        <div class="ph"><div class="lab">Après — « cinémathèque de jour »</div><h3>Papier chaud + blanc qui respire</h3><p>Un neutre légèrement chaud (pas crème), des cartes blanches qui « lèvent », le vert réservé aux notes et états actifs.</p></div>
+        <div class="swatches">
+          <div class="sw" style="background:#F6F4EF;color:#201C18"><span class="nm">Papier</span><span class="hx">#F6F4EF</span></div>
+          <div class="sw" style="background:#FFFFFF;color:#201C18"><span class="nm">Carte</span><span class="hx">#FFFFFF</span></div>
+          <div class="sw" style="background:#E5DFD3;color:#201C18"><span class="nm">Filet</span><span class="hx">#E5DFD3</span></div>
+          <div class="sw" style="background:#7C7367;color:#fff"><span class="nm">Texte doux</span><span class="hx">#7C7367</span></div>
+          <div class="sw" style="background:#201C18;color:#F6F4EF"><span class="nm">Encre</span><span class="hx">#201C18</span></div>
+          <div class="sw" style="background:#05A972;color:#022"><span class="nm">Accent</span><span class="hx">#05A972</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ambiance toggle -->
+    <div class="ambiance">
+      <div class="amb-controls" role="tablist" aria-label="Comparer l'ambiance">
+        <button type="button" id="ambBefore" class="on" role="tab" aria-selected="true">Avant · plein écran sombre</button>
+        <button type="button" id="ambAfter" role="tab" aria-selected="false">Après · cadré &amp; clair</button>
+      </div>
+      <div class="amb-stage">
+        <!-- BEFORE ambiance -->
+        <div class="amb-shot" id="shotBefore">
+          <div style="background:#FAFAFA">
+            <div style="position:relative;height:260px;background:linear-gradient(180deg,rgba(10,10,14,.35),rgba(10,10,14,.05) 70%),linear-gradient(120deg,#3a4658,#20252e 55%,#0f1218);display:flex;align-items:flex-end;padding:24px">
+              <div>
+                <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#e7e3da;font-weight:700">— Votre dernier film</div>
+                <div style="font-family:'Fraunces',serif;color:#fff;font-size:44px;font-weight:500;margin-top:8px;line-height:1">Parasite</div>
+                <div style="color:#d8d4cb;font-size:13px;margin-top:8px">Le backdrop occupe presque tout le premier écran — l'atmosphère devient sombre par défaut.</div>
+              </div>
+            </div>
+            <div style="padding:14px 24px 26px;color:#6B6B6B;font-size:12px">▤ 8 sections encore en dessous…</div>
+          </div>
+        </div>
+        <!-- AFTER ambiance -->
+        <div class="amb-shot" id="shotAfter" hidden>
+          <div style="background:#F6F4EF;padding:24px">
+            <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#7C7367;font-weight:700;margin-bottom:14px">— Votre dernier film</div>
+            <div style="position:relative;height:176px;border-radius:16px;overflow:hidden;background:linear-gradient(120deg,#42506a,#222834 60%,#141821);box-shadow:0 20px 40px -26px rgba(20,16,12,.7);display:flex;align-items:flex-end;padding:20px">
+              <div style="font-family:'Fraunces',serif;color:#fff;font-size:34px;font-weight:500;line-height:1">Parasite</div>
+            </div>
+            <div style="display:flex;gap:16px;align-items:baseline;margin-top:18px;flex-wrap:wrap">
+              <div style="font-family:'Fraunces',serif;font-size:22px;color:#201C18">Aller plus loin</div>
+              <div style="color:#05A972;font-weight:800;font-size:13px">→ 24 vidéos · 20 podcasts · 12 livres</div>
+            </div>
+            <div style="color:#7C7367;font-size:13px;margin-top:10px;max-width:52ch">L'image forte est <b>cadrée</b> et posée sur du papier clair : elle garde sa puissance cinéma sans plomber toute la page. Le reste respire.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="principles">
+      <div class="pr"><div class="k">A</div><h4>Cadrer, ne pas noyer</h4><p>Le backdrop plein écran (88&nbsp;vh) devient une image <b>letterboxée</b> avec une marge de papier autour. La force cinéma reste ; l'obscurité est encadrée, pas ambiante.</p></div>
+      <div class="pr"><div class="k">B</div><h4>Réchauffer le neutre</h4><p>Remplacer le gris froid <span class="kbd">#FAFAFA / #E5E5E5</span> par un papier légèrement chaud + des cartes blanches qui prennent du relief. Plus vivant, sans virer au crème daté.</p></div>
+      <div class="pr"><div class="k">C</div><h4>Assombrir l'image, jamais l'UI</h4><p>Seules les vignettes et backdrops portent le noir. L'ossature (en-tête, sections, texte) reste claire et constante — fini le sentiment de tunnel sombre.</p></div>
+      <div class="pr"><div class="k">D</div><h4>Discipliner l'accent</h4><p>Le vert Letterboxd est réservé aux <b>notes et états actifs</b>. Partout ailleurs, encre sur papier : l'accent redevient un signal, pas un bruit.</p></div>
+      <div class="pr"><div class="k">E</div><h4>Aérer le rythme</h4><p>Plus d'interligne entre les blocs, moins d'éléments par écran. La respiration fait autant contre le « sombre » que la couleur elle-même.</p></div>
+      <div class="pr"><div class="k">F</div><h4>Hiérarchie typographique</h4><p>Trois niveaux explicites (hero / section primaire / section secondaire) au lieu d'un seul gabarit Fraunces réutilisé partout — l'œil sait où regarder.</p></div>
+    </div>
+  </section>
+
+  <!-- PRIORISATION -->
+  <section class="block">
+    <div class="sec-head">
+      <div class="eyebrow">— Comment y aller</div>
+      <h2>Séquencement</h2>
+      <p>Chaque quick win est un brief Lovable indépendant, sans risque produit. Les chantiers structurants réutilisent les patrons établis à l'étape précédente.</p>
+    </div>
+    <div class="phases">
+      <div class="phase"><div class="pn">1</div><div class="pt"><b>Quick wins</b> — <span>plafonner les onglets + « charger plus », réchauffer les tokens, corriger l'anglais résiduel, lien « Explorer », tooltips, fusionner le double montage Éditions.</span></div><span class="badge">1–2 sem · sans risque</span></div>
+      <div class="phase"><div class="pn">2</div><div class="pt"><b>Page film</b> — <span>bloc « Pour commencer » + cartes-compteur + barre d'ancrage. Établit le nouveau patron réutilisable.</span></div><span class="badge">chantier structurant</span></div>
+      <div class="phase"><div class="pn">3</div><div class="pt"><b>Accueil</b> — <span>fusion des 3 sections en « À explorer maintenant », bloc secondaire replié. Réutilise les cartes de la phase 2.</span></div><span class="badge">chantier structurant</span></div>
+      <div class="phase"><div class="pn">4</div><div class="pt"><b>Page « Explorer »</b> — <span>découverte par genre / tendance pour l'utilisateur sans film précis en tête ni diary.</span></div><span class="badge">nouvelle surface</span></div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <div><b>Deepdive — refonte de la découverte.</b> Maquettes reconstituées fidèlement à partir du code source (site de production et Supabase inaccessibles depuis l'environnement d'analyse). Les vignettes sont des placeholders de maquette, pas des captures réelles.</div>
+    <div class="doc">Le détail complet — inventaire page par page, diagnostic ancré <span class="kbd">fichier:ligne</span>, priorisation effort×impact — est dans <b>UX_ANALYSE_RECOMMANDATIONS.md</b> (branche <span class="kbd">claude/site-design-analysis-recommendations-bmx3dt</span>).</div>
+  </footer>
+</div>
+
+<script>
+  // Theme toggle (light default; respects viewer, this button forces)
+  (function(){
+    var root = document.documentElement, btn = document.getElementById('themeBtn');
+    function current(){
+      var explicit = root.getAttribute('data-theme');
+      if(explicit) return explicit;
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    try{ var saved = localStorage.getItem('dd-theme'); if(saved) root.setAttribute('data-theme', saved); }catch(e){}
+    btn.addEventListener('click', function(){
+      var next = current() === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try{ localStorage.setItem('dd-theme', next); }catch(e){}
+    });
+  })();
+
+  // Ambiance before/after toggle
+  (function(){
+    var b = document.getElementById('ambBefore'), a = document.getElementById('ambAfter');
+    var sb = document.getElementById('shotBefore'), sa = document.getElementById('shotAfter');
+    function show(after){
+      sa.hidden = !after; sb.hidden = after;
+      a.classList.toggle('on', after); b.classList.toggle('on', !after);
+      a.setAttribute('aria-selected', after); b.setAttribute('aria-selected', !after);
+    }
+    a.addEventListener('click', function(){ show(true); });
+    b.addEventListener('click', function(){ show(false); });
+  })();
+</script>
