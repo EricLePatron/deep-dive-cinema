@@ -1,19 +1,15 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Star,
   Clock,
   User,
-  Book,
-  Video,
   Play,
-  Headphones,
   FileText,
   Mic,
   Bookmark,
   Share2,
-  Disc3,
   ChevronRight,
   Loader2,
   Film,
@@ -31,7 +27,6 @@ import { useFilmVideos } from "@/hooks/useYouTube";
 import { useFilmPodcasts } from "@/hooks/usePodcast";
 import { useLetterboxdProfile, useLetterboxdFeed } from "@/hooks/useLetterboxd";
 import { getPosterUrl } from "@/services/tmdb";
-import { mockArticles } from "@/data/mockData";
 import { useFilmBooks } from "@/hooks/useFilmBooks";
 import { useFilmArticles } from "@/hooks/useFilmArticles";
 import { ArticleCard } from "@/components/ArticleCard";
@@ -95,12 +90,19 @@ function PaginatedGrid<T>({
   items,
   className,
   renderItem,
+  resetKey,
 }: {
   items: T[];
   className?: string;
   renderItem: (item: T) => JSX.Element;
+  // Réinitialise la pagination quand on change de film (le composant reste monté
+  // lors d'un changement de /film/:id — sans ça, la vue resterait dépliée).
+  resetKey?: unknown;
 }) {
   const [visible, setVisible] = useState(TAB_PAGE);
+  useEffect(() => {
+    setVisible(TAB_PAGE);
+  }, [resetKey]);
   const remaining = items.length - visible;
   return (
     <>
@@ -164,9 +166,11 @@ export default function FilmDeepDive() {
 
   // "Pour commencer" : une seule recommandation, tous formats confondus.
   const bestVideo = videos?.editorial?.[0] ?? videos?.production?.[0] ?? null;
-  type Lead = { kicker: string; metaShort?: string; title: string; meta: string; href: string; thumb?: string | null };
+  const podcastHref = podcasts?.[0] ? podcasts[0].episodeUrl || podcasts[0].audioUrl : "";
+  type Lead = { kind: "video" | "article" | "podcast"; kicker: string; metaShort?: string; title: string; meta: string; href: string; thumb?: string | null };
   const lead: Lead | null = bestVideo
     ? {
+        kind: "video",
         kicker: videos?.editorial?.[0] ? "Vidéo-essai" : "Autour du tournage",
         metaShort: bestVideo.duration,
         title: bestVideo.title,
@@ -176,19 +180,21 @@ export default function FilmDeepDive() {
       }
     : articles?.[0]
     ? {
+        kind: "article",
         kicker: "À lire",
         title: articles[0].title,
         meta: articles[0].source,
         href: articles[0].url,
         thumb: articles[0].image,
       }
-    : podcasts?.[0]
+    : podcasts?.[0] && podcastHref
     ? {
+        kind: "podcast",
         kicker: "À écouter",
         metaShort: podcasts[0].durationFormatted,
         title: podcasts[0].title,
         meta: podcasts[0].podcastName,
-        href: podcasts[0].episodeUrl || podcasts[0].audioUrl,
+        href: podcastHref,
         thumb: podcasts[0].thumbnailUrl,
       }
     : null;
@@ -517,7 +523,13 @@ export default function FilmDeepDive() {
                     )}
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="w-12 h-12 rounded-full bg-background/90 flex items-center justify-center">
-                        <Play className="h-5 w-5 text-foreground fill-foreground ml-0.5" />
+                        {lead.kind === "video" ? (
+                          <Play className="h-5 w-5 text-foreground fill-foreground ml-0.5" />
+                        ) : lead.kind === "article" ? (
+                          <FileText className="h-5 w-5 text-foreground" />
+                        ) : (
+                          <Mic className="h-5 w-5 text-foreground" />
+                        )}
                       </div>
                     </div>
                   </div>
@@ -534,6 +546,7 @@ export default function FilmDeepDive() {
               </div>
             )}
 
+            {(lead || formatCards.length > 0) && (
             <div>
               <p className="editorial-label mb-4">— Parcourir par format</p>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -569,6 +582,7 @@ export default function FilmDeepDive() {
                 </button>
               </div>
             </div>
+            )}
 
             {!lead && formatCards.length === 0 && (
               <EmptyState
@@ -593,6 +607,7 @@ export default function FilmDeepDive() {
                         <SectionHeader title="Éditions françaises" count={frBooks.length} />
                         <PaginatedGrid
                           items={frBooks}
+                          resetKey={film.id}
                           className="grid md:grid-cols-2 lg:grid-cols-3 gap-4"
                           renderItem={(book) => <BookCard key={book.id} book={book} film={filmCtx} director={filmDirector} />}
                         />
@@ -603,6 +618,7 @@ export default function FilmDeepDive() {
                         <SectionHeader title="Éditions originales" count={otherBooks.length} />
                         <PaginatedGrid
                           items={otherBooks}
+                          resetKey={film.id}
                           className="grid md:grid-cols-2 lg:grid-cols-3 gap-4"
                           renderItem={(book) => <BookCard key={book.id} book={book} film={filmCtx} director={filmDirector} />}
                         />
@@ -633,6 +649,7 @@ export default function FilmDeepDive() {
                     </p>
                     <PaginatedGrid
                       items={videos.production}
+                      resetKey={film.id}
                       className="grid md:grid-cols-2 lg:grid-cols-3 gap-4"
                       renderItem={(v) => <YouTubeVideoCard key={v.id} video={v} filmTmdbId={film.id} film={filmCtx} />}
                     />
@@ -649,6 +666,7 @@ export default function FilmDeepDive() {
                     </p>
                     <PaginatedGrid
                       items={videos.editorial}
+                      resetKey={film.id}
                       className="grid md:grid-cols-2 lg:grid-cols-3 gap-4"
                       renderItem={(v) => <YouTubeVideoCard key={v.id} video={v} filmTmdbId={film.id} film={filmCtx} />}
                     />
@@ -667,6 +685,7 @@ export default function FilmDeepDive() {
             ) : podcasts && podcasts.length > 0 ? (
               <PaginatedGrid
                 items={podcasts}
+                resetKey={film.id}
                 className="grid md:grid-cols-2 lg:grid-cols-3 gap-4"
                 renderItem={(p) => <PodcastCard key={p.id} episode={p} film={filmCtx} />}
               />
@@ -700,6 +719,7 @@ export default function FilmDeepDive() {
                         <SectionHeader title="Revues & médias spécialisés" count={specialized.length} />
                         <PaginatedGrid
                           items={specialized}
+                          resetKey={film.id}
                           className="grid md:grid-cols-2 lg:grid-cols-3 gap-4"
                           renderItem={(a) => <ArticleCard key={a.id} article={a} film={filmCtx} />}
                         />
@@ -710,6 +730,7 @@ export default function FilmDeepDive() {
                         <SectionHeader title="Presse généraliste" count={press.length} />
                         <PaginatedGrid
                           items={press}
+                          resetKey={film.id}
                           className="grid md:grid-cols-2 lg:grid-cols-3 gap-4"
                           renderItem={(a) => <ArticleCard key={a.id} article={a} film={filmCtx} />}
                         />
