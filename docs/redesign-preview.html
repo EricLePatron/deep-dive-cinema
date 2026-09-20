@@ -495,20 +495,19 @@
     <div class="sec-head">
       <div class="eyebrow">— « Tout est sombre »</div>
       <h2>Couleurs &amp; look and feel</h2>
-      <p>Détail utile trouvé dans le code : l'app tourne en réalité sur un thème <b>clair</b> (fond quasi blanc) — la classe <span class="kbd">.dark</span> n'est jamais activée. Le ressenti « sombre » vient d'ailleurs : des <b>heros plein écran</b> (jusqu'à 88&nbsp;vh) remplis de backdrops de films assombris, de <b>neutres gris et froids</b> un peu ternes, et de la densité d'imagerie sombre. On ne bascule donc pas en « mode clair » — on <b>cadre l'image, on réchauffe et on aère</b>.</p>
+      <p>Vérifié dans le code : chaque page applique <span class="kbd">className="dark"</span> sur son conteneur racine — l'app tourne donc sur la palette <b>sombre « MUBI »</b> (fond quasi noir, <span class="kbd">0% 5%</span>). Le « tout est sombre » est donc <b>littéral</b>, pas une impression due aux images. S'y ajoutent des <b>heros plein écran</b> (jusqu'à 88&nbsp;vh) de backdrops assombris. La reco : <b>basculer la palette de page</b> vers une direction claire et chaude, <b>cadrer l'image</b> au lieu du plein écran, et <b>aérer</b>.</p>
     </div>
 
     <div class="pal-grid">
       <div class="pal-card before">
-        <div class="ph"><div class="lab">Avant — neutres froids (extraits du code)</div><h3>Gris cliniques + hero noir</h3><p>Un off-white bleuté et plat, des bordures grises, un vert vif utilisé un peu partout.</p></div>
+        <div class="ph"><div class="lab">Avant — palette sombre « MUBI » (active sur chaque page)</div><h3>Quasi-noir de bout en bout</h3><p>Fond à 5&nbsp;% de luminosité, cartes à peine plus claires, texte crème, vert vif comme seul accent.</p></div>
         <div class="swatches">
-          <div class="sw" style="background:#FAFAFA;color:#161616"><span class="nm">Fond</span><span class="hx">#FAFAFA</span></div>
-          <div class="sw" style="background:#E5E5E5;color:#161616"><span class="nm">Bordure</span><span class="hx">#E5E5E5</span></div>
-          <div class="sw" style="background:#6B6B6B;color:#fff"><span class="nm">Texte doux</span><span class="hx">#6B6B6B</span></div>
-          <div class="sw" style="background:#141414;color:#fff"><span class="nm">Encre</span><span class="hx">#141414</span></div>
-          <div class="sw" style="background:#00D183;color:#083">
-            <span class="nm">Accent</span><span class="hx">#00D183</span></div>
-          <div class="sw" style="background:#0D0D0D;color:#fff"><span class="nm">Hero</span><span class="hx">#0D0D0D</span></div>
+          <div class="sw" style="background:#0D0D0D;color:#F0ECE3"><span class="nm">Fond</span><span class="hx">#0D0D0D</span></div>
+          <div class="sw" style="background:#121212;color:#F0ECE3"><span class="nm">Carte</span><span class="hx">#121212</span></div>
+          <div class="sw" style="background:#1F1F1F;color:#F0ECE3"><span class="nm">Bordure</span><span class="hx">#1F1F1F</span></div>
+          <div class="sw" style="background:#8C8C8C;color:#0D0D0D"><span class="nm">Texte doux</span><span class="hx">#8C8C8C</span></div>
+          <div class="sw" style="background:#F0ECE3;color:#0D0D0D"><span class="nm">Texte</span><span class="hx">#F0ECE3</span></div>
+          <div class="sw" style="background:#00D183;color:#083"><span class="nm">Accent</span><span class="hx">#00D183</span></div>
         </div>
       </div>
       <div class="pal-card after">
@@ -533,15 +532,15 @@
       <div class="amb-stage">
         <!-- BEFORE ambiance -->
         <div class="amb-shot" id="shotBefore">
-          <div style="background:#FAFAFA">
-            <div style="position:relative;height:260px;background:linear-gradient(180deg,rgba(10,10,14,.35),rgba(10,10,14,.05) 70%),linear-gradient(120deg,#3a4658,#20252e 55%,#0f1218);display:flex;align-items:flex-end;padding:24px">
+          <div style="background:#0D0D0D">
+            <div style="position:relative;height:260px;background:linear-gradient(180deg,rgba(13,13,13,.25),#0D0D0D 94%),linear-gradient(120deg,#3a4658,#20252e 55%,#0f1218);display:flex;align-items:flex-end;padding:24px">
               <div>
                 <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#e7e3da;font-weight:700">— Votre dernier film</div>
                 <div style="font-family:'Fraunces',serif;color:#fff;font-size:44px;font-weight:500;margin-top:8px;line-height:1">Parasite</div>
-                <div style="color:#d8d4cb;font-size:13px;margin-top:8px">Le backdrop occupe presque tout le premier écran — l'atmosphère devient sombre par défaut.</div>
+                <div style="color:#c9c3b8;font-size:13px;margin-top:8px">Toute la page est en quasi-noir, et le backdrop plein écran renforce encore l'obscurité.</div>
               </div>
             </div>
-            <div style="padding:14px 24px 26px;color:#6B6B6B;font-size:12px">▤ 8 sections encore en dessous…</div>
+            <div style="padding:14px 24px 26px;color:#8C8C8C;font-size:12px">▤ 8 sections encore en dessous, sur le même fond noir…</div>
           </div>
         </div>
         <!-- AFTER ambiance -->
