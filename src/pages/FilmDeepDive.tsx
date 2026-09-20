@@ -40,8 +40,6 @@ import { PhysicalMediaSection } from "@/components/PhysicalMediaSection";
 import { useUpsertFilmContentStats } from "@/hooks/useFilmContentStats";
 import { FilmSEO } from "@/components/FilmSEO";
 
-const PREVIEW = 3;
-
 interface SectionHeaderProps {
   title: string;
   count?: number;
@@ -163,6 +161,46 @@ export default function FilmDeepDive() {
   const totalEditorial = videos?.editorial.length || 0;
   const totalPodcasts = podcasts?.length || 0;
   const totalArticles = articles?.length || 0;
+
+  // "Pour commencer" : une seule recommandation, tous formats confondus.
+  const bestVideo = videos?.editorial?.[0] ?? videos?.production?.[0] ?? null;
+  type Lead = { kicker: string; metaShort?: string; title: string; meta: string; href: string; thumb?: string | null };
+  const lead: Lead | null = bestVideo
+    ? {
+        kicker: videos?.editorial?.[0] ? "Vidéo-essai" : "Autour du tournage",
+        metaShort: bestVideo.duration,
+        title: bestVideo.title,
+        meta: bestVideo.channelTitle,
+        href: bestVideo.url,
+        thumb: bestVideo.thumbnailUrl,
+      }
+    : articles?.[0]
+    ? {
+        kicker: "À lire",
+        title: articles[0].title,
+        meta: articles[0].source,
+        href: articles[0].url,
+        thumb: articles[0].image,
+      }
+    : podcasts?.[0]
+    ? {
+        kicker: "À écouter",
+        metaShort: podcasts[0].durationFormatted,
+        title: podcasts[0].title,
+        meta: podcasts[0].podcastName,
+        href: podcasts[0].episodeUrl || podcasts[0].audioUrl,
+        thumb: podcasts[0].thumbnailUrl,
+      }
+    : null;
+
+  // Cartes-compteur des formats déjà chargés. Les Éditions n'ont pas de compteur :
+  // leur recherche ne se déclenche qu'à l'ouverture de l'onglet dédié (pas de fetch éager).
+  const formatCards = [
+    { id: "videos", label: "Vidéos", count: videos?.all.length || 0, loading: loadingVideos, teaser: "Analyses, essais & tournage" },
+    { id: "podcasts", label: "Podcasts", count: totalPodcasts, loading: loadingPodcasts, teaser: "La critique à écouter" },
+    { id: "books", label: "Livres", count: totalBooks, loading: loadingBooks, teaser: "Essais & entretiens" },
+    { id: "articles", label: "Articles", count: totalArticles, loading: loadingArticles, teaser: "Presse & revues spécialisées" },
+  ].filter((f) => f.count > 0 || f.loading);
 
   // Cache the available content counts so the homepage can surface films with real depth.
   useUpsertFilmContentStats({
@@ -436,7 +474,7 @@ export default function FilmDeepDive() {
           </h2>
         </div>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-10">
-          <TabsList className="bg-transparent p-0 border-b border-border rounded-none h-auto w-full justify-start gap-0 flex-wrap">
+          <TabsList className="sticky top-14 z-30 bg-background/90 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 p-0 border-b border-border rounded-none h-auto w-full justify-start gap-0 flex-wrap">
             {[
               { id: "overview", label: "Aperçu" },
               { id: "books", label: "Livres", count: totalBooks },
@@ -462,139 +500,82 @@ export default function FilmDeepDive() {
             ))}
           </TabsList>
 
-          {/* APERÇU — 3 highlights par section */}
-          <TabsContent value="overview" className="space-y-14 mt-8">
-            {/* Articles — critique & analyses (en premier, mis en avant) */}
-            {(loadingArticles || totalArticles > 0) && (
+          {/* APERÇU → "Pour commencer" (une reco) + parcours par format (cartes-compteur) */}
+          <TabsContent value="overview" className="space-y-12 mt-8">
+            {lead && (
               <div>
-                <SectionHeader
-                  title="Articles & critiques"
-                  count={totalArticles}
-                  onViewAll={totalArticles > PREVIEW ? () => goToTab("articles") : undefined}
-                />
-                {loadingArticles ? (
-                  <SectionLoader />
-                ) : (
-                  <div className="space-y-4">
-                    <ArticleCard article={articles![0]} variant="featured" film={filmCtx} />
-                    {articles!.length > 1 && (
-                      <div className="grid md:grid-cols-2 gap-4">
-                        {articles!.slice(1, PREVIEW).map((a) => (
-                          <ArticleCard key={a.id} article={a} film={filmCtx} />
-                        ))}
-                      </div>
+                <p className="editorial-label mb-4">— Pour commencer</p>
+                <a
+                  href={lead.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group grid sm:grid-cols-[minmax(0,240px)_1fr] gap-5 rounded-sm border border-border/60 overflow-hidden transition-colors hover:border-foreground/40"
+                >
+                  <div className="relative aspect-video sm:aspect-auto sm:h-full min-h-[150px] bg-muted overflow-hidden">
+                    {lead.thumb && (
+                      <img src={lead.thumb} alt="" className="w-full h-full object-cover" />
                     )}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-full bg-background/90 flex items-center justify-center">
+                        <Play className="h-5 w-5 text-foreground fill-foreground ml-0.5" />
+                      </div>
+                    </div>
                   </div>
-                )}
+                  <div className="p-5 md:p-6 flex flex-col justify-center">
+                    <span className="editorial-label text-foreground/60">
+                      {lead.kicker}{lead.metaShort ? ` · ${lead.metaShort}` : ""}
+                    </span>
+                    <h3 className="font-display text-xl md:text-2xl text-foreground tracking-tight mt-2 mb-2 line-clamp-2">
+                      {lead.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">{lead.meta}</p>
+                  </div>
+                </a>
               </div>
             )}
 
-            {/* Livres — section masquée si aucun livre pertinent (règle d'or : rien > hors sujet) */}
-            {(loadingBooks || totalBooks > 0) && (
-              <div>
-                <SectionHeader
-                  title="Livres & essais"
-                  count={totalBooks}
-                  onViewAll={totalBooks > PREVIEW ? () => goToTab("books") : undefined}
-                />
-                {loadingBooks ? (
-                  <SectionLoader />
-                ) : (
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {[...books!]
-                      .sort((a, b) => {
-                        const aFr = a.language === 'fr' ? 1 : 0;
-                        const bFr = b.language === 'fr' ? 1 : 0;
-                        if (aFr !== bFr) return bFr - aFr;
-                        return b.relevanceScore - a.relevanceScore;
-                      })
-                      .slice(0, PREVIEW)
-                      .map((book) => (
-                        <BookCard key={book.id} book={book} film={filmCtx} director={filmDirector} />
-                      ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Autour du tournage : making-of, coulisses, interviews équipe */}
-            {(loadingVideos || totalProduction > 0) && (
-              <div>
-                <SectionHeader
-                  title="Autour du tournage"
-                  count={totalProduction}
-                  onViewAll={totalProduction > PREVIEW ? () => goToTab("videos") : undefined}
-                />
-                {loadingVideos ? (
-                  <SectionLoader />
-                ) : (
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {videos!.production.slice(0, PREVIEW).map((video) => (
-                      <YouTubeVideoCard key={video.id} video={video} filmTmdbId={film.id} film={filmCtx} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Regards & analyses : présentations, masterclass, vidéos-essais */}
-            {(loadingVideos || totalEditorial > 0) && (
-              <div>
-                <SectionHeader
-                  title="Regards & analyses"
-                  count={totalEditorial}
-                  onViewAll={totalEditorial > PREVIEW ? () => goToTab("videos") : undefined}
-                />
-                {loadingVideos ? (
-                  <SectionLoader />
-                ) : (
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {videos!.editorial.slice(0, PREVIEW).map((video) => (
-                      <YouTubeVideoCard key={video.id} video={video} filmTmdbId={film.id} film={filmCtx} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Podcasts */}
-            {(loadingPodcasts || totalPodcasts > 0) && (
-              <div>
-                <SectionHeader
-                  title="Podcasts"
-                  count={totalPodcasts}
-                  onViewAll={totalPodcasts > PREVIEW ? () => goToTab("podcasts") : undefined}
-                />
-                {loadingPodcasts ? (
-                  <SectionLoader />
-                ) : (
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {podcasts!.slice(0, PREVIEW).map((p) => (
-                      <PodcastCard key={p.id} episode={p} variant="compact" film={filmCtx} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Éditions physiques : accès via l'onglet dédié (plus de double montage
-                du composant complet dans l'Aperçu — cf. fusion du double fetch). */}
             <div>
-              <SectionHeader
-                title="Éditions physiques"
-                onViewAll={() => goToTab("editions")}
-              />
-              <p className="text-sm text-muted-foreground/70">
-                Blu-ray, restaurations et éditions collector.{" "}
+              <p className="editorial-label mb-4">— Parcourir par format</p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {formatCards.map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => goToTab(f.id)}
+                    className="group text-left rounded-sm border border-border/60 p-4 transition-colors hover:border-foreground/40 hover:bg-foreground/[0.02]"
+                  >
+                    <div className="flex items-baseline justify-between">
+                      <span className="font-display text-lg text-foreground">{f.label}</span>
+                      {f.count > 0 ? (
+                        <span className="editorial-label tabular-nums">{f.count}</span>
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1.5">{f.teaser}</p>
+                  </button>
+                ))}
+                {/* Éditions : toujours proposées, compteur chargé à l'ouverture de l'onglet */}
                 <button
                   type="button"
                   onClick={() => goToTab("editions")}
-                  className="text-foreground underline underline-offset-4 hover:opacity-80"
+                  className="group text-left rounded-sm border border-border/60 p-4 transition-colors hover:border-foreground/40 hover:bg-foreground/[0.02]"
                 >
-                  Voir les éditions
+                  <div className="flex items-baseline justify-between">
+                    <span className="font-display text-lg text-foreground">Éditions</span>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1.5">Blu-ray &amp; restaurations</p>
                 </button>
-              </p>
+              </div>
             </div>
+
+            {!lead && formatCards.length === 0 && (
+              <EmptyState
+                message="Le tour du film arrive."
+                subMessage="Nous rassemblons vidéos, podcasts, livres et articles autour de ce film."
+              />
+            )}
           </TabsContent>
 
           {/* LIVRES */}
